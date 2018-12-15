@@ -1,4 +1,4 @@
-
+C> Example doxygen comment
 c Maximum number of real particles on a processor
 #define LPM_LPART 50000
 
