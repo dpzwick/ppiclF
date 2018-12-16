@@ -1,11 +1,6 @@
 !-----------------------------------------------------------------------
       subroutine lpm_comm_setup
 #include "LPM"
-      include 'mpif.h'
-
-      lpm_comm = MPI_COMM_WORLD
-
-      lpm_nelt = LPM_LELT ! fix here
 
 c     call lpm_comm_interp_setup(i_fp_hndl,0.0,idum,lpm_nelt)
       call fgslib_crystal_setup(i_cr_hndl,lpm_comm,lpm_np)
@@ -121,6 +116,7 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       iperiodicx = int(lpm_rparam(8))
       iperiodicy = int(lpm_rparam(9))
       iperiodicz = int(lpm_rparam(10))
+      ndim       = int(lpm_rparam(12))
 
       ! compute binb
       xmin = 1E8
@@ -155,6 +151,7 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       if(lpm_rparam(12) .gt. 2) lpm_binb(5) = glmin(zmin,1)
       if(lpm_rparam(12) .gt. 2) lpm_binb(6) = glmax(zmax,1)
 
+
       lpm_binb(1) = max(lpm_binb(1),lpm_xdrange(1,1))
       lpm_binb(2) = min(lpm_binb(2),lpm_xdrange(2,1))
       lpm_binb(3) = max(lpm_binb(3),lpm_xdrange(1,2))
@@ -163,6 +160,7 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
      >                           max(lpm_binb(5),lpm_xdrange(1,3))
       if(lpm_rparam(12) .gt. 2) lpm_binb(6) = 
      >                           min(lpm_binb(6),lpm_xdrange(2,3))
+
 
       if (iperiodicx .eq. 0) then
          lpm_binb(1) = lpm_xdrange(1,1)
@@ -193,7 +191,9 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       if (lpm_rparam(12) .gt. 2) lpm_ndzgp = 
      >                      floor( (lpm_binb(6) - lpm_binb(5))/d2new(3))
 
-      if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. np) then
+
+      if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. lpm_np .or. 
+     >    int(lpm_rparam(4)) .eq. 1) then
          nmax = 1000
          d2chk_save = lpm_d2chk(2)
          
@@ -202,10 +202,15 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
             ifac(j+1) = 1 + i
             d2new(j+1) = (lpm_binb(2+2*j) - lpm_binb(1+2*j))/ifac(j+1)
             nbb = ifac(1)*ifac(2)*ifac(3)
-            if(d2new(j+1) .lt. d2chk_save .or. nbb .gt. np) then
+
+            if( nbb .gt. lpm_np ) then
+            if( int(lpm_rparam(4)) .eq. 1 .or.
+     >          int(lpm_rparam(4)) .eq. 0 .and.d2new(j+1).lt.d2chk_save)
+     >          then
                icount(j+1) = icount(j+1) + 1
                ifac(j+1) = ifac(j+1) - icount(j+1)
                d2new(j+1) = (lpm_binb(2+2*j) -lpm_binb(1+2*j))/ifac(j+1)
+            endif
             endif
          enddo
             if (icount(1) .gt. 0) then
@@ -522,4 +527,12 @@ c    $        , lpm_y     (iz,1),LPM_LRS ,LPM_NPART) !   &             pts(2*n+1
 
       return
       end
+c-----------------------------------------------------------------------
+      subroutine icopy(a,b,n)
+      INTEGER A(1), B(1)
+C
+      DO 100 I = 1, N
+ 100     A(I) = B(I)
+      return
+      END
 c-----------------------------------------------------------------------

@@ -36,8 +36,9 @@ c main code below
       real rparam(lpm_nparam) 
  
       call MPI_INIT(ierr) 
-      call MPI_COMM_RANK(MPI_COMM_WORLD, nid, ierr) 
-      call MPI_COMM_SIZE(MPI_COMM_WORLD, np , ierr)
+      lpm_comm = MPI_COMM_WORLD
+      call MPI_COMM_RANK(lpm_comm, lpm_nid, ierr) 
+      call MPI_COMM_SIZE(lpm_comm, lpm_np , ierr)
 
       rparam(1)  = 1           ! use custom values
       rparam(2)  = 1           ! time integration method
@@ -46,14 +47,11 @@ c main code below
       rparam(5)  = LPM_R_JDP   ! index of filter non-dimensionalization in rprop
       rparam(6)  = 0           ! non-dimensional Gaussian filter width
       rparam(7)  = 0           ! percent decay of Gaussian filter
-      rparam(8)  = 0           ! periodic in x (== 0)
-      rparam(9)  = 0           ! periodic in y (== 0)
-      rparam(10) = 0           ! periodic in z (== 0)
+      rparam(8)  = 1           ! periodic in x (== 0) ! dont do periodic without bounds!!!
+      rparam(9)  = 1           ! periodic in y (== 0)
+      rparam(10) = 1           ! periodic in z (== 0)
       rparam(11) = 8E-4        ! time step
       rparam(12) = 3           ! problem dimensions
-c     rparam(13) = nid            ! future!!
-c     rparam(14) = np             ! future!!
-c     rparam(15) = MPI_COMM_WORLD ! future!!
 
       call init_particles(lpm_y,npart)
 c     call lpm_io_vtu_read('new99999.vtu',npart)
@@ -66,11 +64,19 @@ c     call lpm_io_vtu_read('new99999.vtu',npart)
          lpm_time = (lpm_cycle-1)*lpm_dt
          call lpm_solve(lpm_time,lpm_y,lpm_ydot)
 
-         if (lpm_nid .eq. 0) then
-            write(6,'(A,I6,A,E16.10)') 'STEP: ',lpm_cycle,
-     >                               ', TIME: ',lpm_time
+         if(mod(lpm_cycle,iostep) .eq. 0) then
+             call lpm_io_vtu_write('',0)
+             nptmax = iglmax(lpm_npart,1)
+             nptmin = iglmin(lpm_npart,1)
+             nptsum = iglsum(lpm_npart,1)
+             if (lpm_nid .eq. 0) then
+                write(6,'(A,I6,A,E16.10)')  'STEP: ',lpm_cycle,
+     >                                    ', TIME: ',lpm_time
+                write(6,'(A,I6,A,I6,A,I6)') 'NMAX: ',nptmax,
+     >                                    ', NMIN: ',nptmin,
+     >                                    ', NAVG: ',nptsum/lpm_np
+              endif
          endif
-          if(mod(lpm_cycle,iostep) .eq. 0)  call lpm_io_vtu_write('',0)
       enddo
 
       call MPI_FINALIZE(ierr) 
@@ -87,7 +93,7 @@ c     call lpm_io_vtu_read('new99999.vtu',npart)
       npart   = 50       ! particles/rank to distribute
       dp      = 0.0001   ! particle diameter
       rhop    = 3307.327 ! particle density
-      rdum    = ran2(-1-nid) ! initialize random number generator
+      rdum    = ran2(-1-lpm_nid) ! initialize random number generator
 
       do i=1,npart
          ! set initial conditions for solution
@@ -116,7 +122,7 @@ c     call lpm_io_vtu_read('new99999.vtu',npart)
       real ydot(*)
 
 c setup interpolation
-c     call lpm_interpolate_setup
+      call lpm_interpolate_setup
 c setup interpolation
 
 C interpolate fields

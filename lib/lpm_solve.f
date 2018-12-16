@@ -14,9 +14,14 @@
       call lpm_tag_init
       call lpm_tag_set
       call lpm_init_filter
-      call lpm_domain_size(y,npart)
 
 c     ! get domain bounds
+      lpm_xdrange(1,1) = -1E8
+      lpm_xdrange(2,1) =  1E8
+      lpm_xdrange(1,2) = -1E8
+      lpm_xdrange(2,2) =  1E8
+      lpm_xdrange(1,3) = -1E8
+      lpm_xdrange(2,3) =  1E8
 c     call domain_size( lpm_xdrange(1,1),lpm_xdrange(2,1)
 c    >                 ,lpm_xdrange(1,2),lpm_xdrange(2,2)
 c    >                 ,lpm_xdrange(1,3),lpm_xdrange(2,3))
@@ -28,58 +33,6 @@ c     ! two-way coupling init
 c     if (int(lpm_rparam(4)) .ne. 1) then
 c        call lpm_project
 c     endif
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine lpm_domain_size(y,npart)
-#include "LPM"
-      include 'mpif.h'
-
-      real y(*), work(1)
-
-      ! assumed that at least x,y,z in 1,2,3
-      lpm_jx = 1
-      lpm_jy = 2
-      lpm_jz = 3
-
-      xmin =  1E8
-      xmax = -1E8
-      ymin =  1E8
-      ymax = -1E8
-      zmin =  1E8
-      zmax = -1E8
-
-      do j=1,npart
-         i = LPM_LRS*(j-1)
-         if (y(lpm_jx+i) .gt. xmax) xmax = y(lpm_jx+i)
-         if (y(lpm_jx+i) .lt. xmin) xmin = y(lpm_jx+i)
-         if (y(lpm_jy+i) .gt. ymax) ymax = y(lpm_jy+i)
-         if (y(lpm_jy+i) .lt. ymin) ymin = y(lpm_jy+i)
-         if (y(lpm_jz+i) .gt. zmax) zmax = y(lpm_jz+i)
-         if (y(lpm_jz+i) .lt. zmin) zmin = y(lpm_jz+i)
-      enddo
-
-      n = 1
-      call mpi_allreduce (xmin,work,n,mpi_double_precision,
-     >                    mpi_min,lpm_comm,ierr)
-      call mpi_allreduce (ymin,work,n,mpi_double_precision,
-     >                    mpi_min,lpm_comm,ierr)
-      call mpi_allreduce (zmin,work,n,mpi_double_precision,
-     >                    mpi_min,lpm_comm,ierr)
-      call mpi_allreduce (xmax,work,n,mpi_double_precision,
-     >                    mpi_max,lpm_comm,ierr)
-      call mpi_allreduce (ymax,work,n,mpi_double_precision,
-     >                    mpi_max,lpm_comm,ierr)
-      call mpi_allreduce (zmax,work,n,mpi_double_precision,
-     >                    mpi_max,lpm_comm,ierr)
-
-      lpm_xdrange(1,1) = xmin
-      lpm_xdrange(2,1) = xmin
-      lpm_xdrange(1,2) = ymin
-      lpm_xdrange(2,2) = ymin
-      lpm_xdrange(1,3) = zmin
-      lpm_xdrange(2,3) = zmin
 
       return
       end
@@ -138,6 +91,8 @@ c     call rzero(lpm_rparam, lpm_nparam)
 
       rsig  = filt*lpm_rprop(jdp,i)/(2.*sqrt(2.*log(2.)))
       lpm_d2chk(2) = rsig*sqrt(-2*log(alph))
+
+      if (int(lpm_rparam(4)) .eq. 1) lpm_d2chk(2) = 0
 
 c     rdx_max = 0.0
 
@@ -310,7 +265,7 @@ c----------------------------------------------------------------------
       subroutine lpm_interpolate_setup
 #include "LPM"
 
-c     call lpm_move_outlier
+      call lpm_move_outlier
       call lpm_comm_bin_setup
       call lpm_comm_findpts
       call lpm_comm_crystal
@@ -379,6 +334,77 @@ c----------------------------------------------------------------------
       rk3coef(1,3) = 1.0/3.0
       rk3coef(2,3) = 2.0/3.0 
       rk3coef(3,3) = lpm_dt*2.0/3.0 
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine lpm_move_outlier
+#include "LPM"
+
+      integer in_part(LPM_LPART), jj(3), iperiodicx, iperiodicy,
+     >                                   iperiodicz
+
+      iperiodicx = int(lpm_rparam(8))
+      iperiodicy = int(lpm_rparam(9))
+      iperiodicz = int(lpm_rparam(10))
+      ndim       = int(lpm_rparam(12))
+
+      jj(1) = 1
+      jj(2) = 2
+      jj(3) = 3
+
+      do i=1,lpm_npart
+         isl = (i -1) * LPM_LRS + 1
+         in_part(i) = 0
+         do j=0,ndim-1
+            jchk = jj(j+1)
+            if (lpm_y(jchk,i).lt.lpm_xdrange(1,j+1))then
+               if (((iperiodicx.eq.0) .and. (j.eq.0)) .or.   ! periodic
+     >             ((iperiodicy.eq.0) .and. (j.eq.1)) .or.     
+     >             ((iperiodicz.eq.0) .and. (j.eq.2)) ) then
+                   lpm_y(jchk,i) = lpm_xdrange(2,j+1) - 
+     &                         abs(lpm_xdrange(1,j+1) - lpm_y(jchk,i))
+                   lpm_y1(isl+j)   = lpm_xdrange(2,j+1) +
+     &                         abs(lpm_xdrange(1,j+1) - lpm_y1(isl+j))
+                  goto 1512
+                endif
+            endif
+            if (lpm_y(jchk,i).gt.lpm_xdrange(2,j+1))then
+               if (((iperiodicx.eq.0) .and. (j.eq.0)) .or.   ! periodic
+     >             ((iperiodicy.eq.0) .and. (j.eq.1)) .or.     
+     >             ((iperiodicz.eq.0) .and. (j.eq.2)) ) then
+                   lpm_y(jchk,i) = lpm_xdrange(1,j+1) +
+     &                         abs(lpm_y(jchk,i) - lpm_xdrange(2,j+1))
+                   lpm_y1(isl+j)   = lpm_xdrange(1,j+1) +
+     &                         abs(lpm_y1(isl+j) - lpm_xdrange(2,j+1))
+                  goto 1512
+                endif
+            endif
+            if (lpm_iprop(1,i) .eq. 2) then
+               in_part(i) = -1 ! only if periodic check fails it will get here
+            endif
+ 1512 continue
+         enddo
+      enddo
+
+      ic = 0
+      do i=1,lpm_npart
+         if (in_part(i).eq.0) then
+            ic = ic + 1 
+            if (i .ne. ic) then
+               isl = (i -1) * LPM_LRS + 1
+               isr = (ic-1) * LPM_LRS + 1
+               call copy(lpm_y     (1,ic),lpm_y(1,i)     ,LPM_LRS)
+               call copy(lpm_y1    (isr) ,lpm_y1(isl)    ,LPM_LRS)
+               call copy(lpm_ydot  (1,ic),lpm_ydot(1,i)  ,LPM_LRS)
+               call copy(lpm_ydotc (1,ic),lpm_ydotc(1,i) ,LPM_LRS)
+               call copy(lpm_rprop (1,ic),lpm_rprop(1,i) ,LPM_LRP)
+               call copy(lpm_rprop2(1,ic),lpm_rprop2(1,i),LPM_LRP2)
+               call icopy(lpm_iprop(1,ic),lpm_iprop(1,i) ,LPM_LIP)
+            endif
+         endif
+      enddo
+      lpm_npart = ic
 
       return
       end
