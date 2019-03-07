@@ -2,6 +2,10 @@ C> Example doxygen comment
 c Maximum number of real particles on a processor
 #define LPM_LPART 50000
 
+#define LPM_BX1 100
+#define LPM_BY1 100
+#define LPM_BZ1 100
+
 c Number of particle equations being solved
 #define LPM_LRS 6
 
@@ -44,8 +48,9 @@ c main code below
       rparam(2)  = 1           ! time integration method
       rparam(3)  = 2           ! polynomial order of mesh
       rparam(4)  = 1           ! use 1 for tracers only
-      rparam(5)  = LPM_R_JDP   ! index of filter non-dimensionalization in rprop
-      rparam(6)  = 0           ! non-dimensional Gaussian filter width
+      rparam(5)  = 0.05         ! filter width in real units
+
+
       rparam(7)  = 0           ! percent decay of Gaussian filter
       rparam(8)  = 1           ! periodic in x (== 0) ! dont do periodic without bounds!!!
       rparam(9)  = 1           ! periodic in y (== 0)
@@ -55,17 +60,18 @@ c main code below
 
       call init_particles(lpm_y,npart)
 c     call lpm_io_vtu_read('new99999.vtu',npart)
-      call lpm_init      (rparam,lpm_y,npart,0.0)
-
+      call lpm_init      (rparam,lpm_y,npart,0.0) 
       ! time loop
       iostep = 100
       nstep  = 1000
-      do lpm_cycle=1,1000
+      do lpm_cycle=1,nstep
          lpm_time = (lpm_cycle-1)*lpm_dt
          call lpm_solve(lpm_time,lpm_y,lpm_ydot)
 
          if(mod(lpm_cycle,iostep) .eq. 0) then
              call lpm_io_vtu_write('',0)
+c            call lpm_io_vtu_write_bins('',0)
+             call lpm_io_vtu_write_grd('',0)
              nptmax = iglmax(lpm_npart,1)
              nptmin = iglmin(lpm_npart,1)
              nptsum = iglsum(lpm_npart,1)

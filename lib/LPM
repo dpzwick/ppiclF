@@ -53,6 +53,30 @@ c Ghost particle connection map
       COMMON /LPM_GP/ LPM_RDXGP, LPM_RDYGP, LPM_RDZGP, LPM_D2CHK   ,
      >                LPM_BINB
 
+      REAL            LPM_BINX(2,LPM_BMAX),
+     >                LPM_BINY(2,LPM_BMAX),
+     >                LPM_BINZ(2,LPM_BMAX) 
+      COMMON /LPM_BIN_R/ LPM_BINX, LPM_BINY, LPM_BINZ
+
+      INTEGER            LPM_NBMAX
+      COMMON /LPM_BIN_I/ LPM_NBMAX
+
+      COMMON /LPM_GRID_RC/ LPM_GRID_FLD, LPM_GRID_X, LPM_GRID_Y
+     >                   , LPM_GRID_Z
+     >                   , LPM_RDX, LPM_RDY, LPM_RDZ
+      REAL            LPM_GRID_FLD(LPM_BX1,LPM_BY1,LPM_BZ1,LPM_LRP_PRO)
+     >              , LPM_GRID_X(LPM_BX1,LPM_BY1,LPM_BZ1)
+     >              , LPM_GRID_Y(LPM_BX1,LPM_BY1,LPM_BZ1)
+     >              , LPM_GRID_Z(LPM_BX1,LPM_BY1,LPM_BZ1)
+     >              , LPM_RDX, LPM_RDY, LPM_RDZ
+
+      COMMON /LPM_GRID_IC/ LPM_GRID_I
+      REAL                 LPM_GRID_I(LPM_BX1, LPM_BY1, LPM_BZ1)
+
+      COMMON /LPM_GRID_PC/ LPM_BX, LPM_BY, LPM_BZ
+      INTEGER              LPM_BX, LPM_BY, LPM_BZ
+
+
 C Ghost particles
       COMMON /LPM_GHOST_PART_R/  LPM_RPROP_GP
       REAL LPM_RPROP_GP(LPM_LRP_GP,LPM_LPART_GP)  

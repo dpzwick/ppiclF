@@ -152,28 +152,27 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       if(lpm_rparam(12) .gt. 2) lpm_binb(6) = glmax(zmax,1)
 
 
-      lpm_binb(1) = max(lpm_binb(1),lpm_xdrange(1,1))
-      lpm_binb(2) = min(lpm_binb(2),lpm_xdrange(2,1))
-      lpm_binb(3) = max(lpm_binb(3),lpm_xdrange(1,2))
-      lpm_binb(4) = min(lpm_binb(4),lpm_xdrange(2,2))
-      if(lpm_rparam(12) .gt. 2) lpm_binb(5) = 
-     >                           max(lpm_binb(5),lpm_xdrange(1,3))
-      if(lpm_rparam(12) .gt. 2) lpm_binb(6) = 
-     >                           min(lpm_binb(6),lpm_xdrange(2,3))
-
-
-      if (iperiodicx .eq. 0) then
-         lpm_binb(1) = lpm_xdrange(1,1)
-         lpm_binb(2) = lpm_xdrange(2,1)
-      endif
-      if (iperiodicy .eq. 0) then
-         lpm_binb(3) = lpm_xdrange(1,2)
-         lpm_binb(4) = lpm_xdrange(2,2)
-      endif
-      if (iperiodicz .eq. 0 .and. lpm_rparam(12) .gt. 2) then
-         lpm_binb(5) = lpm_xdrange(1,3)
-         lpm_binb(6) = lpm_xdrange(2,3)
-      endif
+      ! comment for now.....
+c     lpm_binb(1) = max(lpm_binb(1),lpm_xdrange(1,1))
+c     lpm_binb(2) = min(lpm_binb(2),lpm_xdrange(2,1))
+c     lpm_binb(3) = max(lpm_binb(3),lpm_xdrange(1,2))
+c     lpm_binb(4) = min(lpm_binb(4),lpm_xdrange(2,2))
+c     if(lpm_rparam(12) .gt. 2) lpm_binb(5) = 
+c    >                           max(lpm_binb(5),lpm_xdrange(1,3))
+c     if(lpm_rparam(12) .gt. 2) lpm_binb(6) = 
+c    >                           min(lpm_binb(6),lpm_xdrange(2,3))
+c     if (iperiodicx .eq. 0) then
+c        lpm_binb(1) = lpm_xdrange(1,1)
+c        lpm_binb(2) = lpm_xdrange(2,1)
+c     endif
+c     if (iperiodicy .eq. 0) then
+c        lpm_binb(3) = lpm_xdrange(1,2)
+c        lpm_binb(4) = lpm_xdrange(2,2)
+c     endif
+c     if (iperiodicz .eq. 0 .and. lpm_rparam(12) .gt. 2) then
+c        lpm_binb(5) = lpm_xdrange(1,3)
+c        lpm_binb(6) = lpm_xdrange(2,3)
+c     endif
 
       ifac(1) = 1
       ifac(2) = 1
@@ -233,6 +232,13 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       if (lpm_rparam(12) .gt. 2) lpm_ndzgp = 
      >                      floor( (lpm_binb(6) - lpm_binb(5))/d2new(3))
 
+      
+      isize = 4
+      call bcast(lpm_ndxgp, isize)
+      call bcast(lpm_ndygp, isize)
+      call bcast(lpm_ndzgp, isize)
+      call bcast(lpm_binb , 6*2*isize)
+
       ! grid spacing for that many spacings
       lpm_rdxgp = (lpm_binb(2) - lpm_binb(1))/real(lpm_ndxgp)
       lpm_rdygp = (lpm_binb(4) - lpm_binb(3))/real(lpm_ndygp)
@@ -240,35 +246,104 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       if (lpm_rparam(12) .gt. 2) lpm_rdzgp = (lpm_binb(6) - lpm_binb(5))
      >                           /real(lpm_ndzgp)
 
-      ninc = 2
+c     ninc = 2
       rxlbin = lpm_binb(1)
       rxrbin = lpm_binb(2)
       rylbin = lpm_binb(3)
       ryrbin = lpm_binb(4)
       rzlbin = lpm_binb(5)
       rzrbin = lpm_binb(6)
-      if (iperiodicx .ne. 0) then
-         rxlbin = rxlbin - ninc/2*lpm_rdxgp
-         rxrbin = rxrbin + ninc/2*lpm_rdxgp
-         rxlbin = max(rxlbin,lpm_xdrange(1,1))
-         rxrbin = min(rxrbin,lpm_xdrange(2,1))
-      endif
-      if (iperiodicy .ne. 0) then
-         rylbin = rylbin - ninc/2*lpm_rdygp
-         ryrbin = ryrbin + ninc/2*lpm_rdygp
-         rylbin = max(rylbin,lpm_xdrange(1,2))
-         ryrbin = min(ryrbin,lpm_xdrange(2,2))
-      endif
-      if (iperiodicz .ne. 0) then
-      if (lpm_rparam(12) .gt. 2) then
-         rzlbin = rzlbin - ninc/2*lpm_rdzgp
-         rzrbin = rzrbin + ninc/2*lpm_rdzgp
-         rzlbin = max(rzlbin,lpm_xdrange(1,3))
-         rzrbin = min(rzrbin,lpm_xdrange(2,3))
-      endif
+c     if (iperiodicx .ne. 0) then
+c        rxlbin = rxlbin - ninc/2*lpm_rdxgp
+c        rxrbin = rxrbin + ninc/2*lpm_rdxgp
+c        rxlbin = max(rxlbin,lpm_xdrange(1,1))
+c        rxrbin = min(rxrbin,lpm_xdrange(2,1))
+c     endif
+c     if (iperiodicy .ne. 0) then
+c        rylbin = rylbin - ninc/2*lpm_rdygp
+c        ryrbin = ryrbin + ninc/2*lpm_rdygp
+c        rylbin = max(rylbin,lpm_xdrange(1,2))
+c        ryrbin = min(ryrbin,lpm_xdrange(2,2))
+c     endif
+c     if (iperiodicz .ne. 0) then
+c     if (lpm_rparam(12) .gt. 2) then
+c        rzlbin = rzlbin - ninc/2*lpm_rdzgp
+c        rzrbin = rzrbin + ninc/2*lpm_rdzgp
+c        rzlbin = max(rzlbin,lpm_xdrange(1,3))
+c        rzrbin = min(rzrbin,lpm_xdrange(2,3))
+c     endif
+c     endif
+
+      lpm_nbin = lpm_ndxgp*lpm_ndygp*lpm_ndzgp
+
+c     current box coordinates
+      if (lpm_nid .le. lpm_nbin-1) then
+         idum = modulo(lpm_nid,lpm_ndxgp)
+         jdum = modulo(lpm_nid/lpm_ndxgp,lpm_ndygp)
+         kdum = lpm_nid/(lpm_ndxgp*lpm_ndygp)
+         lpm_binx(1,1) = rxlbin + idum    *lpm_rdxgp
+         lpm_binx(2,1) = rxlbin + (idum+1)*lpm_rdxgp
+         lpm_biny(1,1) = rylbin + jdum    *lpm_rdygp
+         lpm_biny(2,1) = rylbin + (jdum+1)*lpm_rdygp
+         lpm_binz(1,1) = rzlbin + kdum    *lpm_rdzgp
+         lpm_binz(2,1) = rzlbin + (kdum+1)*lpm_rdzgp
+    
+         ! interior grid of each bin
+         ! +1 for making mesh smaller and +1 since these are vertice counts
+         lpm_bx = floor(lpm_rdxgp/lpm_rparam(5)) + 1 + 1
+         lpm_by = floor(lpm_rdygp/lpm_rparam(5)) + 1 + 1
+         lpm_bz = 1
+         if (lpm_rparam(12) .gt. 2) 
+     >      lpm_bz = floor(lpm_rdzgp/lpm_rparam(5)) + 1 + 1
+
+c        ! force for now!!! remove and uncomment above
+c        lpm_bx = 3
+c        lpm_by = 3
+c        lpm_bz = 3
+
+         if ((lpm_bx .gt. LPM_BX1) .or. 
+     >       (lpm_by .gt. LPM_BY1) .or.
+     >       (lpm_bz .gt. LPM_BZ1)) then
+               if (lpm_nid .eq. 0) write(6, *) 
+     >          'INCREASE GRID ALLOCATION LPM_B*1', lpm_bx,lpm_by,lpm_bz
+               return
+         endif
+
+         lpm_rdx = lpm_rdxgp/(lpm_bx-1)
+         lpm_rdy = lpm_rdygp/(lpm_by-1)
+         lpm_rdz = 0
+         if (lpm_rparam(12) .gt. 2) 
+     >      lpm_rdz = lpm_rdzgp/(lpm_bz-1)
+
+         ndumx = lpm_ndxgp*(lpm_bx-1) + 1
+         ndumy = lpm_ndygp*(lpm_by-1) + 1
+         ndumz = lpm_ndzgp*(lpm_bz-1) + 1
+    
+         do k=1,lpm_bz
+         do j=1,lpm_by
+         do i=1,lpm_bx
+            lpm_grid_x(i,j,k) = lpm_binx(1,1) + (i-1)*lpm_rdx
+            lpm_grid_y(i,j,k) = lpm_biny(1,1) + (j-1)*lpm_rdy
+            lpm_grid_z(i,j,k) = lpm_binz(1,1) + (k-1)*lpm_rdz
+
+            ! indicies global, note new mapping
+c           lpm_grid_i(i,j,k) = lpm_nid*lpm_bx*lpm_by*lpm_bz +
+c    >                        (i-1) + lpm_bx*(j-1) + lpm_bx*lpm_by*(k-1)
+
+            itmp = idum*(lpm_bx-1) + (i-1)
+            jtmp = jdum*(lpm_by-1) + (j-1)
+            ktmp = kdum*(lpm_bz-1) + (k-1)
+    
+            lpm_grid_i(i,j,k) = itmp + ndumx*jtmp + ndumx*ndumy*ktmp
+
+         enddo
+         enddo
+         enddo
+
       endif
 
-      nbin_now = lpm_ndxgp*lpm_ndygp*lpm_ndzgp
+c     rmax = glmax(lpm_binz(1,1),2)
+c     if (lpm_nid .eq. 0) write(6,*) 'MAXX:', rmax
 
       if (int(lpm_rparam(4)) .eq. 1) return ! only for projection
 

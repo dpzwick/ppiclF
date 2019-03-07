@@ -42,6 +42,22 @@ c Maximum number of ghost particles
 #define LPM_LZ1 1
 #endif
 
+c max bins per processor
+#ifndef LPM_BMAX
+#define LPM_BMAX 1
+#endif
+
+c max gridpts per processor
+#ifndef LPM_BX1
+#define LPM_BX1 1
+#endif
+#ifndef LPM_BY1
+#define LPM_BY1 1
+#endif
+#ifndef LPM_BZ1
+#define LPM_BZ1 1
+#endif
+
 #include "lpm_solve.f"
 #include "lpm_comm.f"
 #include "lpm_comm_mpi.f"

@@ -26,6 +26,8 @@ c     call domain_size( lpm_xdrange(1,1),lpm_xdrange(2,1)
 c    >                 ,lpm_xdrange(1,2),lpm_xdrange(2,2)
 c    >                 ,lpm_xdrange(1,3),lpm_xdrange(2,3))
 
+      lpm_nbmax = LPM_BMAX ! set only one bin for now...
+
 c     ! send particles to correct rank
       call lpm_interpolate_setup
 
@@ -53,8 +55,8 @@ c     call rzero(lpm_rparam, lpm_nparam)
          lpm_rparam(2)  = 1        ! time integration method
          lpm_rparam(3)  = LPM_LX1  ! polynomial order of mesh
          lpm_rparam(4)  = 1        ! use 1 for tracers only
-         lpm_rparam(5)  = 0        ! index of filter non-dimensionalization in rprop
-         lpm_rparam(6)  = 0        ! non-dimensional Gaussian filter width
+         lpm_rparam(5)  = 0        ! filter size in real units
+
          lpm_rparam(7)  = 0        ! percent decay of Gaussian filter
          lpm_rparam(8)  = 1        ! periodic in x
          lpm_rparam(9)  = 1        ! periodic in y
@@ -85,11 +87,9 @@ c     call rzero(lpm_rparam, lpm_nparam)
 #include "LPM"
 
       rsig  = 0.0
-      jdp   = int(lpm_rparam(5))
-      filt  = lpm_rparam(6) ! assume already set
       alph  = lpm_rparam(7)
 
-      rsig  = filt*lpm_rprop(jdp,i)/(2.*sqrt(2.*log(2.)))
+      rsig  = lpm_rparam(5)/(2.*sqrt(2.*log(2.)))
       lpm_d2chk(2) = rsig*sqrt(-2*log(alph))
 
       if (int(lpm_rparam(4)) .eq. 1) lpm_d2chk(2) = 0
