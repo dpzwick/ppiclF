@@ -26,6 +26,11 @@ c Number of real properties for a particle
 #define LPM_R_JUY   5
 #define LPM_R_JUZ   6
 
+C Number of properties to project
+#define LPM_LRP_PRO 1
+
+#define LPM_P_JPHIP 1   
+
 #define LPM_INCLUDE "lib/LPM"
 #define LPM_HEADER  "lib/lpm.h"
 #include LPM_HEADER
@@ -47,11 +52,10 @@ c main code below
       rparam(1)  = 1           ! use custom values
       rparam(2)  = 1           ! time integration method
       rparam(3)  = 2           ! polynomial order of mesh
-      rparam(4)  = 1           ! use 1 for tracers only
-      rparam(5)  = 0.05         ! filter width in real units
-
-
-      rparam(7)  = 0           ! percent decay of Gaussian filter
+      rparam(4)  = 0           ! use 1 for tracers only
+      rparam(5)  = 0.1        ! filter width in real units
+      rparam(6)  = 4           ! how many grid points to resolve filter over
+      rparam(7)  = 1E-4        ! percent decay of Gaussian filter
       rparam(8)  = 1           ! periodic in x (== 0) ! dont do periodic without bounds!!!
       rparam(9)  = 1           ! periodic in y (== 0)
       rparam(10) = 1           ! periodic in z (== 0)
@@ -93,13 +97,15 @@ c            call lpm_io_vtu_write_bins('',0)
 #include LPM_INCLUDE
 
       real      y(*)
+      real      pi
       real      ran2
       external  ran2
 
       npart   = 50       ! particles/rank to distribute
-      dp      = 0.0001   ! particle diameter
+      dp      = 0.01   ! particle diameter
       rhop    = 3307.327 ! particle density
       rdum    = ran2(-1-lpm_nid) ! initialize random number generator
+      PI      = 4.D0*DATAN(1.D0)
 
       do i=1,npart
          ! set initial conditions for solution
@@ -171,8 +177,23 @@ c evaluate ydot
 c evaluate ydot
 
 c project fields
-c     call lpm_project
+      call lpm_project
 c project fields
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine lpm_project_map(map,y,ydot,ydotc,rprop)
+c
+c     map Lagrangian quantity to Eulerian field
+c
+      real map(*)
+      real y(*)
+      real ydot(*)
+      real ydotc(*)
+      real rprop(*)
+
+      map(LPM_P_JPHIP) = rprop(LPM_R_JVOLP)   ! particle volume
 
       return
       end

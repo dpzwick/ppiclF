@@ -71,7 +71,13 @@ c Ghost particle connection map
      >              , LPM_RDX, LPM_RDY, LPM_RDZ
 
       COMMON /LPM_GRID_IC/ LPM_GRID_I
-      REAL                 LPM_GRID_I(LPM_BX1, LPM_BY1, LPM_BZ1)
+     >                   , LPM_GRID_II
+     >                   , LPM_GRID_JJ
+     >                   , LPM_GRID_KK
+      INTEGER              LPM_GRID_I(LPM_BX1, LPM_BY1, LPM_BZ1)
+     >                   , LPM_GRID_II(LPM_BX1, LPM_BY1, LPM_BZ1)
+     >                   , LPM_GRID_JJ(LPM_BX1, LPM_BY1, LPM_BZ1)
+     >                   , LPM_GRID_KK(LPM_BX1, LPM_BY1, LPM_BZ1)
 
       COMMON /LPM_GRID_PC/ LPM_BX, LPM_BY, LPM_BZ
       INTEGER              LPM_BX, LPM_BY, LPM_BZ

@@ -32,9 +32,7 @@ c     ! send particles to correct rank
       call lpm_interpolate_setup
 
 c     ! two-way coupling init
-c     if (int(lpm_rparam(4)) .ne. 1) then
-c        call lpm_project
-c     endif
+      call lpm_project
 
       return
       end
@@ -92,7 +90,7 @@ c     call rzero(lpm_rparam, lpm_nparam)
       rsig  = lpm_rparam(5)/(2.*sqrt(2.*log(2.)))
       lpm_d2chk(2) = rsig*sqrt(-2*log(alph))
 
-      if (int(lpm_rparam(4)) .eq. 1) lpm_d2chk(2) = 0
+c     if (int(lpm_rparam(4)) .eq. 1) lpm_d2chk(2) = 0
 
 c     rdx_max = 0.0
 
@@ -314,9 +312,9 @@ c----------------------------------------------------------------------
 #include "LPM"
 
       if (int(lpm_rparam(4)) .ne. 1) then
-c        call lpm_comm_ghost_create
-c        call lpm_comm_ghost_send
-c        call lpm_solve_project
+         call lpm_comm_ghost_create
+         call lpm_comm_ghost_send
+         call lpm_solve_project
       endif
 
       return
@@ -405,6 +403,144 @@ c----------------------------------------------------------------------
          endif
       enddo
       lpm_npart = ic
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine lpm_solve_project
+#include "LPM"
+
+      real    multfci
+      integer e
+
+      real    rproj(1+LPM_LRP_GP,LPM_LPART+LPM_LPART_GP)
+      integer iproj(4,LPM_LPART+LPM_LPART_GP)
+
+      logical partl
+
+      real pi
+
+      PI=4.D0*DATAN(1.D0)
+
+      nxyz = LPM_BX1*LPM_BY1*LPM_BZ1
+
+      nxyzdum = nxyz*LPM_LRP_PRO
+      do i=1,nxyzdum
+         lpm_grid_fld(i,1,1,1) = 0.0
+      enddo
+
+      d2chk2_sq = lpm_d2chk(2)**2
+
+      ! real particles
+      lpm_jxgp  = 1
+      lpm_jygp  = 2
+      lpm_jzgp  = 3
+
+c     lpm_npart_gp = 0
+
+      ! real particles
+      do ip=1,lpm_npart
+         rsig    = lpm_rparam(5)/(2.*sqrt(2.*log(2.)))
+         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
+         if (lpm_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         rbexpi   = 1./(-2.*rsig**2)
+
+         rproj(1 ,ip) = rbexpi
+         rproj(2 ,ip) = lpm_cp_map(lpm_jxgp,ip)
+         rproj(3 ,ip) = lpm_cp_map(lpm_jygp,ip)
+         rproj(4 ,ip) = lpm_cp_map(lpm_jzgp,ip)
+
+
+         do j=5,LPM_LRP_GP+1
+            rproj(j,ip) = lpm_cp_map(j-1,ip)*multfci
+         enddo
+                    
+         iproj(1,ip) = 
+     >       floor( (rproj(2,ip) - lpm_binx(1,1))/lpm_rdx)
+         iproj(2,ip) = 
+     >       floor( (rproj(3,ip) - lpm_biny(1,1))/lpm_rdy)
+         iproj(3,ip) = 
+     >       floor( (rproj(4,ip) - lpm_binz(1,1))/lpm_rdz)
+      enddo
+
+      ! ghost particles
+      do ip=1,lpm_npart_gp
+         rsig    = lpm_rparam(5)/(2.*sqrt(2.*log(2.)))
+         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
+         if (lpm_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         rbexpi   = 1./(-2.*rsig**2)
+
+         rproj(1 ,ip+lpm_npart) = rbexpi
+         rproj(2 ,ip+lpm_npart) = lpm_rprop_gp(lpm_jxgp,ip)
+         rproj(3 ,ip+lpm_npart) = lpm_rprop_gp(lpm_jygp,ip)
+         rproj(4 ,ip+lpm_npart) = lpm_rprop_gp(lpm_jzgp,ip)
+
+         do j=5,LPM_LRP_GP+1
+            rproj(j,ip+lpm_npart) = lpm_rprop_gp(j-1,ip)*multfci
+         enddo
+                    
+         iproj(1,ip+lpm_npart) = 
+     >       floor( (rproj(2,ip) - lpm_binx(1,1))/lpm_rdx)
+         iproj(2,ip+lpm_npart) = 
+     >       floor( (rproj(3,ip) - lpm_biny(1,1))/lpm_rdy)
+         iproj(3,ip+lpm_npart) = 
+     >       floor( (rproj(4,ip) - lpm_binz(1,1))/lpm_rdz)
+      enddo
+
+      ndum = lpm_npart+lpm_npart_gp
+c     ndum = lpm_npart_gp
+c     ndum = lpm_npart
+
+c     if (int(lpm_rparam(3)) .eq. 1) then
+         do ip=1,ndum
+            iip = iproj(1,ip)
+            jjp = iproj(2,ip)
+            kkp = iproj(3,ip)
+
+            il = iip - 1
+            ir = iip + 1
+            jl = jjp - 1
+            jr = jjp + 1
+            kl = kkp - 1
+            kr = kkp + 1
+
+            do k=1,lpm_bz
+            do j=1,lpm_by
+            do i=1,lpm_bx
+    
+c              if (lpm_grid_ii(i,j,k) .gt. ir) cycle
+c              if (lpm_grid_ii(i,j,k) .lt. il) cycle
+c              if (lpm_grid_jj(i,j,k) .gt. jr) cycle
+c              if (lpm_grid_jj(i,j,k) .lt. jl) cycle
+c              if (lpm_grid_kk(i,j,k) .gt. kr) cycle
+c              if (lpm_grid_kk(i,j,k) .lt. kl) cycle
+
+
+               rdist2  = (lpm_grid_x(i,j,k) - rproj(2,ip))**2 +
+     >                   (lpm_grid_y(i,j,k) - rproj(3,ip))**2
+               if(lpm_rparam(12) .gt. 2) rdist2 = rdist2 +
+     >                   (lpm_grid_z(i,j,k) - rproj(4,ip))**2
+
+               if (rdist2 .gt. d2chk2_sq) cycle
+
+c              write(6,*) 'Made itt', lpm_grid_x(i,j,k)
+c    >                              , lpm_grid_y(i,j,k)
+c    >                              , lpm_grid_z(i,j,k)
+
+            
+               rexp = exp(rdist2*rproj(1,ip))
+               
+               do jj=1,LPM_LRP_PRO
+                  j1 = jj+4
+                  lpm_grid_fld(i,j,k,jj) = 
+     >                            lpm_grid_fld(i,j,k,jj) 
+     >                          + rproj(j1,ip)*rexp
+               enddo
+            enddo
+            enddo
+            enddo
+         enddo
+c     endif
 
       return
       end

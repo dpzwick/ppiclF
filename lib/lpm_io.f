@@ -16,6 +16,7 @@
       character*12 vtufile
       character*13 vtufile1
       character*50 dumstr
+      character*6  prostr
 
       integer icalld1
       save    icalld1
@@ -141,12 +142,13 @@ c     goto 1511
 ! DATA 
 ! ----
       write(vtu,'(A)',advance='yes') '   <PointData>'
+      do ie=1,LPM_LRP_PRO
+         write(prostr,'(A4,I2.2)') "PRO-",ie
+         call lpm_io_vtu_data(vtu,prostr,1,iint)
+         iint = iint + 1*isize*nvtx_total + isize
+      enddo
       write(vtu,'(A)',advance='yes') '   </PointData> '
       write(vtu,'(A)',advance='yes') '   <CellData>'
-
-c     call lpm_io_vtu_data(vtu,'DUMMY',1,iint)
-c     iint = iint + 1*isize*ncll_total + isize
-
       write(vtu,'(A)',advance='yes') '   </CellData> '
 
 ! ----------
@@ -287,7 +289,6 @@ c1511 continue
 
       if_pos = 3*isize*nvtx_total
 
-
       ! integer write
       if (lpm_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
@@ -404,17 +405,6 @@ c1511 continue
          enddo
       endif
 
-! debug
-c     isum = 0
-c     do k=1,lpm_bz
-c     do j=1,lpm_by
-c     do i=1,lpm_bx
-c        isum = isum + icount_pos(i,j,k)
-c     enddo
-c     enddo
-c     enddo
-c     isum = iglsum(isum,1)
-
       do k=1,lpm_bz
       do j=1,lpm_by
       do i=1,lpm_bx
@@ -426,13 +416,53 @@ c     isum = iglsum(isum,1)
          rpoint(3)   = lpm_grid_z(i,j,k)
          call byte_set_view(idisp_pos,pth)
          call byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
+
       enddo
       enddo
       enddo
+
+      call byte_close_mpi(pth,ierr)
+
+
+      do ie=1,LPM_LRP_PRO
+
+      if_pos = 1*isize*nvtx_total
+
+      ! integer write
+      if (lpm_nid .eq. 0) then
+        open(unit=vtu,file=vtufile,access='stream',form="unformatted"
+     >      ,position='append')
+        write(vtu) if_pos
+        close(vtu)
+      endif
+
+      call mpi_barrier(lpm_comm,ierr)
+
+      call byte_open_mpi(vtufile,pth,.false.,ierr)
+
+      do k=1,lpm_bz
+      do j=1,lpm_by
+      do i=1,lpm_bx
+            stride_lenv = lpm_grid_i(i,j,k)
+            idisp_pos   = ivtu_size + isize*(3*nvtx_total ! position fld
+     >                    + (ie-1)*nvtx_total ! prev fields
+     >                    + 1*stride_lenv    ! this fld
+     >                    + 1 + ie)          ! ints
+            icount_dum  = icount_pos(i,j,k)/3 ! either zero or 1
+            rpoint(1)   = lpm_grid_fld(i,j,k,ie)
+            call byte_set_view(idisp_pos,pth)
+            call byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
+      enddo
+      enddo
+      enddo
+
+      call byte_close_mpi(pth,ierr)
+
+      enddo
+            
 
       ! still need to add 2d
 
-      call byte_close_mpi(pth,ierr)
 
       call mpi_barrier(lpm_comm,ierr)
 

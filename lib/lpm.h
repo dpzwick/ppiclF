@@ -23,7 +23,7 @@ c Maximum number of ghost particles
 #endif
 
 #ifndef LPM_LRP_GP
-#define LPM_LRP_GP 4+LPM_LRP_PRO
+#define LPM_LRP_GP 3+LPM_LRP_PRO
 #endif
 
 #ifndef LPM_LELT

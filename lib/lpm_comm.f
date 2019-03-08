@@ -119,12 +119,12 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       ndim       = int(lpm_rparam(12))
 
       ! compute binb
-      xmin = 1E8
-      ymin = 1E8
-      zmin = 1E8
-      xmax = 0.
-      ymax = 0.
-      zmax = 0.
+      xmin = 1E10
+      ymin = 1E10
+      zmin = 1E10
+      xmax = -1E10
+      ymax = -1E10
+      zmax = -1E10
       do i=1,lpm_npart
          rduml = lpm_y(ix,i) - lpm_d2chk(2)
          rdumr = lpm_y(ix,i) + lpm_d2chk(2)
@@ -191,8 +191,9 @@ c     endif
      >                      floor( (lpm_binb(6) - lpm_binb(5))/d2new(3))
 
 
-      if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. lpm_np .or. 
-     >    int(lpm_rparam(4)) .eq. 1) then
+      ! dz comment 3/9/2019
+c     if (lpm_ndxgp*lpm_ndygp*lpm_ndzgp .gt. lpm_np .or. 
+c    >    int(lpm_rparam(4)) .eq. 1) then
          nmax = 1000
          d2chk_save = lpm_d2chk(2)
          
@@ -203,13 +204,14 @@ c     endif
             nbb = ifac(1)*ifac(2)*ifac(3)
 
             if( nbb .gt. lpm_np ) then
-            if( int(lpm_rparam(4)) .eq. 1 .or.
-     >          int(lpm_rparam(4)) .eq. 0 .and.d2new(j+1).lt.d2chk_save)
-     >          then
+            ! dz comment 3/9/2019
+c           if( int(lpm_rparam(4)) .eq. 1 .or.
+c    >          int(lpm_rparam(4)) .eq. 0 .and.d2new(j+1).lt.d2chk_save)
+c    >          then
                icount(j+1) = icount(j+1) + 1
                ifac(j+1) = ifac(j+1) - icount(j+1)
                d2new(j+1) = (lpm_binb(2+2*j) -lpm_binb(1+2*j))/ifac(j+1)
-            endif
+c           endif
             endif
          enddo
             if (icount(1) .gt. 0) then
@@ -220,7 +222,7 @@ c     endif
             endif
             endif
          enddo
-      endif
+c     endif
 
 ! -------------------------------------------------------
 c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
@@ -296,6 +298,11 @@ c     current box coordinates
          if (lpm_rparam(12) .gt. 2) 
      >      lpm_bz = floor(lpm_rdzgp/lpm_rparam(5)) + 1 + 1
 
+         lpm_bx = lpm_bx*lpm_rparam(6)
+         lpm_by = lpm_by*lpm_rparam(6)
+         if (lpm_rparam(12) .gt. 2) 
+     >      lpm_bz = lpm_bz*lpm_rparam(6)
+
 c        ! force for now!!! remove and uncomment above
 c        lpm_bx = 3
 c        lpm_by = 3
@@ -334,7 +341,10 @@ c    >                        (i-1) + lpm_bx*(j-1) + lpm_bx*lpm_by*(k-1)
             jtmp = jdum*(lpm_by-1) + (j-1)
             ktmp = kdum*(lpm_bz-1) + (k-1)
     
-            lpm_grid_i(i,j,k) = itmp + ndumx*jtmp + ndumx*ndumy*ktmp
+            lpm_grid_i(i,j,k)  = itmp + ndumx*jtmp + ndumx*ndumy*ktmp
+            lpm_grid_ii(i,j,k) = itmp
+            lpm_grid_jj(i,j,k) = jtmp
+            lpm_grid_kk(i,j,k) = ktmp
 
          enddo
          enddo
@@ -345,7 +355,7 @@ c    >                        (i-1) + lpm_bx*(j-1) + lpm_bx*lpm_by*(k-1)
 c     rmax = glmax(lpm_binz(1,1),2)
 c     if (lpm_nid .eq. 0) write(6,*) 'MAXX:', rmax
 
-      if (int(lpm_rparam(4)) .eq. 1) return ! only for projection
+c     if (int(lpm_rparam(4)) .eq. 1) return ! only for projection
 
 ! see which bins are in which elements
 c     lpm_neltb = 0
@@ -611,3 +621,475 @@ C
       return
       END
 c-----------------------------------------------------------------------
+      subroutine lpm_comm_ghost_create
+#include "LPM"
+
+      character*132 deathmessage
+      real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
+      integer iadd(3),gpsave(27)
+      real map(LPM_LRP_PRO)
+
+      integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
+     >                            nfacegp, nedgegp, ncornergp
+
+c     face, edge, and corner number, x,y,z are all inline, so stride=3
+      el_face_num = (/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /)
+      el_edge_num = (/ -1,-1,0 , 1,-1,0, 1,1,0 , -1,1,0 ,
+     >                  0,-1,-1, 1,0,-1, 0,1,-1, -1,0,-1,
+     >                  0,-1,1 , 1,0,1 , 0,1,1 , -1,0,1  /)
+      el_corner_num = (/ -1,-1,-1, 1,-1,-1, 1,1,-1, -1,1,-1,
+     >                   -1,-1,1,  1,-1,1,  1,1,1,  -1,1,1 /)
+
+      nfacegp   = 4  ! number of faces
+      nedgegp   = 4  ! number of edges
+      ncornergp = 0  ! number of corners
+
+      if (lpm_rparam(12) .gt. 2) then
+         nfacegp   = 6  ! number of faces
+         nedgegp   = 12 ! number of edges
+         ncornergp = 8  ! number of corners
+      endif
+
+      iperiodicx = int(lpm_rparam(8))
+      iperiodicy = int(lpm_rparam(9))
+      iperiodicz = int(lpm_rparam(10))
+
+! ------------------------
+c CREATING GHOST PARTICLES
+! ------------------------
+      jx    = 1
+      jy    = 2
+      jz    = 3
+
+      xdlen = lpm_binb(2) - lpm_binb(1)
+      ydlen = lpm_binb(4) - lpm_binb(3)
+      zdlen = -1.
+      if (lpm_rparam(12) .gt. 2) zdlen = lpm_binb(6) - lpm_binb(5)
+      if (iperiodicx .ne. 0) xdlen = -1
+      if (iperiodicy .ne. 0) ydlen = -1
+      if (iperiodicz .ne. 0) zdlen = -1
+
+      rxdrng(1) = xdlen
+      rxdrng(2) = ydlen
+      rxdrng(3) = zdlen
+
+      lpm_npart_gp = 0
+
+      rfac = 1.0
+
+      do ip=1,lpm_npart
+
+         call lpm_project_map(map,lpm_y(1,ip),lpm_ydot(1,ip)
+     >                       ,lpm_ydotc(1,ip),lpm_rprop(1,ip))
+         lpm_cp_map(1,ip) = lpm_y(jx,ip)      ! x coord
+         lpm_cp_map(2,ip) = lpm_y(jy,ip)      ! y coord
+         lpm_cp_map(3,ip) = lpm_y(jz,ip)      ! z coord
+         do j=1,LPM_LRP_PRO
+            lpm_cp_map(3+j,ip) = map(j)
+         enddo
+
+         rxval = lpm_cp_map(1,ip)
+         ryval = lpm_cp_map(2,ip)
+         rzval = 0.
+         if (lpm_rparam(12) .gt. 2) rzval = lpm_cp_map(3,ip)
+
+         iip    = lpm_iprop(8,ip)
+         jjp    = lpm_iprop(9,ip)
+         kkp    = lpm_iprop(10,ip)
+
+         rxl = lpm_binb(1) + lpm_rdxgp*iip
+         rxr = rxl + lpm_rdxgp
+         ryl = lpm_binb(3) + lpm_rdygp*jjp
+         ryr = ryl + lpm_rdygp
+         rzl = 0.0
+         rzr = 0.0
+         if (lpm_rparam(12) .gt. 2) then
+            rzl = lpm_binb(5) + lpm_rdzgp*kkp
+            rzr = rzl + lpm_rdzgp
+         endif
+
+         isave = 0
+
+         ! faces
+         do ifc=1,nfacegp
+            ist = (ifc-1)*3
+            ii1 = iip + el_face_num(ist+1) 
+            jj1 = jjp + el_face_num(ist+2)
+            kk1 = kkp + el_face_num(ist+3)
+
+            iig = ii1
+            jjg = jj1
+            kkg = kk1
+
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (lpm_rparam(12) .gt. 2) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
+
+            iflgx = 0
+            iflgy = 0
+            iflgz = 0
+            ! periodic if out of domain - add some ifsss
+            if (iig .lt. 0 .or. iig .gt. lpm_ndxgp-1) then
+               iflgx = 1
+               iig =modulo(iig,lpm_ndxgp)
+               if (iperiodicx .ne. 0) cycle
+            endif
+            if (jjg .lt. 0 .or. jjg .gt. lpm_ndygp-1) then
+               iflgy = 1
+               jjg =modulo(jjg,lpm_ndygp)
+               if (iperiodicy .ne. 0) cycle
+            endif
+            if (kkg .lt. 0 .or. kkg .gt. lpm_ndzgp-1) then
+               iflgz = 1  
+               kkg =modulo(kkg,lpm_ndzgp)
+               if (iperiodicz .ne. 0) cycle
+            endif
+
+            iflgsum = iflgx + iflgy + iflgz
+            ndumn = iig + lpm_ndxgp*jjg + lpm_ndxgp*lpm_ndygp*kkg
+            nrank = modulo(ndumn,np)
+
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 111
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
+
+            ibctype = iflgx+iflgy+iflgz
+                 
+            rxnew(1) = rxval
+            rxnew(2) = ryval
+            rxnew(3) = rzval
+       
+            iadd(1) = ii1
+            iadd(2) = jj1
+            iadd(3) = kk1
+
+            call lpm_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+                 
+            lpm_npart_gp = lpm_npart_gp + 1
+            lpm_iprop_gp(1,lpm_npart_gp) = nrank
+            lpm_iprop_gp(2,lpm_npart_gp) = iig
+            lpm_iprop_gp(3,lpm_npart_gp) = jjg
+            lpm_iprop_gp(4,lpm_npart_gp) = kkg
+            lpm_iprop_gp(5,lpm_npart_gp) = ndumn
+
+            lpm_rprop_gp(1,lpm_npart_gp) = rxnew(1)
+            lpm_rprop_gp(2,lpm_npart_gp) = rxnew(2)
+            lpm_rprop_gp(3,lpm_npart_gp) = rxnew(3)
+            do k=4,LPM_LRP_GP
+               lpm_rprop_gp(k,lpm_npart_gp) = lpm_cp_map(k,ip)
+            enddo
+  111 continue
+         enddo
+
+         ! edges
+         do ifc=1,nedgegp
+            ist = (ifc-1)*3
+            ii1 = iip + el_edge_num(ist+1) 
+            jj1 = jjp + el_edge_num(ist+2)
+            kk1 = kkp + el_edge_num(ist+3)
+
+            iig = ii1
+            jjg = jj1
+            kkg = kk1
+
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (lpm_rparam(12) .gt. 2) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
+
+            iflgx = 0
+            iflgy = 0
+            iflgz = 0
+            ! periodic if out of domain - add some ifsss
+            if (iig .lt. 0 .or. iig .gt. lpm_ndxgp-1) then
+               iflgx = 1
+               iig =modulo(iig,lpm_ndxgp)
+               if (iperiodicx .ne. 0) cycle
+            endif
+            if (jjg .lt. 0 .or. jjg .gt. lpm_ndygp-1) then
+               iflgy = 1
+               jjg =modulo(jjg,lpm_ndygp)
+               if (iperiodicy .ne. 0) cycle
+            endif
+            if (kkg .lt. 0 .or. kkg .gt. lpm_ndzgp-1) then
+               iflgz = 1  
+               kkg =modulo(kkg,lpm_ndzgp)
+               if (iperiodicz .ne. 0) cycle
+            endif
+
+            iflgsum = iflgx + iflgy + iflgz
+            ndumn = iig + lpm_ndxgp*jjg + lpm_ndxgp*lpm_ndygp*kkg
+            nrank = modulo(ndumn,np)
+
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 222
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
+
+            ibctype = iflgx+iflgy+iflgz
+                 
+            rxnew(1) = rxval
+            rxnew(2) = ryval
+            rxnew(3) = rzval
+       
+            iadd(1) = ii1
+            iadd(2) = jj1
+            iadd(3) = kk1
+
+            call lpm_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+                 
+            lpm_npart_gp = lpm_npart_gp + 1
+            lpm_iprop_gp(1,lpm_npart_gp) = nrank
+            lpm_iprop_gp(2,lpm_npart_gp) = iig
+            lpm_iprop_gp(3,lpm_npart_gp) = jjg
+            lpm_iprop_gp(4,lpm_npart_gp) = kkg
+            lpm_iprop_gp(5,lpm_npart_gp) = ndumn
+
+            lpm_rprop_gp(1,lpm_npart_gp) = rxnew(1)
+            lpm_rprop_gp(2,lpm_npart_gp) = rxnew(2)
+            lpm_rprop_gp(3,lpm_npart_gp) = rxnew(3)
+            do k=4,LPM_LRP_GP
+               lpm_rprop_gp(k,lpm_npart_gp) = lpm_cp_map(k,ip)
+            enddo
+  222 continue
+         enddo
+
+         ! corners
+         do ifc=1,ncornergp
+            ist = (ifc-1)*3
+            ii1 = iip + el_corner_num(ist+1) 
+            jj1 = jjp + el_corner_num(ist+2)
+            kk1 = kkp + el_corner_num(ist+3)
+
+            iig = ii1
+            jjg = jj1
+            kkg = kk1
+
+            distchk = 0.0
+            dist = 0.0
+            if (ii1-iip .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
+               if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
+            endif
+            if (jj1-jjp .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
+               if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
+            endif
+            if (lpm_rparam(12) .gt. 2) then
+            if (kk1-kkp .ne. 0) then
+               distchk = distchk + (rfac*lpm_d2chk(2))**2
+               if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
+               if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
+            endif
+            endif
+            distchk = sqrt(distchk)
+            dist = sqrt(dist)
+            if (dist .gt. distchk) cycle
+
+            iflgx = 0
+            iflgy = 0
+            iflgz = 0
+            ! periodic if out of domain - add some ifsss
+            if (iig .lt. 0 .or. iig .gt. lpm_ndxgp-1) then
+               iflgx = 1
+               iig =modulo(iig,lpm_ndxgp)
+               if (iperiodicx .ne. 0) cycle
+            endif
+            if (jjg .lt. 0 .or. jjg .gt. lpm_ndygp-1) then
+               iflgy = 1
+               jjg =modulo(jjg,lpm_ndygp)
+               if (iperiodicy .ne. 0) cycle
+            endif
+            if (kkg .lt. 0 .or. kkg .gt. lpm_ndzgp-1) then
+               iflgz = 1  
+               kkg =modulo(kkg,lpm_ndzgp)
+               if (iperiodicz .ne. 0) cycle
+            endif
+
+            iflgsum = iflgx + iflgy + iflgz
+            ndumn = iig + lpm_ndxgp*jjg + lpm_ndxgp*lpm_ndygp*kkg
+            nrank = modulo(ndumn,np)
+
+            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+
+            do i=1,isave
+               if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 333
+            enddo
+            isave = isave + 1
+            gpsave(isave) = nrank
+
+            ibctype = iflgx+iflgy+iflgz
+                 
+            rxnew(1) = rxval
+            rxnew(2) = ryval
+            rxnew(3) = rzval
+       
+            iadd(1) = ii1
+            iadd(2) = jj1
+            iadd(3) = kk1
+
+            call lpm_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+                 
+            lpm_npart_gp = lpm_npart_gp + 1
+            lpm_iprop_gp(1,lpm_npart_gp) = nrank
+            lpm_iprop_gp(2,lpm_npart_gp) = iig
+            lpm_iprop_gp(3,lpm_npart_gp) = jjg
+            lpm_iprop_gp(4,lpm_npart_gp) = kkg
+            lpm_iprop_gp(5,lpm_npart_gp) = ndumn
+
+            lpm_rprop_gp(1,lpm_npart_gp) = rxnew(1)
+            lpm_rprop_gp(2,lpm_npart_gp) = rxnew(2)
+            lpm_rprop_gp(3,lpm_npart_gp) = rxnew(3)
+            do k=4,LPM_LRP_GP
+               lpm_rprop_gp(k,lpm_npart_gp) = lpm_cp_map(k,ip)
+            enddo
+  333 continue
+         enddo
+
+      enddo
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine lpm_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+#include "LPM"
+c
+      real rxnew(3), rxdrng(3)
+      integer iadd(3), irett(3), ntype, ntypel(7)
+
+      xloc = rxnew(1)
+      yloc = rxnew(2)
+      zloc = rxnew(3)
+
+      xdlen = rxdrng(1)
+      ydlen = rxdrng(2)
+      zdlen = rxdrng(3)
+
+      ii = iadd(1)
+      jj = iadd(2)
+      kk = iadd(3)
+
+      irett(1) = 0
+      irett(2) = 0
+      irett(3) = 0
+
+      if (xdlen .gt. 0 ) then
+      if (ii .ge. lpm_ndxgp) then
+         xloc = xloc - xdlen
+         irett(1) = 1
+         goto 123
+      endif
+      endif
+      if (xdlen .gt. 0 ) then
+      if (ii .lt. 0) then
+         xloc = xloc + xdlen
+         irett(1) = 1
+         goto 123
+      endif
+      endif
+
+  123 continue    
+      if (ydlen .gt. 0 ) then
+      if (jj .ge. lpm_ndygp) then
+         yloc = yloc - ydlen
+         irett(2) = 1
+         goto 124
+      endif
+      endif
+      if (ydlen .gt. 0 ) then
+      if (jj .lt. 0) then
+         yloc = yloc + ydlen
+         irett(2) = 1
+         goto 124
+      endif
+      endif
+  124 continue
+
+      if (lpm_rparam(12) .gt. 2) then
+         if (zdlen .gt. 0 ) then
+         if (kk .ge. lpm_ndzgp) then
+            zloc = zloc - zdlen
+            irett(3) = 1
+            goto 125
+         endif
+         endif
+         if (zdlen .gt. 0 ) then
+         if (kk .lt. 0) then
+            zloc = zloc + zdlen
+            irett(3) = 1
+            goto 125
+         endif
+         endif
+      endif
+  125 continue
+
+      rxnew(1) = xloc
+      rxnew(2) = yloc
+      rxnew(3) = zloc
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine lpm_comm_ghost_send
+c
+#include "LPM"
+
+      logical partl         
+
+      ! send ghost particles
+      call fgslib_crystal_tuple_transfer(i_cr_hndl
+     >                                  ,lpm_npart_gp,LPM_LPART_GP
+     >                                  ,lpm_iprop_gp,LPM_LIP_GP
+     >                                  ,partl,0
+     >                                  ,lpm_rprop_gp,LPM_LRP_GP
+     >                                  ,1)
+
+      return
+      end
+c----------------------------------------------------------------------
