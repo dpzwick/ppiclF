@@ -492,17 +492,34 @@ c     ndum = lpm_npart_gp
 c     ndum = lpm_npart
 
 c     if (int(lpm_rparam(3)) .eq. 1) then
+
+         iadd = floor(lpm_rparam(6)/2.0/lpm_rdx
+     >             *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+         jadd = floor(lpm_rparam(6)/2.0/lpm_rdy
+     >             *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+         kadd = floor(lpm_rparam(6)/2.0/lpm_rdz
+     >             *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+
+         write(6,*) iadd,jadd,kadd, lpm_bx, lpm_by, lpm_bz
+
+
          do ip=1,ndum
             iip = iproj(1,ip)
             jjp = iproj(2,ip)
             kkp = iproj(3,ip)
 
-            il = iip - 1
-            ir = iip + 1
-            jl = jjp - 1
-            jr = jjp + 1
-            kl = kkp - 1
-            kr = kkp + 1
+c           il = iip - 1
+c           ir = iip + 1
+c           jl = jjp - 1
+c           jr = jjp + 1
+c           kl = kkp - 1
+c           kr = kkp + 1
+
+            ii = modulo(iip,lpm_ndxgp)
+            jj = modulo(jjp,lpm_ndygp)
+            kk = modulo(kkp,lpm_ndzgp)
+
+
 
             do k=1,lpm_bz
             do j=1,lpm_by

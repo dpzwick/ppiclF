@@ -55,7 +55,7 @@ c main code below
       rparam(4)  = 0           ! use 1 for tracers only
       rparam(5)  = 0.1        ! filter width in real units
       rparam(6)  = 4           ! how many grid points to resolve filter over
-      rparam(7)  = 1E-4        ! percent decay of Gaussian filter
+      rparam(7)  = 1E-1        ! percent decay of Gaussian filter
       rparam(8)  = 1           ! periodic in x (== 0) ! dont do periodic without bounds!!!
       rparam(9)  = 1           ! periodic in y (== 0)
       rparam(10) = 1           ! periodic in z (== 0)
