@@ -1,11 +1,11 @@
 !-----------------------------------------------------------------------
-      subroutine lpm_fun(time_,y,ydot)
+      subroutine ppiclf_fun(time_,y,ydot)
 c
 c     Set ydot(*) for system of d/dt y(*) = ydot(*)
 c
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
 
       real time_
       real y(*)
@@ -14,7 +14,7 @@ c
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_project_map(map,y,ydot,ydotc,rprop)
+      subroutine ppiclf_project_map(map,y,ydot,ydotc,rprop)
 c
 c     Map Lagrangian quantity to Eulerian field:
 c

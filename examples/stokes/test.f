@@ -2,17 +2,17 @@
 c main code below
 !-----------------------------------------------------------------------
       program test
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h' 
 
-      real rparam(lpm_nparam) 
+      real rparam(ppiclf_nparam) 
  
       call MPI_INIT(ierr) 
-      lpm_comm = MPI_COMM_WORLD
-      call MPI_COMM_RANK(lpm_comm, lpm_nid, ierr) 
-      call MPI_COMM_SIZE(lpm_comm, lpm_np , ierr)
+      ppiclf_comm = MPI_COMM_WORLD
+      call MPI_COMM_RANK(ppiclf_comm, ppiclf_nid, ierr) 
+      call MPI_COMM_SIZE(ppiclf_comm, ppiclf_np , ierr)
 
       rparam(1)  = 1           ! use custom values
       rparam(2)  = 1           ! time integration method
@@ -27,31 +27,31 @@ c main code below
       rparam(11) = 8E-4        ! time step
       rparam(12) = 3           ! problem dimensions
 
-      call init_particles(lpm_y,npart)
-c     call lpm_io_vtu_read('new99999.vtu',npart)
-      call lpm_init      (rparam,lpm_y,npart,0.0) 
+      call init_particles(ppiclf_y,npart)
+c     call ppiclf_io_vtu_read('new99999.vtu',npart)
+      call ppiclf_init      (rparam,ppiclf_y,npart,0.0) 
 
       ! time loop
       iostep = 100
       nstep  = 1000
-      do lpm_cycle=1,nstep
-         lpm_time = (lpm_cycle-1)*lpm_dt
-         call lpm_solve(lpm_time,lpm_y,lpm_ydot)
+      do ppiclf_cycle=1,nstep
+         ppiclf_time = (ppiclf_cycle-1)*ppiclf_dt
+         call ppiclf_solve(ppiclf_time,ppiclf_y,ppiclf_ydot)
 
 
-         if(mod(lpm_cycle,iostep) .eq. 0) then
-             call lpm_io_vtu_write('',0)
-c            call lpm_io_vtu_write_bins('',0)
-             call lpm_io_vtu_write_grd('',0)
-             nptmax = iglmax(lpm_npart,1)
-             nptmin = iglmin(lpm_npart,1)
-             nptsum = iglsum(lpm_npart,1)
-             if (lpm_nid .eq. 0) then
-                write(6,'(A,I6,A,E16.10)')  'STEP: ',lpm_cycle,
-     >                                    ', TIME: ',lpm_time
+         if(mod(ppiclf_cycle,iostep) .eq. 0) then
+             call ppiclf_io_vtu_write('',0)
+c            call ppiclf_io_vtu_write_bins('',0)
+             call ppiclf_io_vtu_write_grd('',0)
+             nptmax = iglmax(ppiclf_npart,1)
+             nptmin = iglmin(ppiclf_npart,1)
+             nptsum = iglsum(ppiclf_npart,1)
+             if (ppiclf_nid .eq. 0) then
+                write(6,'(A,I6,A,E16.10)')  'STEP: ',ppiclf_cycle,
+     >                                    ', TIME: ',ppiclf_time
                 write(6,'(A,I6,A,I6,A,I6)') 'NMAX: ',nptmax,
      >                                    ', NMIN: ',nptmin,
-     >                                    ', NAVG: ',nptsum/lpm_np
+     >                                    ', NAVG: ',nptsum/ppiclf_np
               endif
          endif
       enddo
@@ -61,9 +61,9 @@ c            call lpm_io_vtu_write_bins('',0)
       end
 !-----------------------------------------------------------------------
       subroutine init_particles(y,npart)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
 
       real      y(*)
       real      pi
@@ -73,23 +73,24 @@ c            call lpm_io_vtu_write_bins('',0)
       npart   = 50       ! particles/rank to distribute
       dp      = 0.01   ! particle diameter
       rhop    = 3307.327 ! particle density
-      rdum    = ran2(-1-lpm_nid) ! initialize random number generator
+      rdum    = ran2(-1-ppiclf_nid) ! initialize random number generator
       PI      = 4.D0*DATAN(1.D0)
 
       do i=1,npart
          ! set initial conditions for solution
-         j = LPM_LRS*(i-1)
-         y(LPM_JX +j) = 0.1 + 0.8*ran2(2)
-         y(LPM_JY +j) = 0.7 + 0.2*ran2(2)
-         y(LPM_JZ +j) = 0.1 + 0.8*ran2(2)
-         y(LPM_JVX+j) = 0.0
-         y(LPM_JVY+j) = 0.0
-         y(LPM_JVZ+j) = 0.0
+         j = PPICLF_LRS*(i-1)
+         y(PPICLF_JX +j) = 0.1 + 0.8*ran2(2)
+         y(PPICLF_JY +j) = 0.7 + 0.2*ran2(2)
+         y(PPICLF_JZ +j) = 0.1 + 0.8*ran2(2)
+         y(PPICLF_JVX+j) = 0.0
+         y(PPICLF_JVY+j) = 0.0
+         y(PPICLF_JVZ+j) = 0.0
       
          ! set some initial particle properties
-         lpm_rprop(LPM_R_JRHOP,i) = rhop
-         lpm_rprop(LPM_R_JDP  ,i) = dp
-         lpm_rprop(LPM_R_JVOLP,i) = pi/6.0*lpm_rprop(LPM_R_JDP,i)**3
+         ppiclf_rprop(PPICLF_R_JRHOP,i) = rhop
+         ppiclf_rprop(PPICLF_R_JDP  ,i) = dp
+         ppiclf_rprop(PPICLF_R_JVOLP,i) = pi/6.0
+     >                                  *ppiclf_rprop(PPICLF_R_JDP,i)**3
       enddo
 
       return

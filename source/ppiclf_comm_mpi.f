@@ -1,22 +1,25 @@
 c-----------------------------------------------------------------------
       subroutine gop( x, w, op, n)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
 
       real x(n), w(n)
       character*3 op
 
       if (op.eq.'+  ') then
-      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_sum,lpm_comm,ie)
+      call mpi_allreduce
+     >        (x,w,n,MPI_DOUBLE_PRECISION,mpi_sum,ppiclf_comm,ie)
       elseif (op.EQ.'M  ') then
-      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_max,lpm_comm,ie)
+      call mpi_allreduce
+     >        (x,w,n,MPI_DOUBLE_PRECISION,mpi_max,ppiclf_comm,ie)
       elseif (op.EQ.'m  ') then
-      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_min,lpm_comm,ie)
+      call mpi_allreduce
+     >        (x,w,n,MPI_DOUBLE_PRECISION,mpi_min,ppiclf_comm,ie)
       elseif (op.EQ.'*  ') then
-      call mpi_allreduce(x,w,n,MPI_DOUBLE_PRECISION,mpi_prod,lpm_comm
-     >                                                              ,ie)
+      call mpi_allreduce
+     >        (x,w,n,MPI_DOUBLE_PRECISION,mpi_prod,ppiclf_comm,ie)
       endif
 
       do i=1,n
@@ -27,22 +30,22 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine igop( x, w, op, n)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
 
       integer x(n), w(n)
       character*3 op
 
       if     (op.eq.'+  ') then
-        call mpi_allreduce (x,w,n,mpi_integer,mpi_sum ,lpm_comm,ierr)
+        call mpi_allreduce (x,w,n,mpi_integer,mpi_sum ,ppiclf_comm,ierr)
       elseif (op.EQ.'M  ') then
-        call mpi_allreduce (x,w,n,mpi_integer,mpi_max ,lpm_comm,ierr)
+        call mpi_allreduce (x,w,n,mpi_integer,mpi_max ,ppiclf_comm,ierr)
       elseif (op.EQ.'m  ') then
-        call mpi_allreduce (x,w,n,mpi_integer,mpi_min ,lpm_comm,ierr)
+        call mpi_allreduce (x,w,n,mpi_integer,mpi_min ,ppiclf_comm,ierr)
       elseif (op.EQ.'*  ') then
-        call mpi_allreduce (x,w,n,mpi_integer,mpi_prod,lpm_comm,ierr)
+        call mpi_allreduce (x,w,n,mpi_integer,mpi_prod,ppiclf_comm,ierr)
       endif
 
       do i=1,n
@@ -131,9 +134,9 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
 
       character fnamei*(*)
@@ -152,7 +155,7 @@ c     write(6,*) fnamei
         imode = MPI_MODE_RDONLY 
       endif
 
-      call MPI_file_open(lpm_comm,fnamei,imode,
+      call MPI_file_open(ppiclf_comm,fnamei,imode,
      &                   MPI_INFO_NULL,mpi_fh,ierr)
 
       return
@@ -168,15 +171,15 @@ c     call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
 c    &                       MPI_STATUS_IGNORE,ierr)
 c--------------------------------------------------------------------------
       subroutine byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
 
       real*4 buf(1)          ! buffer
 
       iout = icount ! icount is in 4-byte words
-      if(iorank.ge.0 .and. lpm_nid.ne.iorank) iout = 0
+      if(iorank.ge.0 .and. ppiclf_nid.ne.iorank) iout = 0
       call MPI_file_write_all(mpi_fh,buf,iout,MPI_REAL,
      &                        MPI_STATUS_IGNORE,ierr)
 
@@ -202,13 +205,13 @@ c--------------------------------------------------------------------------
       end
 C--------------------------------------------------------------------------
       subroutine bcast(buf,len)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
       real*4 buf(1)
 
-      call mpi_bcast (buf,len,mpi_byte,0,lpm_comm,ierr)
+      call mpi_bcast (buf,len,mpi_byte,0,ppiclf_comm,ierr)
 
       return
       end

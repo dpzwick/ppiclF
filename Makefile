@@ -21,16 +21,16 @@ GSLIB_IFLAGS = -DPREFIX=gslib_   \
 SOURCE_ROOT_GSLIB=$(INSTALL_LOCATION)/3rd_party/gslib
 GSLIB_IFLAGS+=-I$(SOURCE_ROOT_GSLIB)/include
 
-SRC = $(SOURCE_ROOT_PPICLF)/lpm_user.f     \
-      $(SOURCE_ROOT_PPICLF)/lpm_comm.f     \
-      $(SOURCE_ROOT_PPICLF)/lpm_comm_mpi.f \
-      $(SOURCE_ROOT_PPICLF)/lpm_io.f       \
-      $(SOURCE_ROOT_PPICLF)/lpm_solve.f
-OBJ = $(SOURCE_ROOT_PPICLF)/lpm_user.o     \
-      $(SOURCE_ROOT_PPICLF)/lpm_comm.o     \
-      $(SOURCE_ROOT_PPICLF)/lpm_comm_mpi.o \
-      $(SOURCE_ROOT_PPICLF)/lpm_io.o       \
-      $(SOURCE_ROOT_PPICLF)/lpm_solve.o
+SRC = $(SOURCE_ROOT_PPICLF)/ppiclf_user.f     \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_comm.f     \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_comm_mpi.f \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_io.f       \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_solve.f
+OBJ = $(SOURCE_ROOT_PPICLF)/ppiclf_user.o     \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_comm.o     \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_comm_mpi.o \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_io.o       \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_solve.o
 
 # Make commands
 default: makeThird getObjs libObjs 

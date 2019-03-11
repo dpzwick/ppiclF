@@ -1,14 +1,14 @@
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_write_grd(filein1,iobig)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+      subroutine ppiclf_io_vtu_write_grd(filein1,iobig)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
 
-      real*4  rout_pos(3      *LPM_LPART) 
-     >       ,rout_sln(LPM_LRS*LPM_LPART)
-     >       ,rout_lrp(LPM_LRP*LPM_LPART)
-     >       ,rout_lip(3      *LPM_LPART)
+      real*4  rout_pos(3      *PPICLF_LPART) 
+     >       ,rout_sln(PPICLF_LRS*PPICLF_LPART)
+     >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
+     >       ,rout_lip(3      *PPICLF_LPART)
 
       character*5 sprop1
       character*9 rprop1
@@ -30,35 +30,35 @@
       integer*8 idisp_pos,idisp_cll,idisp_lrp,idisp_lip
       integer*8 stride_lenv, stride_lenc
 
-      integer icount_pos(LPM_BX1, LPM_BY1, LPM_BZ1)
+      integer icount_pos(PPICLF_BX1, PPICLF_BY1, PPICLF_BZ1)
 
       real*4 rpoint(3)
 
-      call lpm_comm_ghost_create
-      call lpm_comm_ghost_send
-      call lpm_solve_project_bins
+      call ppiclf_comm_ghost_create
+      call ppiclf_comm_ghost_send
+      call ppiclf_solve_project_bins
 
       icalld1 = icalld1+1
 
-      nnp   = lpm_np
-      nxx   = LPM_NPART
+      nnp   = ppiclf_np
+      nxx   = PPICLF_NPART
 
-      if (lpm_rparam(12) .gt. 2) then
-         ncll_total = lpm_ndxgp*(lpm_bx-1)
-     >               *lpm_ndygp*(lpm_by-1)
-     >               *lpm_ndzgp*(lpm_bz-1)
-         nvtx_total = (lpm_ndxgp*(lpm_bx-1)+1)
-     >               *(lpm_ndygp*(lpm_by-1)+1)
-     >               *(lpm_ndzgp*(lpm_bz-1)+1)
+      if (ppiclf_rparam(12) .gt. 2) then
+         ncll_total = ppiclf_ndxgp*(ppiclf_bx-1)
+     >               *ppiclf_ndygp*(ppiclf_by-1)
+     >               *ppiclf_ndzgp*(ppiclf_bz-1)
+         nvtx_total = (ppiclf_ndxgp*(ppiclf_bx-1)+1)
+     >               *(ppiclf_ndygp*(ppiclf_by-1)+1)
+     >               *(ppiclf_ndzgp*(ppiclf_bz-1)+1)
       else
 
         ! 2d here ....
       endif
 
-      lpm_ndxgpp1 = lpm_ndxgp + 1
-      lpm_ndygpp1 = lpm_ndygp + 1
-      lpm_ndzgpp1 = lpm_ndzgp + 1
-      lpm_ndxygpp1 = lpm_ndxgpp1*lpm_ndygpp1
+      ppiclf_ndxgpp1 = ppiclf_ndxgp + 1
+      ppiclf_ndygpp1 = ppiclf_ndygp + 1
+      ppiclf_ndzgpp1 = ppiclf_ndzgp + 1
+      ppiclf_ndxygpp1 = ppiclf_ndxgpp1*ppiclf_ndygpp1
 
 
       if_sz = len(filein1)
@@ -79,9 +79,9 @@
 ! --------------------------------------------------
 
       ! get which bin this processor holds
-      ibin = modulo(lpm_nid,lpm_ndxgp)
-      jbin = modulo(lpm_nid/lpm_ndxgp,lpm_ndygp)
-      kbin = lpm_nid/(lpm_ndxgp*lpm_ndygp)
+      ibin = modulo(ppiclf_nid,ppiclf_ndxgp)
+      jbin = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
+      kbin = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
 
 ! ----------------------------------------------------
 ! WRITE EACH INDIVIDUAL COMPONENT OF A BINARY VTU FILE
@@ -91,9 +91,9 @@
 ! test skip
 c     goto 1511
 
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
 
-      vtu=867+lpm_nid
+      vtu=867+ppiclf_nid
       open(unit=vtu,file=vtufile,status='replace')
 
 ! ------------
@@ -116,7 +116,7 @@ c     goto 1511
       write(vtu,'(A)',advance='no') 'Name="TIME" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '
-      write(vtu,'(E14.7)',advance='no') lpm_time
+      write(vtu,'(E14.7)',advance='no') ppiclf_time
       write(vtu,'(A)',advance='yes') ' </DataArray> '
 
       write(vtu,'(A)',advance='no') '   <DataArray '  ! cycle
@@ -124,7 +124,7 @@ c     goto 1511
       write(vtu,'(A)',advance='no') 'Name="CYCLE" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '
-      write(vtu,'(I0)',advance='no') lpm_cycle
+      write(vtu,'(I0)',advance='no') ppiclf_cycle
       write(vtu,'(A)',advance='yes') ' </DataArray> '
 
       write(vtu,'(A)',advance='yes') '  </FieldData>'
@@ -140,7 +140,7 @@ c     goto 1511
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call lpm_io_vtu_data(vtu,"Position",3   ,iint)
+      call ppiclf_io_vtu_data(vtu,"Position",3   ,iint)
       iint = iint + 3   *isize*nvtx_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
@@ -148,9 +148,9 @@ c     goto 1511
 ! DATA 
 ! ----
       write(vtu,'(A)',advance='yes') '   <PointData>'
-      do ie=1,LPM_LRP_PRO
+      do ie=1,PPICLF_LRP_PRO
          write(prostr,'(A4,I2.2)') "PRO-",ie
-         call lpm_io_vtu_data(vtu,prostr,1,iint)
+         call ppiclf_io_vtu_data(vtu,prostr,1,iint)
          iint = iint + 1*isize*nvtx_total + isize
       enddo
       write(vtu,'(A)',advance='yes') '   </PointData> '
@@ -166,13 +166,13 @@ c     goto 1511
       write(vtu,'(A)',advance='no') 'Name="connectivity" '
       write(vtu,'(A)',advance='yes') 'format="ascii"> '
       ! write connectivity here
-      ndumx = lpm_ndxgp*(lpm_bx-1) + 1
-      ndumy = lpm_ndygp*(lpm_by-1) + 1
-      ndumz = lpm_ndzgp*(lpm_bz-1) + 1
-      do ie=0,lpm_np-1
-         i = modulo(ie,lpm_ndxgp)
-         j = modulo(ie/lpm_ndxgp,lpm_ndygp)
-         k = ie/(lpm_ndxgp*lpm_ndygp)
+      ndumx = ppiclf_ndxgp*(ppiclf_bx-1) + 1
+      ndumy = ppiclf_ndygp*(ppiclf_by-1) + 1
+      ndumz = ppiclf_ndzgp*(ppiclf_bz-1) + 1
+      do ie=0,ppiclf_np-1
+         i = modulo(ie,ppiclf_ndxgp)
+         j = modulo(ie/ppiclf_ndxgp,ppiclf_ndygp)
+         k = ie/(ppiclf_ndxgp*ppiclf_ndygp)
 
 
 c        il = i-1
@@ -181,42 +181,42 @@ c        jl = j-1
 c        jr = j+1
 c        kl = k-1
 c        kr = k+1
-c        nmult = lpm_ndxgp*lpm_ndygp
-c        nid1  = il + lpm_ndxgp*jl + nmult*kl
-c        nid2  = i  + lpm_ndxgp*jl + nmult*kl
-c        nid3  = ir + lpm_ndxgp*jl + nmult*kl
-c        nid4  = il + lpm_ndxgp*j  + nmult*kl
-c        nid5  = i  + lpm_ndxgp*j  + nmult*kl
-c        nid6  = ir + lpm_ndxgp*j  + nmult*kl
-c        nid7  = il + lpm_ndxgp*jr + nmult*kl
-c        nid8  = i  + lpm_ndxgp*jr + nmult*kl
-c        nid9  = ir + lpm_ndxgp*jr + nmult*kl
-c        nid10 = il + lpm_ndxgp*jl + nmult*k 
-c        nid11 = i  + lpm_ndxgp*jl + nmult*k 
-c        nid12 = ir + lpm_ndxgp*jl + nmult*k 
-c        nid13 = il + lpm_ndxgp*j  + nmult*k 
-c        nid14 = i  + lpm_ndxgp*j  + nmult*k 
-c        nid15 = ir + lpm_ndxgp*j  + nmult*k 
-c        nid16 = il + lpm_ndxgp*jr + nmult*k 
-c        nid17 = i  + lpm_ndxgp*jr + nmult*k 
-c        nid18 = ir + lpm_ndxgp*jr + nmult*k 
-c        nid19 = il + lpm_ndxgp*jl + nmult*kr
-c        nid20 = i  + lpm_ndxgp*jl + nmult*kr
-c        nid21 = ir + lpm_ndxgp*jl + nmult*kr
-c        nid22 = il + lpm_ndxgp*j  + nmult*kr
-c        nid23 = i  + lpm_ndxgp*j  + nmult*kr
-c        nid24 = ir + lpm_ndxgp*j  + nmult*kr
-c        nid25 = il + lpm_ndxgp*jr + nmult*kr
-c        nid26 = i  + lpm_ndxgp*jr + nmult*kr
-c        nid27 = ir + lpm_ndxgp*jr + nmult*kr
+c        nmult = ppiclf_ndxgp*ppiclf_ndygp
+c        nid1  = il + ppiclf_ndxgp*jl + nmult*kl
+c        nid2  = i  + ppiclf_ndxgp*jl + nmult*kl
+c        nid3  = ir + ppiclf_ndxgp*jl + nmult*kl
+c        nid4  = il + ppiclf_ndxgp*j  + nmult*kl
+c        nid5  = i  + ppiclf_ndxgp*j  + nmult*kl
+c        nid6  = ir + ppiclf_ndxgp*j  + nmult*kl
+c        nid7  = il + ppiclf_ndxgp*jr + nmult*kl
+c        nid8  = i  + ppiclf_ndxgp*jr + nmult*kl
+c        nid9  = ir + ppiclf_ndxgp*jr + nmult*kl
+c        nid10 = il + ppiclf_ndxgp*jl + nmult*k 
+c        nid11 = i  + ppiclf_ndxgp*jl + nmult*k 
+c        nid12 = ir + ppiclf_ndxgp*jl + nmult*k 
+c        nid13 = il + ppiclf_ndxgp*j  + nmult*k 
+c        nid14 = i  + ppiclf_ndxgp*j  + nmult*k 
+c        nid15 = ir + ppiclf_ndxgp*j  + nmult*k 
+c        nid16 = il + ppiclf_ndxgp*jr + nmult*k 
+c        nid17 = i  + ppiclf_ndxgp*jr + nmult*k 
+c        nid18 = ir + ppiclf_ndxgp*jr + nmult*k 
+c        nid19 = il + ppiclf_ndxgp*jl + nmult*kr
+c        nid20 = i  + ppiclf_ndxgp*jl + nmult*kr
+c        nid21 = ir + ppiclf_ndxgp*jl + nmult*kr
+c        nid22 = il + ppiclf_ndxgp*j  + nmult*kr
+c        nid23 = i  + ppiclf_ndxgp*j  + nmult*kr
+c        nid24 = ir + ppiclf_ndxgp*j  + nmult*kr
+c        nid25 = il + ppiclf_ndxgp*jr + nmult*kr
+c        nid26 = i  + ppiclf_ndxgp*jr + nmult*kr
+c        nid27 = ir + ppiclf_ndxgp*jr + nmult*kr
 
-      do kk=1,lpm_bz-1
-      do jj=1,lpm_by-1
-      do ii=1,lpm_bx-1
+      do kk=1,ppiclf_bz-1
+      do jj=1,ppiclf_by-1
+      do ii=1,ppiclf_bx-1
 
-         itmp = i*(lpm_bx-1) + (ii-1)
-         jtmp = j*(lpm_by-1) + (jj-1)
-         ktmp = k*(lpm_bz-1) + (kk-1)
+         itmp = i*(ppiclf_bx-1) + (ii-1)
+         jtmp = j*(ppiclf_by-1) + (jj-1)
+         ktmp = k*(ppiclf_bz-1) + (kk-1)
 
          kl = ktmp
          kr = ktmp+1
@@ -296,7 +296,7 @@ c1511 continue
       if_pos = 3*isize*nvtx_total
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_pos
@@ -304,75 +304,63 @@ c1511 continue
       endif
 
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       ! write points first
       call byte_open_mpi(vtufile,pth,.false.,ierr)
 
-      do k=1,lpm_bz
-      do j=1,lpm_by
-      do i=1,lpm_bx
+      do k=1,ppiclf_bz
+      do j=1,ppiclf_by
+      do i=1,ppiclf_bx
          icount_pos(i,j,k) = 0
       enddo
       enddo
       enddo
-      if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         do k=1,lpm_bz
-         do j=1,lpm_by
-         do i=1,lpm_bx
-            if (i .ne. lpm_bx .and.
-     >          j .ne. lpm_by .and.
-     >          k .ne. lpm_bz) then
+      if (ppiclf_nid .le. ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         do k=1,ppiclf_bz
+         do j=1,ppiclf_by
+         do i=1,ppiclf_bx
+            if (i .ne. ppiclf_bx .and.
+     >          j .ne. ppiclf_by .and.
+     >          k .ne. ppiclf_bz) then
                   icount_pos(i,j,k) = 3
             endif
 
-            if (i .eq. lpm_bx) then
-            if (j .ne. lpm_by) then
-            if (k .ne. lpm_bz) then
-            if (ibin .eq. lpm_ndxgp-1) then
+            if (i .eq. ppiclf_bx) then
+            if (j .ne. ppiclf_by) then
+            if (k .ne. ppiclf_bz) then
+            if (ibin .eq. ppiclf_ndxgp-1) then
                icount_pos(i,j,k) = 3
             endif
             endif
             endif
             endif
 
-            if (j .eq. lpm_by) then
-            if (i .ne. lpm_bx) then
-            if (k .ne. lpm_bz) then
-            if (jbin .eq. lpm_ndygp-1) then
+            if (j .eq. ppiclf_by) then
+            if (i .ne. ppiclf_bx) then
+            if (k .ne. ppiclf_bz) then
+            if (jbin .eq. ppiclf_ndygp-1) then
                icount_pos(i,j,k) = 3
             endif
             endif
             endif
             endif
 
-            if (k .eq. lpm_bz) then
-            if (i .ne. lpm_bx) then
-            if (j .ne. lpm_by) then
-            if (kbin .eq. lpm_ndzgp-1) then
+            if (k .eq. ppiclf_bz) then
+            if (i .ne. ppiclf_bx) then
+            if (j .ne. ppiclf_by) then
+            if (kbin .eq. ppiclf_ndzgp-1) then
                icount_pos(i,j,k) = 3
             endif
             endif
             endif
             endif
 
-            if (i .eq. lpm_bx) then
-            if (j .eq. lpm_by) then
-            if (k .ne. lpm_bz) then
-            if (ibin .eq. lpm_ndxgp-1) then
-            if (jbin .eq. lpm_ndygp-1) then
-               icount_pos(i,j,k) = 3
-            endif
-            endif
-            endif
-            endif
-            endif
-
-            if (i .eq. lpm_bx) then
-            if (k .eq. lpm_bz) then
-            if (j .ne. lpm_by) then
-            if (ibin .eq. lpm_ndxgp-1) then
-            if (kbin .eq. lpm_ndzgp-1) then
+            if (i .eq. ppiclf_bx) then
+            if (j .eq. ppiclf_by) then
+            if (k .ne. ppiclf_bz) then
+            if (ibin .eq. ppiclf_ndxgp-1) then
+            if (jbin .eq. ppiclf_ndygp-1) then
                icount_pos(i,j,k) = 3
             endif
             endif
@@ -380,11 +368,11 @@ c1511 continue
             endif
             endif
 
-            if (j .eq. lpm_by) then
-            if (k .eq. lpm_bz) then
-            if (i .ne. lpm_bx) then
-            if (jbin .eq. lpm_ndygp-1) then
-            if (kbin .eq. lpm_ndzgp-1) then
+            if (i .eq. ppiclf_bx) then
+            if (k .eq. ppiclf_bz) then
+            if (j .ne. ppiclf_by) then
+            if (ibin .eq. ppiclf_ndxgp-1) then
+            if (kbin .eq. ppiclf_ndzgp-1) then
                icount_pos(i,j,k) = 3
             endif
             endif
@@ -392,12 +380,24 @@ c1511 continue
             endif
             endif
 
-            if (i .eq. lpm_bx) then
-            if (j .eq. lpm_by) then
-            if (k .eq. lpm_bz) then
-            if (ibin .eq. lpm_ndxgp-1) then
-            if (jbin .eq. lpm_ndygp-1) then
-            if (kbin .eq. lpm_ndzgp-1) then
+            if (j .eq. ppiclf_by) then
+            if (k .eq. ppiclf_bz) then
+            if (i .ne. ppiclf_bx) then
+            if (jbin .eq. ppiclf_ndygp-1) then
+            if (kbin .eq. ppiclf_ndzgp-1) then
+               icount_pos(i,j,k) = 3
+            endif
+            endif
+            endif
+            endif
+            endif
+
+            if (i .eq. ppiclf_bx) then
+            if (j .eq. ppiclf_by) then
+            if (k .eq. ppiclf_bz) then
+            if (ibin .eq. ppiclf_ndxgp-1) then
+            if (jbin .eq. ppiclf_ndygp-1) then
+            if (kbin .eq. ppiclf_ndzgp-1) then
                icount_pos(i,j,k) = 3
             endif
             endif
@@ -411,15 +411,15 @@ c1511 continue
          enddo
       endif
 
-      do k=1,lpm_bz
-      do j=1,lpm_by
-      do i=1,lpm_bx
-         stride_lenv = lpm_grid_i(i,j,k)
+      do k=1,ppiclf_bz
+      do j=1,ppiclf_by
+      do i=1,ppiclf_bx
+         stride_lenv = ppiclf_grid_i(i,j,k)
          idisp_pos   = ivtu_size + isize*(3   *stride_lenv + 1)
          icount_dum  = icount_pos(i,j,k)
-         rpoint(1)   = lpm_grid_x(i,j,k)
-         rpoint(2)   = lpm_grid_y(i,j,k)
-         rpoint(3)   = lpm_grid_z(i,j,k)
+         rpoint(1)   = ppiclf_grid_x(i,j,k)
+         rpoint(2)   = ppiclf_grid_y(i,j,k)
+         rpoint(3)   = ppiclf_grid_z(i,j,k)
          call byte_set_view(idisp_pos,pth)
          call byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
 
@@ -430,32 +430,32 @@ c1511 continue
       call byte_close_mpi(pth,ierr)
 
 
-      do ie=1,LPM_LRP_PRO
+      do ie=1,PPICLF_LRP_PRO
 
       if_pos = 1*isize*nvtx_total
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_pos
         close(vtu)
       endif
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       call byte_open_mpi(vtufile,pth,.false.,ierr)
 
-      do k=1,lpm_bz
-      do j=1,lpm_by
-      do i=1,lpm_bx
-            stride_lenv = lpm_grid_i(i,j,k)
+      do k=1,ppiclf_bz
+      do j=1,ppiclf_by
+      do i=1,ppiclf_bx
+            stride_lenv = ppiclf_grid_i(i,j,k)
             idisp_pos   = ivtu_size + isize*(3*nvtx_total ! position fld
      >                    + (ie-1)*nvtx_total ! prev fields
      >                    + 1*stride_lenv    ! this fld
      >                    + 1 + ie)          ! ints
             icount_dum  = icount_pos(i,j,k)/3 ! either zero or 1
-            rpoint(1)   = lpm_grid_fld(i,j,k,ie)
+            rpoint(1)   = ppiclf_grid_fld(i,j,k,ie)
             call byte_set_view(idisp_pos,pth)
             call byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
       enddo
@@ -470,10 +470,10 @@ c1511 continue
       ! still need to add 2d
 
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
-      if (lpm_nid .eq. 0) then
-      vtu=867+lpm_nid
+      if (ppiclf_nid .eq. 0) then
+      vtu=867+ppiclf_nid
       open(unit=vtu,file=vtufile,status='old',position='append')
 
       write(vtu,'(A)',advance='yes') '</AppendedData>'
@@ -485,16 +485,16 @@ c1511 continue
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_write_bins(filein1,iobig)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+      subroutine ppiclf_io_vtu_write_bins(filein1,iobig)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
 
-      real*4  rout_pos(3      *LPM_LPART) 
-     >       ,rout_sln(LPM_LRS*LPM_LPART)
-     >       ,rout_lrp(LPM_LRP*LPM_LPART)
-     >       ,rout_lip(3      *LPM_LPART)
+      real*4  rout_pos(3      *PPICLF_LPART) 
+     >       ,rout_sln(PPICLF_LRS*PPICLF_LPART)
+     >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
+     >       ,rout_lip(3      *PPICLF_LPART)
 
       character*5 sprop1
       character*9 rprop1
@@ -519,19 +519,20 @@ c1511 continue
 
       icalld1 = icalld1+1
 
-      nnp   = lpm_np
-      nxx   = LPM_NPART
+      nnp   = ppiclf_np
+      nxx   = PPICLF_NPART
 
-      nvtx_total = (lpm_ndxgp+1)*(lpm_ndygp+1)
-      if (lpm_rparam(12) .gt. 2) nvtx_total = nvtx_total*(lpm_ndzgp+1)
-      ncll_total = lpm_ndxgp*lpm_ndygp
-      if (lpm_rparam(12) .gt. 2) ncll_total = ncll_total*lpm_ndzgp
+      nvtx_total = (ppiclf_ndxgp+1)*(ppiclf_ndygp+1)
+      if (ppiclf_rparam(12) .gt. 2) 
+     >    nvtx_total = nvtx_total*(ppiclf_ndzgp+1)
+      ncll_total = ppiclf_ndxgp*ppiclf_ndygp
+      if (ppiclf_rparam(12) .gt. 2) ncll_total = ncll_total*ppiclf_ndzgp
 
 
-      lpm_ndxgpp1 = lpm_ndxgp + 1
-      lpm_ndygpp1 = lpm_ndygp + 1
-      lpm_ndzgpp1 = lpm_ndzgp + 1
-      lpm_ndxygpp1 = lpm_ndxgpp1*lpm_ndygpp1
+      ppiclf_ndxgpp1 = ppiclf_ndxgp + 1
+      ppiclf_ndygpp1 = ppiclf_ndygp + 1
+      ppiclf_ndzgpp1 = ppiclf_ndzgp + 1
+      ppiclf_ndxygpp1 = ppiclf_ndxgpp1*ppiclf_ndygpp1
 
 
       if_sz = len(filein1)
@@ -552,9 +553,9 @@ c1511 continue
 ! --------------------------------------------------
 
       ! get which bin this processor holds
-      ibin = modulo(lpm_nid,lpm_ndxgp)
-      jbin = modulo(lpm_nid/lpm_ndxgp,lpm_ndygp)
-      kbin = lpm_nid/(lpm_ndxgp*lpm_ndygp)
+      ibin = modulo(ppiclf_nid,ppiclf_ndxgp)
+      jbin = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
+      kbin = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
 
       il = ibin
       ir = ibin+1
@@ -563,14 +564,14 @@ c1511 continue
       kl = kbin
       kr = kbin+1
 
-      nbinpa = il + lpm_ndxgpp1*jl + lpm_ndxygpp1*kl
-      nbinpb = ir + lpm_ndxgpp1*jl + lpm_ndxygpp1*kl
-      nbinpc = il + lpm_ndxgpp1*jr + lpm_ndxygpp1*kl
-      nbinpd = ir + lpm_ndxgpp1*jr + lpm_ndxygpp1*kl
-      nbinpe = il + lpm_ndxgpp1*jl + lpm_ndxygpp1*kr
-      nbinpf = ir + lpm_ndxgpp1*jl + lpm_ndxygpp1*kr
-      nbinpg = il + lpm_ndxgpp1*jr + lpm_ndxygpp1*kr
-      nbinph = ir + lpm_ndxgpp1*jr + lpm_ndxygpp1*kr
+      nbinpa = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+      nbinpb = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+      nbinpc = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+      nbinpd = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+      nbinpe = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+      nbinpf = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+      nbinpg = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
+      nbinph = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
 
       stride_lenv(1) = 0
       stride_lenv(2) = 0
@@ -582,7 +583,7 @@ c1511 continue
       stride_lenv(8) = 0
  
       stride_lenc = 0
-      if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
+      if (ppiclf_nid .le. ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          stride_lenv(1) = nbinpa
          stride_lenv(2) = nbinpb
          stride_lenv(3) = nbinpc
@@ -592,7 +593,7 @@ c1511 continue
          stride_lenv(7) = nbinpg
          stride_lenv(8) = nbinph
          
-         stride_lenc    = lpm_nid
+         stride_lenc    = ppiclf_nid
       endif
 
 ! ----------------------------------------------------
@@ -603,9 +604,9 @@ c1511 continue
 ! test skip
 c     goto 1511
 
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
 
-      vtu=867+lpm_nid
+      vtu=867+ppiclf_nid
       open(unit=vtu,file=vtufile,status='replace')
 
 ! ------------
@@ -628,7 +629,7 @@ c     goto 1511
       write(vtu,'(A)',advance='no') 'Name="TIME" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '
-      write(vtu,'(E14.7)',advance='no') lpm_time
+      write(vtu,'(E14.7)',advance='no') ppiclf_time
       write(vtu,'(A)',advance='yes') ' </DataArray> '
 
       write(vtu,'(A)',advance='no') '   <DataArray '  ! cycle
@@ -636,7 +637,7 @@ c     goto 1511
       write(vtu,'(A)',advance='no') 'Name="CYCLE" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '
-      write(vtu,'(I0)',advance='no') lpm_cycle
+      write(vtu,'(I0)',advance='no') ppiclf_cycle
       write(vtu,'(A)',advance='yes') ' </DataArray> '
 
       write(vtu,'(A)',advance='yes') '  </FieldData>'
@@ -652,7 +653,7 @@ c     goto 1511
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call lpm_io_vtu_data(vtu,"Position",3   ,iint)
+      call ppiclf_io_vtu_data(vtu,"Position",3   ,iint)
       iint = iint + 3   *isize*nvtx_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
@@ -674,27 +675,27 @@ c     goto 1511
       write(vtu,'(A)',advance='yes') 'format="ascii"> '
       ! write connectivity here
       do ii=0,ncll_total-1
-         i = modulo(ii,lpm_ndxgp)
-         j = modulo(ii/lpm_ndxgp,lpm_ndygp)
-         k = ii/(lpm_ndxgp*lpm_ndygp)
+         i = modulo(ii,ppiclf_ndxgp)
+         j = modulo(ii/ppiclf_ndxgp,ppiclf_ndygp)
+         k = ii/(ppiclf_ndxgp*ppiclf_ndygp)
           
-c     do K=0,lpm_ndzgp-1
+c     do K=0,ppiclf_ndzgp-1
          kl = K
          kr = K+1
-c     do J=0,lpm_ndygp-1
+c     do J=0,ppiclf_ndygp-1
          jl = J
          jr = J+1
-c     do I=0,lpm_ndxgp-1
+c     do I=0,ppiclf_ndxgp-1
          il = I
          ir = I+1
-         npa = il + lpm_ndxgpp1*jl + lpm_ndxygpp1*kl
-         npb = ir + lpm_ndxgpp1*jl + lpm_ndxygpp1*kl
-         npc = il + lpm_ndxgpp1*jr + lpm_ndxygpp1*kl
-         npd = ir + lpm_ndxgpp1*jr + lpm_ndxygpp1*kl
-         npe = il + lpm_ndxgpp1*jl + lpm_ndxygpp1*kr
-         npf = ir + lpm_ndxgpp1*jl + lpm_ndxygpp1*kr
-         npg = il + lpm_ndxgpp1*jr + lpm_ndxygpp1*kr
-         nph = ir + lpm_ndxgpp1*jr + lpm_ndxygpp1*kr
+         npa = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+         npb = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+         npc = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+         npd = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+         npe = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+         npf = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+         npg = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
+         nph = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
          write(vtu,'(I0,A)',advance='no')  npa, ' '
          write(vtu,'(I0,A)',advance='no')  npb, ' '
          write(vtu,'(I0,A)',advance='no')  npc, ' '
@@ -756,7 +757,7 @@ c1511 continue
 
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_pos
@@ -764,35 +765,37 @@ c1511 continue
       endif
 
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       ! write points first
       call byte_open_mpi(vtufile,pth,.false.,ierr)
 
       ! point A
       icount_pos = 0
-      if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
+      if (ppiclf_nid .le. 
+     >    ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          icount_pos = 3
       endif
       idisp_pos  = ivtu_size + isize*(3   *stride_lenv(1) + 1)
-      rpoint(1)  = lpm_binx(1,1)
-      rpoint(2)  = lpm_biny(1,1)
-      rpoint(3)  = lpm_binz(1,1)
+      rpoint(1)  = ppiclf_binx(1,1)
+      rpoint(2)  = ppiclf_biny(1,1)
+      rpoint(3)  = ppiclf_binz(1,1)
       call byte_set_view(idisp_pos,pth)
       call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
 
       ! 3d
-      if (lpm_rparam(12) .gt. 2) then
+      if (ppiclf_rparam(12) .gt. 2) then
 
          ! point B
          icount_pos = 0
          idisp_pos  = ivtu_size + isize*(3   *stride_lenv(2) + 1)
-         if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         if (ibin .eq. lpm_ndxgp-1) then
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (ibin .eq. ppiclf_ndxgp-1) then
             icount_pos = 3
-            rpoint(1)  = lpm_binx(2,1)
-            rpoint(2)  = lpm_biny(1,1)
-            rpoint(3)  = lpm_binz(1,1)
+            rpoint(1)  = ppiclf_binx(2,1)
+            rpoint(2)  = ppiclf_biny(1,1)
+            rpoint(3)  = ppiclf_binz(1,1)
          endif
          endif
          call byte_set_view(idisp_pos,pth)
@@ -801,12 +804,13 @@ c1511 continue
          ! point C
          icount_pos = 0
          idisp_pos  = ivtu_size + isize*(3   *stride_lenv(3) + 1)
-         if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         if (jbin .eq. lpm_ndygp-1) then
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (jbin .eq. ppiclf_ndygp-1) then
             icount_pos = 3
-            rpoint(1)  = lpm_binx(1,1)
-            rpoint(2)  = lpm_biny(2,1)
-            rpoint(3)  = lpm_binz(1,1)
+            rpoint(1)  = ppiclf_binx(1,1)
+            rpoint(2)  = ppiclf_biny(2,1)
+            rpoint(3)  = ppiclf_binz(1,1)
          endif
          endif
          call byte_set_view(idisp_pos,pth)
@@ -815,12 +819,13 @@ c1511 continue
          ! point E
          icount_pos = 0
          idisp_pos  = ivtu_size + isize*(3   *stride_lenv(5) + 1)
-         if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         if (kbin .eq. lpm_ndzgp-1) then
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = lpm_binx(1,1)
-            rpoint(2)  = lpm_biny(1,1)
-            rpoint(3)  = lpm_binz(2,1)
+            rpoint(1)  = ppiclf_binx(1,1)
+            rpoint(2)  = ppiclf_biny(1,1)
+            rpoint(3)  = ppiclf_binz(2,1)
          endif
          endif
          call byte_set_view(idisp_pos,pth)
@@ -829,13 +834,14 @@ c1511 continue
          ! point D
          icount_pos = 0
          idisp_pos  = ivtu_size + isize*(3   *stride_lenv(4) + 1)
-         if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         if (ibin .eq. lpm_ndxgp-1) then
-         if (jbin .eq. lpm_ndygp-1) then
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (ibin .eq. ppiclf_ndxgp-1) then
+         if (jbin .eq. ppiclf_ndygp-1) then
             icount_pos = 3
-            rpoint(1)  = lpm_binx(2,1)
-            rpoint(2)  = lpm_biny(2,1)
-            rpoint(3)  = lpm_binz(1,1)
+            rpoint(1)  = ppiclf_binx(2,1)
+            rpoint(2)  = ppiclf_biny(2,1)
+            rpoint(3)  = ppiclf_binz(1,1)
          endif
          endif
          endif
@@ -845,13 +851,14 @@ c1511 continue
          ! point F
          icount_pos = 0
          idisp_pos  = ivtu_size + isize*(3   *stride_lenv(6) + 1)
-         if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         if (ibin .eq. lpm_ndxgp-1) then
-         if (kbin .eq. lpm_ndzgp-1) then
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (ibin .eq. ppiclf_ndxgp-1) then
+         if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = lpm_binx(2,1)
-            rpoint(2)  = lpm_biny(1,1)
-            rpoint(3)  = lpm_binz(2,1)
+            rpoint(1)  = ppiclf_binx(2,1)
+            rpoint(2)  = ppiclf_biny(1,1)
+            rpoint(3)  = ppiclf_binz(2,1)
          endif
          endif
          endif
@@ -861,13 +868,14 @@ c1511 continue
          ! point G
          icount_pos = 0
          idisp_pos  = ivtu_size + isize*(3   *stride_lenv(7) + 1)
-         if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         if (jbin .eq. lpm_ndygp-1) then
-         if (kbin .eq. lpm_ndzgp-1) then
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (jbin .eq. ppiclf_ndygp-1) then
+         if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = lpm_binx(1,1)
-            rpoint(2)  = lpm_biny(2,1)
-            rpoint(3)  = lpm_binz(2,1)
+            rpoint(1)  = ppiclf_binx(1,1)
+            rpoint(2)  = ppiclf_biny(2,1)
+            rpoint(3)  = ppiclf_binz(2,1)
          endif
          endif
          endif
@@ -877,14 +885,15 @@ c1511 continue
          ! point H
          icount_pos = 0
          idisp_pos  = ivtu_size + isize*(3   *stride_lenv(8) + 1)
-         if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
-         if (ibin .eq. lpm_ndxgp-1) then
-         if (jbin .eq. lpm_ndygp-1) then
-         if (kbin .eq. lpm_ndzgp-1) then
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (ibin .eq. ppiclf_ndxgp-1) then
+         if (jbin .eq. ppiclf_ndygp-1) then
+         if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = lpm_binx(2,1)
-            rpoint(2)  = lpm_biny(2,1)
-            rpoint(3)  = lpm_binz(2,1)
+            rpoint(1)  = ppiclf_binx(2,1)
+            rpoint(2)  = ppiclf_biny(2,1)
+            rpoint(3)  = ppiclf_binz(2,1)
          endif
          endif
          endif
@@ -900,19 +909,19 @@ c1511 continue
 
       call byte_close_mpi(pth,ierr)
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       if_cll = 1*isize*ncll_total
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_cll
         close(vtu)
       endif
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       ! write points first
       call byte_open_mpi(vtufile,pth,.false.,ierr)
@@ -922,7 +931,7 @@ c1511 continue
       idisp_cll = ivtu_size + isize*(3  *(nvtx_total) 
      >     + 1*stride_lenc + 2)
       icount_cll = 0
-      if (lpm_nid .le. lpm_ndxgp*lpm_ndygp*lpm_ndzgp-1) then
+      if (ppiclf_nid .le. ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          icount_cll = 1
       endif
       rpoint(1)  = real(nxx)
@@ -931,8 +940,8 @@ c1511 continue
 
       call byte_close_mpi(pth,ierr)
 
-      if (lpm_nid .eq. 0) then
-      vtu=867+lpm_nid
+      if (ppiclf_nid .eq. 0) then
+      vtu=867+ppiclf_nid
       open(unit=vtu,file=vtufile,status='old',position='append')
 
       write(vtu,'(A)',advance='yes') '</AppendedData>'
@@ -944,16 +953,16 @@ c1511 continue
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_write(filein1,iobig)
-#include "lpm_user.h"
-#include "lpm.h"
-#include "LPM"
+      subroutine ppiclf_io_vtu_write(filein1,iobig)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
       include 'mpif.h'
 
-      real*4  rout_pos(3      *LPM_LPART) 
-     >       ,rout_sln(LPM_LRS*LPM_LPART)
-     >       ,rout_lrp(LPM_LRP*LPM_LPART)
-     >       ,rout_lip(3      *LPM_LPART)
+      real*4  rout_pos(3      *PPICLF_LPART) 
+     >       ,rout_sln(PPICLF_LRS*PPICLF_LPART)
+     >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
+     >       ,rout_lip(3      *PPICLF_LPART)
 
       character*5 sprop1
       character*9 rprop1
@@ -969,15 +978,15 @@ c1511 continue
       data    icalld1 /0/
 
       logical partl         
-      integer vtu,vtu1,pth,prevs(2,lpm_np)
+      integer vtu,vtu1,pth,prevs(2,ppiclf_np)
       integer*4 iint
       integer*8 idisp_pos,idisp_sln,idisp_lrp,idisp_lip
       integer*8 stride_len
 
       icalld1 = icalld1+1
 
-      nnp   = lpm_np
-      nxx   = LPM_NPART
+      nnp   = ppiclf_np
+      nxx   = PPICLF_NPART
 
       npt_total = iglsum(nxx,1)
 
@@ -1000,8 +1009,8 @@ c1511 continue
 
       iadd = 0
       if_pos = 3      *isize*npt_total
-      if_sln = LPM_LRS*isize*npt_total
-      if_lrp = LPM_LRP*isize*npt_total
+      if_sln = PPICLF_LRS*isize*npt_total
+      if_lrp = PPICLF_LRP*isize*npt_total
       if_lip = 3      *isize*npt_total
 
       ic_pos = iadd
@@ -1011,33 +1020,33 @@ c1511 continue
       do i=1,nxx
 
          ic_pos = ic_pos + 1
-         rout_pos(ic_pos) = lpm_y(jx,i)
+         rout_pos(ic_pos) = ppiclf_y(jx,i)
          ic_pos = ic_pos + 1
-         rout_pos(ic_pos) = lpm_y(jy,i)
+         rout_pos(ic_pos) = ppiclf_y(jy,i)
 c        if (if3d) then
             ic_pos = ic_pos + 1
-            rout_pos(ic_pos) = lpm_y(jz,i)
+            rout_pos(ic_pos) = ppiclf_y(jz,i)
 c        else
 c           ic_pos = ic_pos + 1
 c           rout_pos(ic_pos) = 0.0
 c        endif
 
-         do j=1,LPM_LRS
+         do j=1,PPICLF_LRS
             ic_sln = ic_sln + 1
-            rout_sln(ic_sln) = lpm_y(j,i)
+            rout_sln(ic_sln) = ppiclf_y(j,i)
          enddo
 
-         do j=1,LPM_LRP
+         do j=1,PPICLF_LRP
             ic_lrp = ic_lrp + 1
-            rout_lrp(ic_lrp) = lpm_rprop(j,i)
+            rout_lrp(ic_lrp) = ppiclf_rprop(j,i)
          enddo
 
          ic_lip = ic_lip + 1
-         rout_lip(ic_lip) = lpm_iprop(5,i)
+         rout_lip(ic_lip) = ppiclf_iprop(5,i)
          ic_lip = ic_lip + 1
-         rout_lip(ic_lip) = lpm_iprop(6,i)
+         rout_lip(ic_lip) = ppiclf_iprop(6,i)
          ic_lip = ic_lip + 1
-         rout_lip(ic_lip) = lpm_iprop(7,i)
+         rout_lip(ic_lip) = ppiclf_iprop(7,i)
 
       enddo
 
@@ -1059,8 +1068,8 @@ c        endif
      >                 ndum,nnp,nglob,nkey)
 
       stride_len = 0
-      if (lpm_nid .ne. 0) then
-      do i=1,lpm_nid
+      if (ppiclf_nid .ne. 0) then
+      do i=1,ppiclf_nid
          stride_len = stride_len + prevs(2,i)
       enddo
       endif
@@ -1070,9 +1079,9 @@ c        endif
 ! ----------------------------------------------------
       write(vtufile,'(A3,I5.5,A4)') filein,icalld1,'.vtu'
 
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
 
-      vtu=867+lpm_nid
+      vtu=867+ppiclf_nid
       open(unit=vtu,file=vtufile,status='replace')
 
 ! ------------
@@ -1095,7 +1104,7 @@ c        endif
       write(vtu,'(A)',advance='no') 'Name="TIME" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '
-      write(vtu,'(E14.7)',advance='no') lpm_time
+      write(vtu,'(E14.7)',advance='no') ppiclf_time
       write(vtu,'(A)',advance='yes') ' </DataArray> '
 
       write(vtu,'(A)',advance='no') '   <DataArray '  ! cycle
@@ -1103,7 +1112,7 @@ c        endif
       write(vtu,'(A)',advance='no') 'Name="CYCLE" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '
-      write(vtu,'(I0)',advance='no') lpm_cycle
+      write(vtu,'(I0)',advance='no') ppiclf_cycle
       write(vtu,'(A)',advance='yes') ' </DataArray> '
 
       write(vtu,'(A)',advance='yes') '  </FieldData>'
@@ -1117,7 +1126,7 @@ c        endif
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call lpm_io_vtu_data(vtu,"Position",3   ,iint)
+      call ppiclf_io_vtu_data(vtu,"Position",3   ,iint)
       iint = iint + 3   *isize*npt_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
@@ -1126,13 +1135,13 @@ c        endif
 ! ----
       write(vtu,'(A)',advance='yes') '   <PointData>'
 
-      call lpm_io_vtu_data(vtu,'lpm-y',LPM_LRS,iint)
-      iint = iint + LPM_LRS*isize*npt_total + isize
+      call ppiclf_io_vtu_data(vtu,'ppiclf-y',PPICLF_LRS,iint)
+      iint = iint + PPICLF_LRS*isize*npt_total + isize
 
-      call lpm_io_vtu_data(vtu,'lpm-rprop',LPM_LRP,iint)
-      iint = iint + LPM_LRP*isize*npt_total + isize
+      call ppiclf_io_vtu_data(vtu,'ppiclf-rprop',PPICLF_LRP,iint)
+      iint = iint + PPICLF_LRP*isize*npt_total + isize
 
-      call lpm_io_vtu_data(vtu,'lpm-iprop',3,iint)
+      call ppiclf_io_vtu_data(vtu,'ppiclf-iprop',3,iint)
       iint = iint + 3*isize*npt_total + isize
 
       write(vtu,'(A)',advance='yes') '   </PointData> '
@@ -1174,31 +1183,31 @@ c        endif
       call bcast(ivtu_size, isize)
 
       ! byte-displacements
-      idisp_pos = ivtu_size + isize*(3   *stride_len + 1)
-      idisp_sln = ivtu_size + isize*(3   *npt_total + LPM_LRS*stride_len
+      idisp_pos = ivtu_size + isize*(3*stride_len + 1)
+      idisp_sln = ivtu_size + isize*(3*npt_total + PPICLF_LRS*stride_len
      >                      + 2)
-      idisp_lrp = ivtu_size + isize*(3   *npt_total  + LPM_LRS*npt_total
-     >                      + LPM_LRP*stride_len + 3)
-      idisp_lip = ivtu_size + isize*(3   *npt_total  + LPM_LRS*npt_total
-     >                      + LPM_LRP*npt_total + 3*stride_len + 4 )
+      idisp_lrp = ivtu_size + isize*(3*npt_total  + PPICLF_LRS*npt_total
+     >                      + PPICLF_LRP*stride_len + 3)
+      idisp_lip = ivtu_size + isize*(3*npt_total  + PPICLF_LRS*npt_total
+     >                      + PPICLF_LRP*npt_total + 3*stride_len + 4 )
 
       ! how much to write
       icount_pos = 3      *nxx
-      icount_sln = LPM_LRS*nxx
-      icount_lrp = LPM_LRP*nxx
+      icount_sln = PPICLF_LRS*nxx
+      icount_lrp = PPICLF_LRP*nxx
       icount_lip = 3      *nxx
 
       iorank = -1
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_pos
         close(vtu)
       endif
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       ! write
       call byte_open_mpi(vtufile,pth,.false.,ierr)
@@ -1206,17 +1215,17 @@ c        endif
       call byte_write_mpi(rout_pos,icount_pos,iorank,pth,ierr)
       call byte_close_mpi(pth,ierr)
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_sln
         close(vtu)
       endif
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       ! write
       call byte_open_mpi(vtufile,pth,.false.,ierr)
@@ -1225,14 +1234,14 @@ c        endif
       call byte_close_mpi(pth,ierr)
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_lrp
         close(vtu)
       endif
 
-      call mpi_barrier(lpm_comm,ierr)
+      call mpi_barrier(ppiclf_comm,ierr)
 
       ! write
       call byte_open_mpi(vtufile,pth,.false.,ierr)
@@ -1241,7 +1250,7 @@ c        endif
       call byte_close_mpi(pth,ierr)
 
       ! integer write
-      if (lpm_nid .eq. 0) then
+      if (ppiclf_nid .eq. 0) then
         open(unit=vtu,file=vtufile,access='stream',form="unformatted"
      >      ,position='append')
         write(vtu) if_lip
@@ -1254,8 +1263,8 @@ c        endif
       call byte_write_mpi(rout_lip,icount_lip,iorank,pth,ierr)
       call byte_close_mpi(pth,ierr)
 
-      if (lpm_nid .eq. 0) then
-      vtu=867+lpm_nid
+      if (ppiclf_nid .eq. 0) then
+      vtu=867+ppiclf_nid
       open(unit=vtu,file=vtufile,status='old',position='append')
 
       write(vtu,'(A)',advance='yes') '</AppendedData>'
@@ -1267,7 +1276,7 @@ c        endif
       return
       end
 !-----------------------------------------------------------------------
-      subroutine lpm_io_vtu_data(vtu,dataname,ncomp,idist)
+      subroutine ppiclf_io_vtu_data(vtu,dataname,ncomp,idist)
 
       integer vtu,ncomp
       integer*4 idist
