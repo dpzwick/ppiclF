@@ -1,5 +1,7 @@
 !-----------------------------------------------------------------------
       subroutine lpm_comm_setup
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
 c     call lpm_comm_interp_setup(i_fp_hndl,0.0,idum,lpm_nelt)
@@ -9,6 +11,8 @@ c     call lpm_comm_interp_setup(i_fp_hndl,0.0,idum,lpm_nelt)
       end
 !-----------------------------------------------------------------------
       subroutine lpm_comm_interp_setup(ih,tolin,nmsh,nelm)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       ! need to add xm1, etc in LPM for this case
@@ -79,6 +83,8 @@ c     ih_intp(2,ih) = ih_intp2
       end
 !-----------------------------------------------------------------------
       subroutine lpm_comm_bin_setup
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
@@ -503,6 +509,8 @@ c     enddo
       end
 c-----------------------------------------------------------------------
       subroutine lpm_comm_findpts
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
 c     common /intp_h/ ih_intp(2,1)
@@ -555,6 +563,8 @@ c    $        , lpm_y     (iz,1),LPM_LRS ,LPM_NPART) !   &             pts(2*n+1
       end
 !-----------------------------------------------------------------------
       subroutine lpm_comm_crystal
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       logical partl    
@@ -622,6 +632,8 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine lpm_comm_ghost_create
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       character*132 deathmessage
@@ -676,6 +688,7 @@ c CREATING GHOST PARTICLES
       lpm_npart_gp = 0
 
       rfac = 1.0
+
 
       do ip=1,lpm_npart
 
@@ -766,7 +779,7 @@ c CREATING GHOST PARTICLES
 
             iflgsum = iflgx + iflgy + iflgz
             ndumn = iig + lpm_ndxgp*jjg + lpm_ndxgp*lpm_ndygp*kkg
-            nrank = modulo(ndumn,np)
+            nrank = ndumn
 
             if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
 
@@ -860,7 +873,7 @@ c CREATING GHOST PARTICLES
 
             iflgsum = iflgx + iflgy + iflgz
             ndumn = iig + lpm_ndxgp*jjg + lpm_ndxgp*lpm_ndygp*kkg
-            nrank = modulo(ndumn,np)
+            nrank = ndumn
 
             if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
 
@@ -897,6 +910,7 @@ c CREATING GHOST PARTICLES
             enddo
   222 continue
          enddo
+
 
          ! corners
          do ifc=1,ncornergp
@@ -954,7 +968,7 @@ c CREATING GHOST PARTICLES
 
             iflgsum = iflgx + iflgy + iflgz
             ndumn = iig + lpm_ndxgp*jjg + lpm_ndxgp*lpm_ndygp*kkg
-            nrank = modulo(ndumn,np)
+            nrank = ndumn
 
             if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
 
@@ -998,6 +1012,8 @@ c CREATING GHOST PARTICLES
       end
 c----------------------------------------------------------------------
       subroutine lpm_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 c
       real rxnew(3), rxdrng(3)
@@ -1078,6 +1094,8 @@ c
 c----------------------------------------------------------------------
       subroutine lpm_comm_ghost_send
 c
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       logical partl         

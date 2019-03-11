@@ -1,5 +1,7 @@
 c-----------------------------------------------------------------------
       subroutine gop( x, w, op, n)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
 
@@ -25,6 +27,8 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine igop( x, w, op, n)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
 
@@ -127,6 +131,8 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
 
@@ -162,6 +168,8 @@ c     call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
 c    &                       MPI_STATUS_IGNORE,ierr)
 c--------------------------------------------------------------------------
       subroutine byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
 
@@ -194,6 +202,8 @@ c--------------------------------------------------------------------------
       end
 C--------------------------------------------------------------------------
       subroutine bcast(buf,len)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
       real*4 buf(1)

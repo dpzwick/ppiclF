@@ -1,32 +1,70 @@
-FC = mpif77
-FFLAGS =
-ENAME = test.out
+FC               = mpif77
+FFLAGS          += -fdefault-real-8   \
+                   -fdefault-double-8 \
+	           -cpp               \
+          	   -fbacktrace        \
+	           -Wall
+INSTALL_LOCATION = .
 
-GSLIB_PREFIX=gslib_
-GSLIB_FPREFIX=fgslib_
-GSLIB_IFLAGS=-DPREFIX=$(GSLIB_PREFIX) -DFPREFIX=$(GSLIB_FPREFIX) -DGLOBAL_LONG_LONG
+####################
+# DO NOT TOUCH BELOW
+####################
 
-SOURCE_ROOT_GSLIB=3rd_party/gslib
+# PPICLF LIBRARY
+SOURCE_ROOT_PPICLF=$(INSTALL_LOCATION)/source
+PPICLF_IFLAGS+=-I$(SOURCE_ROOT_PPICLF)
+
+# GSLIB LIBRARY
+GSLIB_IFLAGS = -DPREFIX=gslib_   \
+               -DFPREFIX=fgslib_ \
+	       -DGLOBAL_LONG_LONG
+SOURCE_ROOT_GSLIB=$(INSTALL_LOCATION)/3rd_party/gslib
 GSLIB_IFLAGS+=-I$(SOURCE_ROOT_GSLIB)/include
-USR_LFLAGS+=-L$(SOURCE_ROOT_GSLIB)/lib -lgs
 
-FFLAGS+=-fdefault-real-8 -fdefault-double-8 -cpp
+SRC = $(SOURCE_ROOT_PPICLF)/lpm_user.f     \
+      $(SOURCE_ROOT_PPICLF)/lpm_comm.f     \
+      $(SOURCE_ROOT_PPICLF)/lpm_comm_mpi.f \
+      $(SOURCE_ROOT_PPICLF)/lpm_io.f       \
+      $(SOURCE_ROOT_PPICLF)/lpm_solve.f
+OBJ = $(SOURCE_ROOT_PPICLF)/lpm_user.o     \
+      $(SOURCE_ROOT_PPICLF)/lpm_comm.o     \
+      $(SOURCE_ROOT_PPICLF)/lpm_comm_mpi.o \
+      $(SOURCE_ROOT_PPICLF)/lpm_io.o       \
+      $(SOURCE_ROOT_PPICLF)/lpm_solve.o
 
-#src = test.f lib/lpm_comm.f lib/lpm_io.f lib/lpm_solve.f
-#obj = test.o lib/lpm_comm.o lib/lpm_io.o lib/lpm_solve.o
+# Make commands
+default: makeThird getObjs libObjs 
 
-src = test.f 
-obj = test.o 
+libObjs: $(OBJ)
+	@ar crv $(SOURCE_ROOT_PPICLF)/libppiclF.a $(OBJ) 
+	@echo "                       "
+	@echo "***********************"
+	@echo "*** LIBRARY SUCCESS ***"
+	@echo "***********************"
+	@echo "                       "
 
-default: getObjs linkObjs 
+getObjs: $(SRC)
+	$(FC) $(FFLAGS) -c $(SRC) $(GSLIB_IFLAGS) $(PPICLF_IFLAGS)
+	mv *.o $(SOURCE_ROOT_PPICLF)
+	@echo "                              "
+	@echo "******************************"
+	@echo "*** LIBRARY OBJECT SUCCESS ***"
+	@echo "******************************"
+	@echo "                              "
 
-linkObjs:  $(obj)
-	$(FC) $(FFLAGS) -o $(ENAME) $(obj) $(USR_LFLAGS)
-	@echo LINK SUCCESS 
-
-getObjs: $(src)
-	$(FC) $(FFLAGS) -c $(src) $(GSLIB_IFLAGS)
-	@echo OBJECT SUCCESS
+makeThird: $(SOURCE_ROOT_GSLIB)/install
+	cd $(SOURCE_ROOT_GSLIB); \
+	./install
+	@echo "                       "
+	@echo "***********************"
+	@echo "*** INSTALLED GSLIB ***"
+	@echo "***********************"
+	@echo "                       "
 
 clean:
-	rm $(ENAME) *.o
+	@rm -r $(SOURCE_ROOT_PPICLF)/*.o         \
+	       $(SOURCE_ROOT_PPICLF)/libppiclF.a \
+	       $(SOURCE_ROOT_GSLIB)/gslib        \
+	       $(SOURCE_ROOT_GSLIB)/lib          \
+	       $(SOURCE_ROOT_GSLIB)/include      \
+	       $(SOURCE_ROOT_GSLIB)/*.tar.gz

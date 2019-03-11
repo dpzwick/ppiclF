@@ -24,7 +24,7 @@ c Particle options
       PARAMETER(LPM_NPARAM = 100)
       COMMON /LPM_PARAM_R/  LPM_RPARAM
       REAL  LPM_RPARAM(LPM_NPARAM)     ! Specified particle parameters
-      COMMON /LPM_PARAM_L/  LPM_RESTART
+c     COMMON /LPM_PARAM_L/  LPM_RESTART
       LOGICAL LPM_RESTART
       DATA LPM_RESTART /.false./
 

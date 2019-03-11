@@ -1,5 +1,7 @@
 !-----------------------------------------------------------------------
       subroutine lpm_io_vtu_write_grd(filein1,iobig)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
 
@@ -31,6 +33,10 @@
       integer icount_pos(LPM_BX1, LPM_BY1, LPM_BZ1)
 
       real*4 rpoint(3)
+
+      call lpm_comm_ghost_create
+      call lpm_comm_ghost_send
+      call lpm_solve_project_bins
 
       icalld1 = icalld1+1
 
@@ -480,6 +486,8 @@ c1511 continue
       end
 !-----------------------------------------------------------------------
       subroutine lpm_io_vtu_write_bins(filein1,iobig)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
 
@@ -937,6 +945,8 @@ c1511 continue
       end
 !-----------------------------------------------------------------------
       subroutine lpm_io_vtu_write(filein1,iobig)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
       include 'mpif.h'
 

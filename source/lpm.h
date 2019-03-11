@@ -58,7 +58,7 @@ c max gridpts per processor
 #define LPM_BZ1 1
 #endif
 
-#include "lpm_solve.f"
-#include "lpm_comm.f"
-#include "lpm_comm_mpi.f"
-#include "lpm_io.f"
+c#include "lpm_solve.f"
+c#include "lpm_comm.f"
+c#include "lpm_comm_mpi.f"
+c#include "lpm_io.f"

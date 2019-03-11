@@ -1,5 +1,7 @@
 !-----------------------------------------------------------------------
       subroutine lpm_init(rparam,y,npart,time_)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       real     y(*)
@@ -38,6 +40,8 @@ c     ! two-way coupling init
       end
 !-----------------------------------------------------------------------
       subroutine lpm_rparam_set(rparam)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       real rparam(*)
@@ -82,6 +86,8 @@ c     call rzero(lpm_rparam, lpm_nparam)
       end
 !-----------------------------------------------------------------------
       subroutine lpm_init_filter
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       rsig  = 0.0
@@ -188,6 +194,8 @@ c     lpm_d2chk(2)  = glmax(lpm_d2chk(2),1)
       end
 c----------------------------------------------------------------------
       subroutine lpm_tag_set
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       do i=1,lpm_npart
@@ -200,6 +208,8 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine lpm_tag_init
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       if (.not. LPM_RESTART) then
@@ -214,6 +224,8 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine lpm_solve(time_,y,ydot)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       real time_
@@ -226,6 +238,8 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine lpm_rk3_driver(time_,y,ydot)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       real time_
@@ -261,6 +275,8 @@ c----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
       subroutine lpm_interpolate_setup
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       call lpm_move_outlier
@@ -272,6 +288,8 @@ c----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
       subroutine lpm_interpolate_fld(jp,fld)
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       common /intp_h/ ih_intp(2,1)
@@ -309,6 +327,8 @@ c    >                           ,fld)
       end
 c----------------------------------------------------------------------
       subroutine lpm_project
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       if (int(lpm_rparam(4)) .ne. 1) then
@@ -321,6 +341,8 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine lpm_rk3_coeff
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       rk3coef(1,1) = 0.0
@@ -337,6 +359,8 @@ c----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
       subroutine lpm_move_outlier
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       integer in_part(LPM_LPART), jj(3), iperiodicx, iperiodicy,
@@ -408,6 +432,8 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine lpm_solve_project
+#include "lpm_user.h"
+#include "lpm.h"
 #include "LPM"
 
       real    multfci
@@ -480,50 +506,145 @@ c     lpm_npart_gp = 0
          enddo
                     
          iproj(1,ip+lpm_npart) = 
-     >       floor( (rproj(2,ip) - lpm_binx(1,1))/lpm_rdx)
+     >       floor( (rproj(2,ip+lpm_npart) - lpm_binx(1,1))/lpm_rdx)
          iproj(2,ip+lpm_npart) = 
-     >       floor( (rproj(3,ip) - lpm_biny(1,1))/lpm_rdy)
+     >       floor( (rproj(3,ip+lpm_npart) - lpm_biny(1,1))/lpm_rdy)
          iproj(3,ip+lpm_npart) = 
-     >       floor( (rproj(4,ip) - lpm_binz(1,1))/lpm_rdz)
+     >       floor( (rproj(4,ip+lpm_npart) - lpm_binz(1,1))/lpm_rdz)
       enddo
 
       ndum = lpm_npart+lpm_npart_gp
 c     ndum = lpm_npart_gp
 c     ndum = lpm_npart
 
+      idum = floor(lpm_rparam(5)/2.0/lpm_rdx
+     >    *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+      jdum = floor(lpm_rparam(5)/2.0/lpm_rdy
+     >    *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+      kdum = floor(lpm_rparam(5)/2.0/lpm_rdz
+     >    *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+
+      do ip=1,ndum
+      ! project here
+      enddo
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine lpm_solve_project_bins
+#include "lpm_user.h"
+#include "lpm.h"
+#include "LPM"
+
+      real    multfci
+      integer e
+
+      real    rproj(1+LPM_LRP_GP,LPM_LPART+LPM_LPART_GP)
+      integer iproj(4,LPM_LPART+LPM_LPART_GP)
+
+      logical partl
+
+      real pi
+
+      PI=4.D0*DATAN(1.D0)
+
+      nxyz = LPM_BX1*LPM_BY1*LPM_BZ1
+
+      nxyzdum = nxyz*LPM_LRP_PRO
+      do i=1,nxyzdum
+         lpm_grid_fld(i,1,1,1) = 0.0
+      enddo
+
+      d2chk2_sq = lpm_d2chk(2)**2
+
+      ! real particles
+      lpm_jxgp  = 1
+      lpm_jygp  = 2
+      lpm_jzgp  = 3
+
+c     lpm_npart_gp = 0
+
+      ! real particles
+      do ip=1,lpm_npart
+         rsig    = lpm_rparam(5)/(2.*sqrt(2.*log(2.)))
+         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
+         if (lpm_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         rbexpi   = 1./(-2.*rsig**2)
+
+         rproj(1 ,ip) = rbexpi
+         rproj(2 ,ip) = lpm_cp_map(lpm_jxgp,ip)
+         rproj(3 ,ip) = lpm_cp_map(lpm_jygp,ip)
+         rproj(4 ,ip) = lpm_cp_map(lpm_jzgp,ip)
+
+
+         do j=5,LPM_LRP_GP+1
+            rproj(j,ip) = lpm_cp_map(j-1,ip)*multfci
+         enddo
+                    
+         iproj(1,ip) = 
+     >       floor( (rproj(2,ip) - lpm_binx(1,1))/lpm_rdx)
+         iproj(2,ip) = 
+     >       floor( (rproj(3,ip) - lpm_biny(1,1))/lpm_rdy)
+         iproj(3,ip) = 
+     >       floor( (rproj(4,ip) - lpm_binz(1,1))/lpm_rdz)
+      enddo
+
+      ! ghost particles
+      do ip=1,lpm_npart_gp
+         rsig    = lpm_rparam(5)/(2.*sqrt(2.*log(2.)))
+         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
+         if (lpm_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         rbexpi   = 1./(-2.*rsig**2)
+
+         rproj(1 ,ip+lpm_npart) = rbexpi
+         rproj(2 ,ip+lpm_npart) = lpm_rprop_gp(lpm_jxgp,ip)
+         rproj(3 ,ip+lpm_npart) = lpm_rprop_gp(lpm_jygp,ip)
+         rproj(4 ,ip+lpm_npart) = lpm_rprop_gp(lpm_jzgp,ip)
+
+         do j=5,LPM_LRP_GP+1
+            rproj(j,ip+lpm_npart) = lpm_rprop_gp(j-1,ip)*multfci
+         enddo
+                    
+         iproj(1,ip+lpm_npart) = 
+     >       floor( (rproj(2,ip+lpm_npart) - lpm_binx(1,1))/lpm_rdx)
+         iproj(2,ip+lpm_npart) = 
+     >       floor( (rproj(3,ip+lpm_npart) - lpm_biny(1,1))/lpm_rdy)
+         iproj(3,ip+lpm_npart) = 
+     >       floor( (rproj(4,ip+lpm_npart) - lpm_binz(1,1))/lpm_rdz)
+      enddo
+
+      ndum = lpm_npart+lpm_npart_gp
+c     ndum = lpm_npart_gp
+c     ndum = lpm_npart
+
+      idum = floor(lpm_rparam(5)/2.0/lpm_rdx
+     >    *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+      jdum = floor(lpm_rparam(5)/2.0/lpm_rdy
+     >    *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+      kdum = floor(lpm_rparam(5)/2.0/lpm_rdz
+     >    *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
+
 c     if (int(lpm_rparam(3)) .eq. 1) then
-
-         iadd = floor(lpm_rparam(6)/2.0/lpm_rdx
-     >             *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
-         jadd = floor(lpm_rparam(6)/2.0/lpm_rdy
-     >             *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
-         kadd = floor(lpm_rparam(6)/2.0/lpm_rdz
-     >             *sqrt(-log(lpm_rparam(7))/log(2.0)))+1
-
-         write(6,*) iadd,jadd,kadd, lpm_bx, lpm_by, lpm_bz
-
-
          do ip=1,ndum
             iip = iproj(1,ip)
             jjp = iproj(2,ip)
             kkp = iproj(3,ip)
 
-c           il = iip - 1
-c           ir = iip + 1
-c           jl = jjp - 1
-c           jr = jjp + 1
-c           kl = kkp - 1
-c           kr = kkp + 1
+            il  = max(1     ,iip-idum)
+            ir  = min(lpm_bx,iip+idum)
+            jl  = max(1     ,jjp-jdum)
+            jr  = min(lpm_by,jjp+jdum)
+            kl  = max(1     ,kkp-kdum)
+            kr  = min(lpm_bz,kkp+kdum)
 
-            ii = modulo(iip,lpm_ndxgp)
-            jj = modulo(jjp,lpm_ndygp)
-            kk = modulo(kkp,lpm_ndzgp)
+c           write(6,*) il,ir,jl,jr,kl,kr
 
-
-
-            do k=1,lpm_bz
-            do j=1,lpm_by
-            do i=1,lpm_bx
+c           do k=1,lpm_bz
+c           do j=1,lpm_by
+c           do i=1,lpm_bx
+            do k=kl,kr
+            do j=jl,jr
+            do i=il,ir
     
 c              if (lpm_grid_ii(i,j,k) .gt. ir) cycle
 c              if (lpm_grid_ii(i,j,k) .lt. il) cycle

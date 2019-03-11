@@ -1,45 +1,10 @@
-C> Example doxygen comment
-c Maximum number of real particles on a processor
-#define LPM_LPART 50000
-
-#define LPM_BX1 100
-#define LPM_BY1 100
-#define LPM_BZ1 100
-
-c Number of particle equations being solved
-#define LPM_LRS 6
-
-#define LPM_JX  1
-#define LPM_JY  2
-#define LPM_JZ  3
-#define LPM_JVX 4
-#define LPM_JVY 5
-#define LPM_JVZ 6
-
-c Number of real properties for a particle
-#define LPM_LRP 6
-
-#define LPM_R_JRHOP 1
-#define LPM_R_JDP   2
-#define LPM_R_JVOLP 3
-#define LPM_R_JUX   4
-#define LPM_R_JUY   5
-#define LPM_R_JUZ   6
-
-C Number of properties to project
-#define LPM_LRP_PRO 1
-
-#define LPM_P_JPHIP 1   
-
-#define LPM_INCLUDE "lib/LPM"
-#define LPM_HEADER  "lib/lpm.h"
-#include LPM_HEADER
-
 !-----------------------------------------------------------------------
 c main code below
 !-----------------------------------------------------------------------
       program test
-#include LPM_INCLUDE
+#include "lpm_user.h"
+#include "lpm.h"
+#include "LPM"
       include 'mpif.h' 
 
       real rparam(lpm_nparam) 
@@ -55,7 +20,7 @@ c main code below
       rparam(4)  = 0           ! use 1 for tracers only
       rparam(5)  = 0.1        ! filter width in real units
       rparam(6)  = 4           ! how many grid points to resolve filter over
-      rparam(7)  = 1E-1        ! percent decay of Gaussian filter
+      rparam(7)  = 1E-2        ! percent decay of Gaussian filter
       rparam(8)  = 1           ! periodic in x (== 0) ! dont do periodic without bounds!!!
       rparam(9)  = 1           ! periodic in y (== 0)
       rparam(10) = 1           ! periodic in z (== 0)
@@ -65,12 +30,14 @@ c main code below
       call init_particles(lpm_y,npart)
 c     call lpm_io_vtu_read('new99999.vtu',npart)
       call lpm_init      (rparam,lpm_y,npart,0.0) 
+
       ! time loop
       iostep = 100
       nstep  = 1000
       do lpm_cycle=1,nstep
          lpm_time = (lpm_cycle-1)*lpm_dt
          call lpm_solve(lpm_time,lpm_y,lpm_ydot)
+
 
          if(mod(lpm_cycle,iostep) .eq. 0) then
              call lpm_io_vtu_write('',0)
@@ -94,7 +61,9 @@ c            call lpm_io_vtu_write_bins('',0)
       end
 !-----------------------------------------------------------------------
       subroutine init_particles(y,npart)
-#include LPM_INCLUDE
+#include "lpm_user.h"
+#include "lpm.h"
+#include "LPM"
 
       real      y(*)
       real      pi
@@ -122,78 +91,6 @@ c            call lpm_io_vtu_write_bins('',0)
          lpm_rprop(LPM_R_JDP  ,i) = dp
          lpm_rprop(LPM_R_JVOLP,i) = pi/6.0*lpm_rprop(LPM_R_JDP,i)**3
       enddo
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine lpm_fun(time_,y,ydot)
-#include LPM_INCLUDE
-
-      real time_
-      real y(*)
-      real ydot(*)
-
-c setup interpolation
-      call lpm_interpolate_setup
-c setup interpolation
-
-C interpolate fields
-c     call lpm_interpolate_fld(LPM_R_JUX  , vx_e    )
-c     call lpm_interpolate_fld(LPM_R_JUY  , vy_e    )
-c     call lpm_interpolate_fld(LPM_R_JUZ  , vz_e    )
-C interpolate fields
-
-c evaluate ydot
-      do i=1,lpm_npart
-         ! striding solution y vector
-         j = LPM_LRS*(i-1)
-
-         ! fluid viscosity
-         rmu   = 1.8E-5
-
-         ! particle mass
-         rmass = lpm_rprop(LPM_R_JVOLP,i)*lpm_rprop(LPM_R_JRHOP,i)
-
-         ! Stokes drag force
-         rdum  = 18.0*rmu/lpm_rprop(LPM_R_JDP,i)**2
-         rdum  = rdum*lpm_rprop(LPM_R_JVOLP,i)
-         fqsx  = rdum*(lpm_rprop(LPM_R_JUX,i) - y(LPM_JVX+j))
-         fqsy  = rdum*(lpm_rprop(LPM_R_JUY,i) - y(LPM_JVY+j))
-         fqsz  = rdum*(lpm_rprop(LPM_R_JUZ,i) - y(LPM_JVZ+j))
-
-         ! Gravity
-         fbx  = 0.0
-         fby  = -9.8*rmass
-         fbz  = 0.0
-
-         ! set ydot for all LPM_SLN number of equations
-         ydot(LPM_JX +j) = y(LPM_JVX +j)
-         ydot(LPM_JY +j) = y(LPM_JVY +j)
-         ydot(LPM_JZ +j) = y(LPM_JVZ +j)
-         ydot(LPM_JVX+j) = (fqsx+fbx)/rmass
-         ydot(LPM_JVY+j) = (fqsy+fby)/rmass
-         ydot(LPM_JVZ+j) = (fqsz+fbz)/rmass
-      enddo 
-c evaluate ydot
-
-c project fields
-      call lpm_project
-c project fields
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine lpm_project_map(map,y,ydot,ydotc,rprop)
-c
-c     map Lagrangian quantity to Eulerian field
-c
-      real map(*)
-      real y(*)
-      real ydot(*)
-      real ydotc(*)
-      real rprop(*)
-
-      map(LPM_P_JPHIP) = rprop(LPM_R_JVOLP)   ! particle volume
 
       return
       end
