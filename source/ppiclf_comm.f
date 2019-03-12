@@ -92,9 +92,6 @@ c     ih_intp(2,ih) = ih_intp2
       integer  ifac(3), icount(3)
       real     d2new(3)
 
-      real                      ppiclf_xerange(2,3,ppiclf_lbmax)
-      common /ppiclf_elementrange/ ppiclf_xerange
-
 c     face, edge, and corner number, x,y,z are all inline, so stride=3
       el_face_num = (/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /)
       el_edge_num = (/ -1,-1,0 , 1,-1,0, 1,1,0 , -1,1,0 ,

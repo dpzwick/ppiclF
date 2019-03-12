@@ -30,3 +30,9 @@ C Number of properties to project
 #define PPICLF_LRP_PRO 1
 
 #define PPICLF_P_JPHIP 1   
+
+C Projection grid
+#define PPICLF_LEX 6
+#define PPICLF_LEY 6
+#define PPICLF_LEZ 6
+#define PPICLF_LEE 20

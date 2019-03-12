@@ -91,28 +91,44 @@ C Ghost particles
       COMMON /PPICLF_PRO_FLD_MAP/ PPICLF_CP_MAP
       REAL  PPICLF_CP_MAP(PPICLF_LRP_GP,PPICLF_LPART)
 
-      INTEGER PPICLF_LBMAX
-      PARAMETER(PPICLF_LBMAX = 50*PPICLF_LELT)
       COMMON /PPICLF_PRO_FLD_CR/ PPICLF_PRO_FLD,PPICLF_PRO_FLDB
      >                          ,PPICLF_XM1B
-      REAL PPICLF_PRO_FLD (PPICLF_LX1,PPICLF_LY1,PPICLF_LZ1,PPICLF_LELT
+      REAL PPICLF_PRO_FLD (PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE
      >                    ,PPICLF_LRP_PRO),
-     >     PPICLF_PRO_FLDB(PPICLF_LX1,PPICLF_LY1,PPICLF_LZ1
-     >                    ,PPICLF_LRP_PRO,PPICLF_LBMAX),
-     >     PPICLF_XM1B    (PPICLF_LX1,PPICLF_LY1,PPICLF_LZ1,3
-     >                    ,PPICLF_LBMAX)
+     >     PPICLF_PRO_FLDB(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ
+     >                    ,PPICLF_LRP_PRO,PPICLF_LEE),
+     >     PPICLF_XM1B    (PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,3
+     >                    ,PPICLF_LEE)
 
       INTEGER PPICLF_LRMAX
       PARAMETER(PPICLF_LRMAX = 6)
       COMMON /PPICLF_PRO_FLD_CI/ PPICLF_ER_MAP,PPICLF_ER_MAPC
      >                        ,PPICLF_ER_MAPS,PPICLF_EL_MAP
      >                        ,PPICLF_MODGP,PPICLF_NELTB,PPICLF_NELTBB
-      INTEGER PPICLF_ER_MAP (PPICLF_LRMAX,PPICLF_LBMAX),
-     >        PPICLF_ER_MAPC(PPICLF_LRMAX,PPICLF_LBMAX),
-     >        PPICLF_ER_MAPS(PPICLF_LRMAX,PPICLF_LBMAX),
-     >        PPICLF_MODGP  (PPICLF_LX1,PPICLF_LY1,PPICLF_LZ1
-     >                      ,PPICLF_LBMAX,4),
-     >        PPICLF_EL_MAP (8,PPICLF_LBMAX), PPICLF_NELTB,PPICLF_NELTBB
+      INTEGER PPICLF_ER_MAP (PPICLF_LRMAX,PPICLF_LEE),
+     >        PPICLF_ER_MAPC(PPICLF_LRMAX,PPICLF_LEE),
+     >        PPICLF_ER_MAPS(PPICLF_LRMAX,PPICLF_LEE),
+     >        PPICLF_MODGP  (PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ
+     >                      ,PPICLF_LEE,4),
+     >        PPICLF_EL_MAP (8,PPICLF_LEE), PPICLF_NELTB,PPICLF_NELTBB
+
+
+
+
+
+
+      integer ppiclf_nee
+      common /ppiclf_external_grid_i/ ppiclf_nee
+
+      real ppiclf_gride_x(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE),
+     >     ppiclf_gride_y(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE),
+     >     ppiclf_gride_z(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
+      common /ppiclf_external_grid_r/
+     >              ppiclf_gride_x,ppiclf_gride_y,ppiclf_gride_z
+
+
+
+
 
       INTEGER PPICLF_LIP_GP
       PARAMETER(PPICLF_LIP_GP = 5)

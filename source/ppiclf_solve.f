@@ -55,7 +55,7 @@ c     call rzero(ppiclf_rparam, ppiclf_nparam)
       if (rparam(1) .eq. 0) then
          ppiclf_rparam(1)  = 0        ! use custom values
          ppiclf_rparam(2)  = 1        ! time integration method
-         ppiclf_rparam(3)  = PPICLF_LX1  ! polynomial order of mesh
+         ppiclf_rparam(3)  = PPICLF_LEX  ! polynomial order of mesh
          ppiclf_rparam(4)  = 1        ! use 1 for tracers only
          ppiclf_rparam(5)  = 0        ! filter size in real units
 
@@ -78,7 +78,7 @@ c        if (wdsize.eq.4) tol = 1.e-6
          if (abs(ppiclf_rparam(2)) .lt. tol  ) 
      >      ppiclf_rparam(2) = 1
          if (abs(ppiclf_rparam(3)) .lt. tol  ) 
-     >      ppiclf_rparam(3) = PPICLF_LX1
+     >      ppiclf_rparam(3) = PPICLF_LEX
 
       endif
 
@@ -451,15 +451,19 @@ c----------------------------------------------------------------------
       real    rproj(1+PPICLF_LRP_GP,PPICLF_LPART+PPICLF_LPART_GP)
       integer iproj(4,PPICLF_LPART+PPICLF_LPART_GP)
 
+      integer ppiclf_jxgp,ppiclf_jygp,ppiclf_jzgp
+
+      logical partl
+
       real pi
 
       PI=4.D0*DATAN(1.D0)
 
-      nxyz = PPICLF_BX1*PPICLF_BY1*PPICLF_BZ1
+      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
 
-      nxyzdum = nxyz*PPICLF_LRP_PRO
+      nxyzdum = nxyz*PPICLF_LRP_PRO*PPICLF_LEE
       do i=1,nxyzdum
-         ppiclf_grid_fld(i,1,1,1) = 0.0
+         ppiclf_pro_fldb(i,1,1,1,1) = 0.0
       enddo
 
       d2chk2_sq = ppiclf_d2chk(2)**2
@@ -524,15 +528,85 @@ c     ppiclf_npart_gp = 0
 c     ndum = ppiclf_npart_gp
 c     ndum = ppiclf_npart
 
-      idum = floor(ppiclf_rparam(5)/2.0/ppiclf_rdx
-     >    *sqrt(-log(ppiclf_rparam(7))/log(2.0)))+1
-      jdum = floor(ppiclf_rparam(5)/2.0/ppiclf_rdy
-     >    *sqrt(-log(ppiclf_rparam(7))/log(2.0)))+1
-      kdum = floor(ppiclf_rparam(5)/2.0/ppiclf_rdz
-     >    *sqrt(-log(ppiclf_rparam(7))/log(2.0)))+1
-
       do ip=1,ndum
-      ! project here
+         iip = iproj(1,ip)
+         jjp = iproj(2,ip)
+         kkp = iproj(3,ip)
+
+         do ie=1,ppiclf_neltb
+         do k=1,PPICLF_LEZ
+         do j=1,PPICLF_LEY
+         do i=1,PPICLF_LEX
+    
+c           if (ppiclf_grid_ii(i,j,k) .gt. ir) cycle
+c           if (ppiclf_grid_ii(i,j,k) .lt. il) cycle
+c           if (ppiclf_grid_jj(i,j,k) .gt. jr) cycle
+c           if (ppiclf_grid_jj(i,j,k) .lt. jl) cycle
+c           if (ppiclf_grid_kk(i,j,k) .gt. kr) cycle
+c           if (ppiclf_grid_kk(i,j,k) .lt. kl) cycle
+
+
+            rdist2  = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))**2 +
+     >                (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))**2
+            if(ppiclf_rparam(12) .gt. 2) rdist2 = rdist2 +
+     >                (ppiclf_xm1b(i,j,k,3,ie) - rproj(4,ip))**2
+
+            if (rdist2 .gt. d2chk2_sq) cycle
+
+c           write(6,*) 'Made itt', ppiclf_grid_x(i,j,k)
+c    >                           , ppiclf_grid_y(i,j,k)
+c    >                           , ppiclf_grid_z(i,j,k)
+
+         
+            rexp = exp(rdist2*rproj(1,ip))
+            
+            do jj=1,PPICLF_LRP_PRO
+               j1 = jj+4
+               ppiclf_pro_fldb(i,j,k,jj,ie) = 
+     >                         ppiclf_pro_fldb(i,j,k,jj,ie) 
+     >                       + rproj(j1,ip)*rexp
+            enddo
+         enddo
+         enddo
+         enddo
+         enddo
+      enddo
+
+      ! now send xm1b to the processors in nek that hold xm1
+
+      neltbc = ppiclf_neltb
+      ndum = PPICLF_LRMAX*neltbc
+      call icopy(ppiclf_er_mapc,ppiclf_er_map,ndum)
+      do ie=1,neltbc
+         ppiclf_er_mapc(5,ie) = ppiclf_er_mapc(2,ie)
+         ppiclf_er_mapc(6,ie) = ppiclf_er_mapc(2,ie)
+      enddo
+      nl = 0
+      nii = PPICLF_LRMAX
+      njj = 6
+      nrr = nxyz*PPICLF_LRP_PRO
+      call fgslib_crystal_tuple_transfer(i_cr_hndl,neltbc,PPICLF_LEE
+     >            , ppiclf_er_mapc,nii,partl,nl,ppiclf_pro_fldb,nrr,njj)
+
+      ! add the fields from the bins to ptw array
+      nlxyzep = nxyz*PPICLF_LEE*PPICLF_LRP_PRO
+      do i=1,nlxyzep
+         PPICLF_PRO_FLD(i,1,1,1,1) = 0.0
+      enddo
+
+
+      do ie=1,neltbc
+         iee = ppiclf_er_mapc(1,ie)
+         do ip=1,PPICLF_LRP_PRO
+         do k=1,LPM_LEZ
+         do j=1,LPM_LEY
+         do i=1,LPM_LEX
+           PPICLF_PRO_FLD(i,j,k,iee,ip) = PPICLF_PRO_FLD(i,j,k,iee,ip) +
+     >                                    PPICLF_PRO_FLDB(i,j,k,ip,ie)
+         enddo
+         enddo
+         enddo
+         enddo
       enddo
 
       return
@@ -546,6 +620,8 @@ c----------------------------------------------------------------------
       real    multfci
       real    rproj(1+PPICLF_LRP_GP,PPICLF_LPART+PPICLF_LPART_GP)
       integer iproj(4,PPICLF_LPART+PPICLF_LPART_GP)
+
+      integer ppiclf_jxgp,ppiclf_jygp,ppiclf_jzgp
 
       real pi
 

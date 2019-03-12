@@ -26,20 +26,20 @@ c Maximum number of ghost particles
 #define PPICLF_LRP_GP 3+PPICLF_LRP_PRO
 #endif
 
-#ifndef PPICLF_LELT
-#define PPICLF_LELT 1
+#ifndef PPICLF_LEX
+#define PPICLF_LEX 1
 #endif
 
-#ifndef PPICLF_LX1
-#define PPICLF_LX1 1
+#ifndef PPICLF_LEY
+#define PPICLF_LEY 1
 #endif
 
-#ifndef PPICLF_LY1
-#define PPICLF_LY1 1
+#ifndef PPICLF_LEZ
+#define PPICLF_LEZ 1
 #endif
 
-#ifndef PPICLF_LZ1
-#define PPICLF_LZ1 1
+#ifndef PPICLF_LEE
+#define PPICLF_LEE 1
 #endif
 
 c max bins per processor
