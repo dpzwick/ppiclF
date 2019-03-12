@@ -91,7 +91,6 @@ c     ih_intp(2,ih) = ih_intp2
      >                            nfacegp, nedgegp, ncornergp
       integer  ifac(3), icount(3)
       real     d2new(3)
-      logical  partl
 
       real                      ppiclf_xerange(2,3,ppiclf_lbmax)
       common /ppiclf_elementrange/ ppiclf_xerange
@@ -306,15 +305,10 @@ c     current box coordinates
          if (ppiclf_rparam(12) .gt. 2) 
      >      ppiclf_bz = floor(ppiclf_rdzgp/ppiclf_rparam(5)) + 1 + 1
 
-         ppiclf_bx = ppiclf_bx*ppiclf_rparam(6)
-         ppiclf_by = ppiclf_by*ppiclf_rparam(6)
+         ppiclf_bx = ppiclf_bx*int(ppiclf_rparam(6))
+         ppiclf_by = ppiclf_by*int(ppiclf_rparam(6))
          if (ppiclf_rparam(12) .gt. 2) 
-     >      ppiclf_bz = ppiclf_bz*ppiclf_rparam(6)
-
-c        ! force for now!!! remove and uncomment above
-c        ppiclf_bx = 3
-c        ppiclf_by = 3
-c        ppiclf_bz = 3
+     >      ppiclf_bz = ppiclf_bz*int(ppiclf_rparam(6))
 
          if ((ppiclf_bx .gt. PPICLF_BX1) .or. 
      >       (ppiclf_by .gt. PPICLF_BY1) .or.
@@ -571,10 +565,6 @@ c    $        , ppiclf_y     (iz,1),PPICLF_LRS ,PPICLF_NPART) !   &             
 #include "PPICLF"
 
       logical partl    
-      integer ppiclf_ipmap1(1,PPICLF_LPART)
-     >       ,ppiclf_ipmap2(1,PPICLF_LPART)
-     >       ,ppiclf_ipmap3(1,PPICLF_LPART)
-     >       ,ppiclf_ipmap4(1,PPICLF_LPART)
 
       parameter(lrf = PPICLF_LRS*4 + PPICLF_LRP + PPICLF_LRP2)
       real rwork(lrf,PPICLF_LPART)
@@ -639,7 +629,6 @@ c-----------------------------------------------------------------------
 #include "ppiclf.h"
 #include "PPICLF"
 
-      character*132 deathmessage
       real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
       integer iadd(3),gpsave(27)
       real map(PPICLF_LRP_PRO)
@@ -786,7 +775,7 @@ c CREATING GHOST PARTICLES
      >                  + ppiclf_ndxgp*ppiclf_ndygp*kkg
             nrank = ndumn
 
-            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. ppiclf_nid .and. iflgsum .eq. 0) cycle
 
             do i=1,isave
                if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 111
@@ -881,7 +870,7 @@ c CREATING GHOST PARTICLES
      >                  + ppiclf_ndxgp*ppiclf_ndygp*kkg
             nrank = ndumn
 
-            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. ppiclf_nid .and. iflgsum .eq. 0) cycle
 
             do i=1,isave
                if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 222
@@ -977,7 +966,7 @@ c CREATING GHOST PARTICLES
      >                  + ppiclf_ndxgp*ppiclf_ndygp*kkg
             nrank = ndumn
 
-            if (nrank .eq. nid .and. iflgsum .eq. 0) cycle
+            if (nrank .eq. ppiclf_nid .and. iflgsum .eq. 0) cycle
 
             do i=1,isave
                if (gpsave(i) .eq. nrank .and. iflgsum .eq.0) goto 333
@@ -1024,7 +1013,7 @@ c----------------------------------------------------------------------
 #include "PPICLF"
 c
       real rxnew(3), rxdrng(3)
-      integer iadd(3), irett(3), ntype, ntypel(7)
+      integer iadd(3), irett(3)
 
       xloc = rxnew(1)
       yloc = rxnew(2)

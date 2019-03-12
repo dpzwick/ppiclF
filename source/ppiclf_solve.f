@@ -73,7 +73,7 @@ c     call rzero(ppiclf_rparam, ppiclf_nparam)
          enddo
 
          tol = 1.e-12
-         if (wdsize.eq.4) tol = 1.e-6
+c        if (wdsize.eq.4) tol = 1.e-6
 
          if (abs(ppiclf_rparam(2)) .lt. tol  ) 
      >      ppiclf_rparam(2) = 1
@@ -447,12 +447,9 @@ c----------------------------------------------------------------------
 #include "PPICLF"
 
       real    multfci
-      integer e
 
       real    rproj(1+PPICLF_LRP_GP,PPICLF_LPART+PPICLF_LPART_GP)
       integer iproj(4,PPICLF_LPART+PPICLF_LPART_GP)
-
-      logical partl
 
       real pi
 
@@ -547,12 +544,8 @@ c----------------------------------------------------------------------
 #include "PPICLF"
 
       real    multfci
-      integer e
-
       real    rproj(1+PPICLF_LRP_GP,PPICLF_LPART+PPICLF_LPART_GP)
       integer iproj(4,PPICLF_LPART+PPICLF_LPART_GP)
-
-      logical partl
 
       real pi
 

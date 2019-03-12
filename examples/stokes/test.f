@@ -41,7 +41,7 @@ c     call ppiclf_io_vtu_read('new99999.vtu',npart)
 
          if(mod(ppiclf_cycle,iostep) .eq. 0) then
              call ppiclf_io_vtu_write('',0)
-c            call ppiclf_io_vtu_write_bins('',0)
+             call ppiclf_io_vtu_write_bins('',0)
              call ppiclf_io_vtu_write_grd('',0)
              nptmax = iglmax(ppiclf_npart,1)
              nptmin = iglmin(ppiclf_npart,1)

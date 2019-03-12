@@ -5,30 +5,19 @@
 #include "PPICLF"
       include 'mpif.h'
 
-      real*4  rout_pos(3      *PPICLF_LPART) 
-     >       ,rout_sln(PPICLF_LRS*PPICLF_LPART)
-     >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
-     >       ,rout_lip(3      *PPICLF_LPART)
-
-      character*5 sprop1
-      character*9 rprop1
-
       character (len = *)  filein1
       character*3 filein
       character*12 vtufile
-      character*13 vtufile1
-      character*50 dumstr
       character*6  prostr
 
       integer icalld1
       save    icalld1
       data    icalld1 /0/
 
-      logical partl         
-      integer vtu,vtu1,pth, nvtx_total, ncll_total
+      integer vtu,pth, nvtx_total, ncll_total
       integer*4 iint
-      integer*8 idisp_pos,idisp_cll,idisp_lrp,idisp_lip
-      integer*8 stride_lenv, stride_lenc
+      integer*8 idisp_pos
+      integer*8 stride_lenv
 
       integer icount_pos(PPICLF_BX1, PPICLF_BY1, PPICLF_BZ1)
 
@@ -491,28 +480,17 @@ c1511 continue
 #include "PPICLF"
       include 'mpif.h'
 
-      real*4  rout_pos(3      *PPICLF_LPART) 
-     >       ,rout_sln(PPICLF_LRS*PPICLF_LPART)
-     >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
-     >       ,rout_lip(3      *PPICLF_LPART)
-
-      character*5 sprop1
-      character*9 rprop1
-
       character (len = *)  filein1
       character*3 filein
       character*12 vtufile
-      character*13 vtufile1
-      character*50 dumstr
 
       integer icalld1
       save    icalld1
       data    icalld1 /0/
 
-      logical partl         
-      integer vtu,vtu1,pth, nvtx_total, ncll_total
+      integer vtu,pth, nvtx_total, ncll_total
       integer*4 iint
-      integer*8 idisp_pos,idisp_cll,idisp_lrp,idisp_lip
+      integer*8 idisp_pos,idisp_cll
       integer*8 stride_lenv(8), stride_lenc
 
       real*4 rpoint(3)
@@ -663,6 +641,8 @@ c     goto 1511
       write(vtu,'(A)',advance='yes') '   <PointData>'
       write(vtu,'(A)',advance='yes') '   </PointData> '
       write(vtu,'(A)',advance='yes') '   <CellData>'
+      call ppiclf_io_vtu_data(vtu,"PPR",1,iint)
+      iint = iint + 1   *isize*ncll_total + isize
       write(vtu,'(A)',advance='yes') '   </CellData> '
 
 ! ----------
@@ -964,24 +944,20 @@ c1511 continue
      >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
      >       ,rout_lip(3      *PPICLF_LPART)
 
-      character*5 sprop1
-      character*9 rprop1
-
       character (len = *)  filein1
       character*3 filein
       character*12 vtufile
-      character*13 vtufile1
-      character*50 dumstr
 
       integer icalld1
       save    icalld1
       data    icalld1 /0/
 
-      logical partl         
-      integer vtu,vtu1,pth,prevs(2,ppiclf_np)
+      integer vtu,pth,prevs(2,ppiclf_np)
       integer*4 iint
       integer*8 idisp_pos,idisp_sln,idisp_lrp,idisp_lip
       integer*8 stride_len
+
+      integer iobig
 
       icalld1 = icalld1+1
 
@@ -1281,7 +1257,6 @@ c        endif
       integer vtu,ncomp
       integer*4 idist
       character (len = *) dataname
-      character*50 dumstr
 
       write(vtu,'(A)',advance='no') '    <DataArray '
       write(vtu,'(A)',advance='no') 'type="Float32" '

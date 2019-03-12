@@ -1,14 +1,14 @@
 c Computational particles
-      COMMON /PPICLF_COMP_PART_R/ PPICLF_Y
-     >                           ,PPICLF_YDOT
-     >                           ,PPICLF_YDOTC
-     >                           ,PPICLF_RPROP
-     >                           ,PPICLF_RPROP2
       REAL  PPICLF_Y     (PPICLF_LRS ,PPICLF_LPART)  ! Solution
      >     ,PPICLF_YDOT  (PPICLF_LRS ,PPICLF_LPART)  ! Total solution RHS
      >     ,PPICLF_YDOTC (PPICLF_LRS ,PPICLF_LPART)  ! Coupled solution RHS
      >     ,PPICLF_RPROP (PPICLF_LRP ,PPICLF_LPART)  ! Real particle properties
      >     ,PPICLF_RPROP2(PPICLF_LRP2,PPICLF_LPART)  ! Secondary real particle properties
+      COMMON /PPICLF_COMP_PART_R/ PPICLF_Y
+     >                           ,PPICLF_YDOT
+     >                           ,PPICLF_YDOTC
+     >                           ,PPICLF_RPROP
+     >                           ,PPICLF_RPROP2
 
 c Previous time step solutions, may grow later
       COMMON /PPICLF_SLN_PREV/  PPICLF_Y1
@@ -64,12 +64,12 @@ c Ghost particle connection map
       COMMON /PPICLF_GRID_RC/ PPICLF_GRID_FLD, PPICLF_GRID_X
      >                   , PPICLF_GRID_Y, PPICLF_GRID_Z
      >                   , PPICLF_RDX, PPICLF_RDY, PPICLF_RDZ
-      REAL            PPICLF_GRID_FLD(PPICLF_BX1,PPICLF_BY1,PPICLF_BZ1
+      REAL*4          PPICLF_GRID_FLD(PPICLF_BX1,PPICLF_BY1,PPICLF_BZ1
      >              , PPICLF_LRP_PRO)
      >              , PPICLF_GRID_X(PPICLF_BX1,PPICLF_BY1,PPICLF_BZ1)
      >              , PPICLF_GRID_Y(PPICLF_BX1,PPICLF_BY1,PPICLF_BZ1)
      >              , PPICLF_GRID_Z(PPICLF_BX1,PPICLF_BY1,PPICLF_BZ1)
-     >              , PPICLF_RDX, PPICLF_RDY, PPICLF_RDZ
+      REAL            PPICLF_RDX, PPICLF_RDY, PPICLF_RDZ
 
       COMMON /PPICLF_GRID_IC/ PPICLF_GRID_I
      >                   , PPICLF_GRID_II
