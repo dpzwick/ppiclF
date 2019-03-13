@@ -357,147 +357,230 @@ c     if (ppiclf_nid .eq. 0) write(6,*) 'MAXX:', rmax
 
 c     if (int(ppiclf_rparam(4)) .eq. 1) return ! only for projection
 
-! see which bins are in which elements
-c     ppiclf_neltb = 0
-c     do ie=1,ppiclf_nelt
-c     do k=1,ppiclf_lz1
-c     do j=1,ppiclf_ly1
-c     do i=1,ppiclf_lx1
-c        rxval = xm1(i,j,k,ie) 
-c        ryval = ym1(i,j,k,ie) 
-c        rzval = 0.
-c        if(if3d) rzval = zm1(i,j,k,ie)
+      call ppiclf_comm_binned_grid
 
-c        if (rxval .gt. ppiclf_binb(2)) goto 1233
-c        if (rxval .lt. ppiclf_binb(1)) goto 1233
-c        if (ryval .gt. ppiclf_binb(4)) goto 1233
-c        if (ryval .lt. ppiclf_binb(3)) goto 1233
-c        if (if3d .and. rzval .gt. ppiclf_binb(6)) goto 1233
-c        if (if3d .and. rzval .lt. ppiclf_binb(5)) goto 1233
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_comm_binned_grid
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
 
-c        ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
-c        jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
-c        kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
-c        if (.not. if3d) kk = 0
-c        if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-c        if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
-c        ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
-c        nrank = modulo(ndum,np)
-
-c        ppiclf_neltb = ppiclf_neltb + 1
-c        if(ppiclf_neltb .gt. ppiclf_lbmax) then
-c          write(6,*) 'increase lbmax',nid,ppiclf_neltb,ppiclf_lbmax
-c          call exitt
-c        endif
-
-c        ppiclf_er_map(1,ppiclf_neltb) = ie
-c        ppiclf_er_map(2,ppiclf_neltb) = nid
-c        ppiclf_er_map(3,ppiclf_neltb) = ndum
-c        ppiclf_er_map(4,ppiclf_neltb) = nrank
-c        ppiclf_er_map(5,ppiclf_neltb) = nrank
-c        ppiclf_er_map(6,ppiclf_neltb) = nrank
-
-c        if (ppiclf_neltb .gt. 1) then
-c        do il=1,ppiclf_neltb-1
-c           if (ppiclf_er_map(1,il) .eq. ie) then
-c           if (ppiclf_er_map(4,il) .eq. nrank) then
-c              ppiclf_neltb = ppiclf_neltb - 1
-c              goto 1233
-c           endif
-c           endif
-c        enddo
-c        endif
-c1233 continue
-c     enddo
-c     enddo
-c     enddo
-c     enddo
-
-c     nxyz = lx1*ly1*lz1
-c     do ie=1,ppiclf_neltb
-c        iee = ppiclf_er_map(1,ie)
-c        call copy(ppiclf_xm1b(1,1,1,1,ie), xm1(1,1,1,iee),nxyz)
-c        call copy(ppiclf_xm1b(1,1,1,2,ie), ym1(1,1,1,iee),nxyz)
-c        call copy(ppiclf_xm1b(1,1,1,3,ie), zm1(1,1,1,iee),nxyz)
-c     enddo
-
-c     ppiclf_neltbb = ppiclf_neltb
-
-c     do ie=1,ppiclf_neltbb
-c        call icopy(ppiclf_er_maps(1,ie),ppiclf_er_map(1,ie),PPICLF_LRMAX)
-c     enddo
+      real ppiclf_xm1bd(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,3,PPICLF_LEE)
+      common /ppiclf_mesh_orig/ ppiclf_xm1bd
 
 
-c     nl   = 0
-c     nii  = PPICLF_LRMAX
-c     njj  = 6
-c     nrr  = nxyz*3
-c     nkey = 3
-c     call fgslib_crystal_tuple_transfer(i_cr_hndl,ppiclf_neltb,ppiclf_lbmax
-c    >                  , ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,njj)
-c     call fgslib_crystal_tuple_sort    (i_cr_hndl,ppiclf_neltb
-c    $              , ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,nkey,1)
+      ! see which bins are in which elements
+      ppiclf_neltb = 0
+      do ie=1,ppiclf_nee
+      do k=1,PPICLF_LEZ
+      do j=1,PPICLF_LEY
+      do i=1,PPICLF_LEX
+         rxval = ppiclf_xm1b(i,j,k,1,ie)
+         ryval = ppiclf_xm1b(i,j,k,2,ie)
+         rzval = 0.
+         if(ppiclf_rparam(12).gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
+
+         ppiclf_xm1bd(i,j,k,1,ie) = rxval
+         ppiclf_xm1bd(i,j,k,2,ie) = ryval
+         ppiclf_xm1bd(i,j,k,3,ie) = rzval
+
+         if (rxval .gt. ppiclf_binb(2)) goto 1233
+         if (rxval .lt. ppiclf_binb(1)) goto 1233
+         if (ryval .gt. ppiclf_binb(4)) goto 1233
+         if (ryval .lt. ppiclf_binb(3)) goto 1233
+         if (ppiclf_rparam(12).gt.2 .and. rzval .gt. ppiclf_binb(6)) 
+     >      goto 1233
+         if (ppiclf_rparam(12).gt.2 .and. rzval .lt. ppiclf_binb(5))
+     >      goto 1233
+
+         ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
+         jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
+         kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
+         if (ppiclf_rparam(12).lt.3) kk = 0
+         !if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
+         !if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
+         !if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+         ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
+         nrank = ndum
+
+c        if (ii .eq. ppiclf_ndxgp-1) write(6,*) rxval,ppiclf_ndxgp
+
+c        if (ppiclf_binb(3) .gt. ryval)
+c    >      write(6,*) ryval,ppiclf_binb(3),jj
+         if (ii .lt. 0 .or. ii .gt. ppiclf_ndxgp-1) then
+c           write(6,*) 'Bounds here:',ppiclf_binb
+c           write(6,*) 'Failed here:',rxval,ryval,rzval
+            goto 1233
+         endif
+         if (jj .lt. 0 .or. jj .gt. ppiclf_ndygp-1) then
+c           write(6,*) 'Bounds here:',ppiclf_binb
+c           write(6,*) 'Failed here:',rxval,ryval,rzval
+            goto 1233
+         endif
+         if (kk .lt. 0 .or. kk .gt. ppiclf_ndzgp-1) then
+c           write(6,*) 'Bounds here:',ppiclf_binb
+c           write(6,*) 'Failed here:',rxval,ryval,rzval
+            goto 1233
+         endif
+
+         ppiclf_neltb = ppiclf_neltb + 1
+         if(ppiclf_neltb .gt. PPICLF_LEE) then
+           write(6,*) 'increase PPICLF_LEE', ppiclf_nid, ppiclf_neltb
+           return
+           !call exitt
+         endif
+
+         ppiclf_er_map(1,ppiclf_neltb) = ie
+         ppiclf_er_map(2,ppiclf_neltb) = ppiclf_nid
+         ppiclf_er_map(3,ppiclf_neltb) = ndum
+         ppiclf_er_map(4,ppiclf_neltb) = nrank
+         ppiclf_er_map(5,ppiclf_neltb) = nrank
+         ppiclf_er_map(6,ppiclf_neltb) = nrank
+
+         if (ppiclf_neltb .gt. 1) then
+         do il=1,ppiclf_neltb-1
+            if (ppiclf_er_map(1,il) .eq. ie) then
+            if (ppiclf_er_map(4,il) .eq. nrank) then
+               ppiclf_neltb = ppiclf_neltb - 1
+               goto 1233
+            endif
+            endif
+         enddo
+         endif
+ 1233 continue
+      enddo
+      enddo
+      enddo
+      enddo
+
+      ! Should re-add what I had here before... remove mapping from
+      ! other "external" routine in this file too....
+
+      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      do ie=1,ppiclf_neltb
+       iee = ppiclf_er_map(1,ie)
+       call copy(ppiclf_xm1b(1,1,1,1,ie),ppiclf_xm1bd(1,1,1,1,iee),nxyz)
+       call copy(ppiclf_xm1b(1,1,1,2,ie),ppiclf_xm1bd(1,1,1,2,iee),nxyz)
+       call copy(ppiclf_xm1b(1,1,1,3,ie),ppiclf_xm1bd(1,1,1,3,iee),nxyz)
+      enddo
+
+      ppiclf_neltbb = ppiclf_neltb
+      do ie=1,ppiclf_neltbb
+         call icopy(ppiclf_er_maps(1,ie),ppiclf_er_map(1,ie)
+     >             ,PPICLF_LRMAX)
+      enddo
 
 
-c     do ie=1,ppiclf_neltb
-c     do k=1,nz1
-c     do j=1,ny1
-c     do i=1,nx1
-c        rxval = ppiclf_xm1b(i,j,k,1,ie)
-c        ryval = ppiclf_xm1b(i,j,k,2,ie)
-c        rzval = 0.
-c        if(if3d) rzval = ppiclf_xm1b(i,j,k,3,ie)
-c        
-c        ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
-c        jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
-c        kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
-c        if (.not. if3d) kk = 0
-c        if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-c        if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
-c        ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
+      nl   = 0
+      nii  = PPICLF_LRMAX
+      njj  = 6
+      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      nrr  = nxyz*3
+      nkey = 3
+      call fgslib_crystal_tuple_transfer(i_cr_hndl,ppiclf_neltb
+     >       ,PPICLF_LEE,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,njj)
+      call fgslib_crystal_tuple_sort    (i_cr_hndl,ppiclf_neltb
+     >       ,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,nkey,1)
 
-c        ppiclf_modgp(i,j,k,ie,1) = ii
-c        ppiclf_modgp(i,j,k,ie,2) = jj
-c        ppiclf_modgp(i,j,k,ie,3) = kk
-c        ppiclf_modgp(i,j,k,ie,4) = ndum
-c  
-c     enddo
-c     enddo
-c     enddo
-c     enddo
 
-c     do ie=1,ppiclf_neltb
-c        ppiclf_xerange(1,1,ie) = vlmin(ppiclf_xm1b(1,1,1,1,ie),nxyz)
-c        ppiclf_xerange(2,1,ie) = vlmax(ppiclf_xm1b(1,1,1,1,ie),nxyz)
-c        ppiclf_xerange(1,2,ie) = vlmin(ppiclf_xm1b(1,1,1,2,ie),nxyz)
-c        ppiclf_xerange(2,2,ie) = vlmax(ppiclf_xm1b(1,1,1,2,ie),nxyz)
-c        ppiclf_xerange(1,3,ie) = vlmin(ppiclf_xm1b(1,1,1,3,ie),nxyz)
-c        ppiclf_xerange(2,3,ie) = vlmax(ppiclf_xm1b(1,1,1,3,ie),nxyz)
+      do ie=1,ppiclf_neltb
+      do k=1,PPICLF_LEZ
+      do j=1,PPICLF_LEY
+      do i=1,PPICLF_LEX
+         rxval = ppiclf_xm1b(i,j,k,1,ie)
+         ryval = ppiclf_xm1b(i,j,k,2,ie)
+         rzval = 0.
+         if(ppiclf_rparam(12).gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
+         
+         ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
+         jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
+         kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
+         if (ppiclf_rparam(12).eq.2) kk = 0
+         !if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
+         !if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
+         !if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+         ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
 
-c        ilow  = floor((ppiclf_xerange(1,1,ie) - ppiclf_binb(1))/ppiclf_rdxgp)
-c        ihigh = floor((ppiclf_xerange(2,1,ie) - ppiclf_binb(1))/ppiclf_rdxgp)
-c        jlow  = floor((ppiclf_xerange(1,2,ie) - ppiclf_binb(3))/ppiclf_rdygp)
-c        jhigh = floor((ppiclf_xerange(2,2,ie) - ppiclf_binb(3))/ppiclf_rdygp)
-c        klow  = floor((ppiclf_xerange(1,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
-c        khigh = floor((ppiclf_xerange(2,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
-c        if (.not. if3d) then
-c           klow = 0
-c           khigh = 0
-c        endif
+         ppiclf_modgp(i,j,k,ie,1) = ii
+         ppiclf_modgp(i,j,k,ie,2) = jj
+         ppiclf_modgp(i,j,k,ie,3) = kk
+         ppiclf_modgp(i,j,k,ie,4) = ndum
+   
+      enddo
+      enddo
+      enddo
+      enddo
 
-c        ppiclf_el_map(1,ie) = ilow  + ppiclf_ndxgp*jlow  
-c    >                            + ppiclf_ndxgp*ppiclf_ndygp*klow
-c        ppiclf_el_map(2,ie) = ihigh + ppiclf_ndxgp*jhigh 
-c    >                            + ppiclf_ndxgp*ppiclf_ndygp*khigh
-c        ppiclf_el_map(3,ie) = ilow
-c        ppiclf_el_map(4,ie) = ihigh
-c        ppiclf_el_map(5,ie) = jlow
-c        ppiclf_el_map(6,ie) = jhigh
-c        ppiclf_el_map(7,ie) = klow
-c        ppiclf_el_map(8,ie) = khigh
-c     enddo
+      do ie=1,ppiclf_neltb
+         ppiclf_xerange(1,1,ie) = 
+     >      ppiclf_vlmin(ppiclf_xm1b(1,1,1,1,ie),nxyz)
+         ppiclf_xerange(2,1,ie) = 
+     >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,1,ie),nxyz)
+         ppiclf_xerange(1,2,ie) = 
+     >      ppiclf_vlmin(ppiclf_xm1b(1,1,1,2,ie),nxyz)
+         ppiclf_xerange(2,2,ie) = 
+     >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,2,ie),nxyz)
+         ppiclf_xerange(1,3,ie) = 
+     >      ppiclf_vlmin(ppiclf_xm1b(1,1,1,3,ie),nxyz)
+         ppiclf_xerange(2,3,ie) = 
+     >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,3,ie),nxyz)
+
+         ilow  = 
+     >     floor((ppiclf_xerange(1,1,ie) - ppiclf_binb(1))/ppiclf_rdxgp)
+         ihigh = 
+     >     floor((ppiclf_xerange(2,1,ie) - ppiclf_binb(1))/ppiclf_rdxgp)
+         jlow  = 
+     >     floor((ppiclf_xerange(1,2,ie) - ppiclf_binb(3))/ppiclf_rdygp)
+         jhigh = 
+     >     floor((ppiclf_xerange(2,2,ie) - ppiclf_binb(3))/ppiclf_rdygp)
+         klow  = 
+     >     floor((ppiclf_xerange(1,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
+         khigh = 
+     >     floor((ppiclf_xerange(2,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
+         if (ppiclf_rparam(12).lt.3) then
+            klow = 0
+            khigh = 0
+         endif
+
+         ppiclf_el_map(1,ie) = ilow  + ppiclf_ndxgp*jlow  
+     >                            + ppiclf_ndxgp*ppiclf_ndygp*klow
+         ppiclf_el_map(2,ie) = ihigh + ppiclf_ndxgp*jhigh 
+     >                            + ppiclf_ndxgp*ppiclf_ndygp*khigh
+         ppiclf_el_map(3,ie) = ilow
+         ppiclf_el_map(4,ie) = ihigh
+         ppiclf_el_map(5,ie) = jlow
+         ppiclf_el_map(6,ie) = jhigh
+         ppiclf_el_map(7,ie) = klow
+         ppiclf_el_map(8,ie) = khigh
+      enddo
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_comm_grid_map(ncell,xgrid,ygrid,zgrid)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      integer ncell
+      real    xgrid(*)
+      real    ygrid(*)
+      real    zgrid(*)
+
+      ppiclf_nee = ncell
+
+      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+
+      do ie=1,ppiclf_nee
+      do i=1,nxyz
+         j = (ie-1)*nxyz + i
+         ppiclf_xm1b(i,1,1,1,ie) = xgrid(j)
+         ppiclf_xm1b(i,1,1,2,ie) = ygrid(j)
+         ppiclf_xm1b(i,1,1,3,ie) = zgrid(j)
+      enddo
+      enddo
 
       return
       end
