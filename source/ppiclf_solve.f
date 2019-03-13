@@ -34,7 +34,7 @@ c     ! send particles to correct rank
       call ppiclf_interpolate_setup
 
 c     ! two-way coupling init
-      call ppiclf_project
+c     call ppiclf_project
 
       return
       end
@@ -492,12 +492,10 @@ c     ppiclf_npart_gp = 0
             rproj(j,ip) = ppiclf_cp_map(j-1,ip)*multfci
          enddo
                     
-         iproj(1,ip) = 
-     >       floor( (rproj(2,ip) - ppiclf_binx(1,1))/ppiclf_rdx)
-         iproj(2,ip) = 
-     >       floor( (rproj(3,ip) - ppiclf_biny(1,1))/ppiclf_rdy)
-         iproj(3,ip) = 
-     >       floor( (rproj(4,ip) - ppiclf_binz(1,1))/ppiclf_rdz)
+         iproj(1,ip)  = ppiclf_iprop(8,ip)
+         iproj(2,ip)  = ppiclf_iprop(9,ip)
+         iproj(3,ip)  = ppiclf_iprop(10,ip)
+         iproj(4,ip)  = ppiclf_iprop(11,ip)
       enddo
 
       ! ghost particles
@@ -516,12 +514,10 @@ c     ppiclf_npart_gp = 0
             rproj(j,ip+ppiclf_npart) = ppiclf_rprop_gp(j-1,ip)*multfci
          enddo
                     
-         iproj(1,ip+ppiclf_npart) = 
-     >     floor((rproj(2,ip+ppiclf_npart)-ppiclf_binx(1,1))/ppiclf_rdx)
-         iproj(2,ip+ppiclf_npart) = 
-     >     floor((rproj(3,ip+ppiclf_npart)-ppiclf_biny(1,1))/ppiclf_rdy)
-         iproj(3,ip+ppiclf_npart) = 
-     >     floor((rproj(4,ip+ppiclf_npart)-ppiclf_binz(1,1))/ppiclf_rdz)
+         iproj(1,ip+ppiclf_npart)  = ppiclf_iprop_gp(2,ip)
+         iproj(2,ip+ppiclf_npart)  = ppiclf_iprop_gp(3,ip)
+         iproj(3,ip+ppiclf_npart)  = ppiclf_iprop_gp(4,ip)
+         iproj(4,ip+ppiclf_npart)  = ppiclf_iprop_gp(5,ip)
       enddo
 
       ndum = ppiclf_npart+ppiclf_npart_gp
@@ -529,22 +525,34 @@ c     ndum = ppiclf_npart_gp
 c     ndum = ppiclf_npart
 
       do ip=1,ndum
-         iip = iproj(1,ip)
-         jjp = iproj(2,ip)
-         kkp = iproj(3,ip)
+         iip      = iproj(1,ip)
+         jjp      = iproj(2,ip)
+         kkp      = iproj(3,ip)
+         ndumdum  = iproj(4,ip)
+
+         ilow  = iip-1
+         ihigh = iip+1
+         jlow  = jjp-1
+         jhigh = jjp+1
+         klow  = kkp-1
+         khigh = kkp+1
 
          do ie=1,ppiclf_neltb
+
+               if (ppiclf_el_map(1,ie) .gt. ndumdum) exit
+               if (ppiclf_el_map(2,ie) .lt. ndumdum) cycle 
+         
+               if (ppiclf_el_map(3,ie) .gt. ihigh) cycle
+               if (ppiclf_el_map(4,ie) .lt. ilow)  cycle
+               if (ppiclf_el_map(5,ie) .gt. jhigh) cycle
+               if (ppiclf_el_map(6,ie) .lt. jlow)  cycle
+               if (ppiclf_el_map(7,ie) .gt. khigh) cycle
+               if (ppiclf_el_map(8,ie) .lt. klow)  cycle
+
          do k=1,PPICLF_LEZ
          do j=1,PPICLF_LEY
          do i=1,PPICLF_LEX
-    
-c           if (ppiclf_grid_ii(i,j,k) .gt. ir) cycle
-c           if (ppiclf_grid_ii(i,j,k) .lt. il) cycle
-c           if (ppiclf_grid_jj(i,j,k) .gt. jr) cycle
-c           if (ppiclf_grid_jj(i,j,k) .lt. jl) cycle
-c           if (ppiclf_grid_kk(i,j,k) .gt. kr) cycle
-c           if (ppiclf_grid_kk(i,j,k) .lt. kl) cycle
-
+            if (ppiclf_modgp(i,j,k,ie,4).ne.ndumdum) cycle
 
             rdist2  = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))**2 +
      >                (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))**2
@@ -553,11 +561,6 @@ c           if (ppiclf_grid_kk(i,j,k) .lt. kl) cycle
 
             if (rdist2 .gt. d2chk2_sq) cycle
 
-c           write(6,*) 'Made itt', ppiclf_grid_x(i,j,k)
-c    >                           , ppiclf_grid_y(i,j,k)
-c    >                           , ppiclf_grid_z(i,j,k)
-
-         
             rexp = exp(rdist2*rproj(1,ip))
             
             do jj=1,PPICLF_LRP_PRO
@@ -598,9 +601,9 @@ c    >                           , ppiclf_grid_z(i,j,k)
       do ie=1,neltbc
          iee = ppiclf_er_mapc(1,ie)
          do ip=1,PPICLF_LRP_PRO
-         do k=1,LPM_LEZ
-         do j=1,LPM_LEY
-         do i=1,LPM_LEX
+         do k=1,PPICLF_LEZ
+         do j=1,PPICLF_LEY
+         do i=1,PPICLF_LEX
            PPICLF_PRO_FLD(i,j,k,iee,ip) = PPICLF_PRO_FLD(i,j,k,iee,ip) +
      >                                    PPICLF_PRO_FLDB(i,j,k,ip,ie)
          enddo

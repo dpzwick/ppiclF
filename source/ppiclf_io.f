@@ -278,7 +278,7 @@ c1511 continue
       inquire(file=vtufile,size=ivtu_size)
       endif
 
-      call bcast(ivtu_size, isize)
+      call ppiclf_bcast(ivtu_size, isize)
 
       iorank = -1
 
@@ -296,7 +296,7 @@ c1511 continue
       call mpi_barrier(ppiclf_comm,ierr)
 
       ! write points first
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
 
       do k=1,ppiclf_bz
       do j=1,ppiclf_by
@@ -409,14 +409,14 @@ c1511 continue
          rpoint(1)   = ppiclf_grid_x(i,j,k)
          rpoint(2)   = ppiclf_grid_y(i,j,k)
          rpoint(3)   = ppiclf_grid_z(i,j,k)
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
 
       enddo
       enddo
       enddo
 
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
 
       do ie=1,PPICLF_LRP_PRO
@@ -433,25 +433,25 @@ c1511 continue
 
       call mpi_barrier(ppiclf_comm,ierr)
 
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
 
       do k=1,ppiclf_bz
       do j=1,ppiclf_by
       do i=1,ppiclf_bx
-            stride_lenv = ppiclf_grid_i(i,j,k)
-            idisp_pos   = ivtu_size + isize*(3*nvtx_total ! position fld
-     >                    + (ie-1)*nvtx_total ! prev fields
-     >                    + 1*stride_lenv    ! this fld
-     >                    + 1 + ie)          ! ints
-            icount_dum  = icount_pos(i,j,k)/3 ! either zero or 1
-            rpoint(1)   = ppiclf_grid_fld(i,j,k,ie)
-            call byte_set_view(idisp_pos,pth)
-            call byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
+           stride_lenv = ppiclf_grid_i(i,j,k)
+           idisp_pos   = ivtu_size + isize*(3*nvtx_total ! position fld
+     >                   + (ie-1)*nvtx_total ! prev fields
+     >                   + 1*stride_lenv    ! this fld
+     >                   + 1 + ie)          ! ints
+           icount_dum  = icount_pos(i,j,k)/3 ! either zero or 1
+           rpoint(1)   = ppiclf_grid_fld(i,j,k,ie)
+           call ppiclf_byte_set_view(idisp_pos,pth)
+           call ppiclf_byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
       enddo
       enddo
       enddo
 
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
       enddo
             
@@ -729,7 +729,7 @@ c1511 continue
       inquire(file=vtufile,size=ivtu_size)
       endif
 
-      call bcast(ivtu_size, isize)
+      call ppiclf_bcast(ivtu_size, isize)
 
       iorank = -1
 
@@ -748,7 +748,7 @@ c1511 continue
       call mpi_barrier(ppiclf_comm,ierr)
 
       ! write points first
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
 
       ! point A
       icount_pos = 0
@@ -760,8 +760,8 @@ c1511 continue
       rpoint(1)  = ppiclf_binx(1,1)
       rpoint(2)  = ppiclf_biny(1,1)
       rpoint(3)  = ppiclf_binz(1,1)
-      call byte_set_view(idisp_pos,pth)
-      call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+      call ppiclf_byte_set_view(idisp_pos,pth)
+      call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
 
       ! 3d
       if (ppiclf_rparam(12) .gt. 2) then
@@ -778,8 +778,8 @@ c1511 continue
             rpoint(3)  = ppiclf_binz(1,1)
          endif
          endif
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
          
          ! point C
          icount_pos = 0
@@ -793,8 +793,8 @@ c1511 continue
             rpoint(3)  = ppiclf_binz(1,1)
          endif
          endif
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
          
          ! point E
          icount_pos = 0
@@ -808,8 +808,8 @@ c1511 continue
             rpoint(3)  = ppiclf_binz(2,1)
          endif
          endif
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
          
          ! point D
          icount_pos = 0
@@ -825,8 +825,8 @@ c1511 continue
          endif
          endif
          endif
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
          
          ! point F
          icount_pos = 0
@@ -842,8 +842,8 @@ c1511 continue
          endif
          endif
          endif
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
          
          ! point G
          icount_pos = 0
@@ -859,8 +859,8 @@ c1511 continue
          endif
          endif
          endif
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
          
          ! point H
          icount_pos = 0
@@ -878,8 +878,8 @@ c1511 continue
          endif
          endif
          endif
-         call byte_set_view(idisp_pos,pth)
-         call byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
 
 
       ! 2d
@@ -887,7 +887,7 @@ c1511 continue
 
       endif
 
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
       call mpi_barrier(ppiclf_comm,ierr)
 
@@ -904,7 +904,7 @@ c1511 continue
       call mpi_barrier(ppiclf_comm,ierr)
 
       ! write points first
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
 
       !
       ! cell values
@@ -915,10 +915,10 @@ c1511 continue
          icount_cll = 1
       endif
       rpoint(1)  = real(nxx)
-      call byte_set_view(idisp_cll,pth)
-      call byte_write_mpi(rpoint,icount_cll,iorank,pth,ierr)
+      call ppiclf_byte_set_view(idisp_cll,pth)
+      call ppiclf_byte_write_mpi(rpoint,icount_cll,iorank,pth,ierr)
 
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
       if (ppiclf_nid .eq. 0) then
       vtu=867+ppiclf_nid
@@ -964,7 +964,7 @@ c1511 continue
       nnp   = ppiclf_np
       nxx   = PPICLF_NPART
 
-      npt_total = iglsum(nxx,1)
+      npt_total = ppiclf_iglsum(nxx,1)
 
       jx    = 1
       jy    = 2
@@ -1156,7 +1156,7 @@ c        endif
       inquire(file=vtufile,size=ivtu_size)
       endif
 
-      call bcast(ivtu_size, isize)
+      call ppiclf_bcast(ivtu_size, isize)
 
       ! byte-displacements
       idisp_pos = ivtu_size + isize*(3*stride_len + 1)
@@ -1186,10 +1186,10 @@ c        endif
       call mpi_barrier(ppiclf_comm,ierr)
 
       ! write
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
-      call byte_set_view(idisp_pos,pth)
-      call byte_write_mpi(rout_pos,icount_pos,iorank,pth,ierr)
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_set_view(idisp_pos,pth)
+      call ppiclf_byte_write_mpi(rout_pos,icount_pos,iorank,pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
       call mpi_barrier(ppiclf_comm,ierr)
 
@@ -1204,10 +1204,10 @@ c        endif
       call mpi_barrier(ppiclf_comm,ierr)
 
       ! write
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
-      call byte_set_view(idisp_sln,pth)
-      call byte_write_mpi(rout_sln,icount_sln,iorank,pth,ierr)
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_set_view(idisp_sln,pth)
+      call ppiclf_byte_write_mpi(rout_sln,icount_sln,iorank,pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
       ! integer write
       if (ppiclf_nid .eq. 0) then
@@ -1220,10 +1220,10 @@ c        endif
       call mpi_barrier(ppiclf_comm,ierr)
 
       ! write
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
-      call byte_set_view(idisp_lrp,pth)
-      call byte_write_mpi(rout_lrp,icount_lrp,iorank,pth,ierr)
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_set_view(idisp_lrp,pth)
+      call ppiclf_byte_write_mpi(rout_lrp,icount_lrp,iorank,pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
       ! integer write
       if (ppiclf_nid .eq. 0) then
@@ -1234,10 +1234,10 @@ c        endif
       endif
 
       ! write
-      call byte_open_mpi(vtufile,pth,.false.,ierr)
-      call byte_set_view(idisp_lip,pth)
-      call byte_write_mpi(rout_lip,icount_lip,iorank,pth,ierr)
-      call byte_close_mpi(pth,ierr)
+      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+      call ppiclf_byte_set_view(idisp_lip,pth)
+      call ppiclf_byte_write_mpi(rout_lip,icount_lip,iorank,pth,ierr)
+      call ppiclf_byte_close_mpi(pth,ierr)
 
       if (ppiclf_nid .eq. 0) then
       vtu=867+ppiclf_nid

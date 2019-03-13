@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine gop( x, w, op, n)
+      subroutine ppiclf_gop( x, w, op, n)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -29,7 +29,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine igop( x, w, op, n)
+      subroutine ppiclf_igop( x, w, op, n)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -55,7 +55,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      function iglsum(a,n)
+      function ppiclf_iglsum(a,n)
       integer a(1),tsum
       integer tmp(1),work(1)
       tsum= 0
@@ -63,12 +63,12 @@ c-----------------------------------------------------------------------
          tsum=tsum+a(i)
       enddo
       tmp(1)=tsum
-      call igop(tmp,work,'+  ',1)
-      iglsum=tmp(1)
+      call ppiclf_igop(tmp,work,'+  ',1)
+      ppiclf_iglsum=tmp(1)
       return
       end
 C-----------------------------------------------------------------------
-      function glsum (x,n)
+      function ppiclf_glsum (x,n)
       DIMENSION X(1)
       DIMENSION TMP(1),WORK(1)
       TSUM = 0.
@@ -76,12 +76,12 @@ C-----------------------------------------------------------------------
          TSUM = TSUM+X(I)
  100  CONTINUE
       TMP(1)=TSUM
-      CALL GOP(TMP,WORK,'+  ',1)
-      GLSUM = TMP(1)
+      CALL ppiclf_GOP(TMP,WORK,'+  ',1)
+      ppiclf_GLSUM = TMP(1)
       return
       END
 c-----------------------------------------------------------------------
-      function glmax(a,n)
+      function ppiclf_glmax(a,n)
       REAL A(1)
       DIMENSION TMP(1),WORK(1)
       TMAX=-99.0e20
@@ -89,12 +89,12 @@ c-----------------------------------------------------------------------
          TMAX=MAX(TMAX,A(I))
   100 CONTINUE
       TMP(1)=TMAX
-      CALL GOP(TMP,WORK,'M  ',1)
-      GLMAX=TMP(1)
+      CALL ppiclf_GOP(TMP,WORK,'M  ',1)
+      ppiclf_GLMAX=TMP(1)
       return
       END
 c-----------------------------------------------------------------------
-      function iglmax(a,n)
+      function ppiclf_iglmax(a,n)
       integer a(1),tmax
       integer tmp(1),work(1)
       tmax= -999999999
@@ -102,12 +102,12 @@ c-----------------------------------------------------------------------
          tmax=max(tmax,a(i))
       enddo
       tmp(1)=tmax
-      call igop(tmp,work,'M  ',1)
-      iglmax=tmp(1)
+      call ppiclf_igop(tmp,work,'M  ',1)
+      ppiclf_iglmax=tmp(1)
       return
       end
 c-----------------------------------------------------------------------
-      function glmin(a,n)
+      function ppiclf_glmin(a,n)
       REAL A(1)
       DIMENSION TMP(1),WORK(1)
       TMIN=99.0e20
@@ -115,12 +115,12 @@ c-----------------------------------------------------------------------
          TMIN=MIN(TMIN,A(I))
   100 CONTINUE
       TMP(1)=TMIN
-      CALL GOP(TMP,WORK,'m  ',1)
-      GLMIN = TMP(1)
+      CALL ppiclf_GOP(TMP,WORK,'m  ',1)
+      ppiclf_GLMIN = TMP(1)
       return
       END
 c-----------------------------------------------------------------------
-      function iglmin(a,n)
+      function ppiclf_iglmin(a,n)
       integer a(1),tmin
       integer tmp(1),work(1)
       tmin=  999999999
@@ -128,12 +128,33 @@ c-----------------------------------------------------------------------
          tmin=min(tmin,a(i))
       enddo
       tmp(1)=tmin
-      call igop(tmp,work,'m  ',1)
-      iglmin=tmp(1)
+      call ppiclf_igop(tmp,work,'m  ',1)
+      ppiclf_iglmin=tmp(1)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
+      real function ppiclf_vlmin(vec,n)
+      REAL VEC(1)
+      TMIN = 99.0E20
+C
+      DO 100 I=1,N
+         TMIN = MIN(TMIN,VEC(I))
+ 100  CONTINUE
+      VLMIN = TMIN
+      return
+      END
+c-----------------------------------------------------------------------
+      real function ppiclf_vlmax(vec,n)
+      REAL VEC(1)
+      TMAX =-99.0E20
+      do i=1,n
+         TMAX = MAX(TMAX,VEC(I))
+      enddo
+      VLMAX = TMAX
+      return
+      END
+c-----------------------------------------------------------------------
+      subroutine ppiclf_byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -161,7 +182,7 @@ c     write(6,*) fnamei
       return
       end
 C--------------------------------------------------------------------------
-c     subroutine byte_read_mpi(buf,icount,iorank,mpi_fh,ierr)
+c     subroutine ppiclf_byte_read_mpi(buf,icount,iorank,mpi_fh,ierr)
 c     include 'mpif.h'
 
 c     real*4 buf(1)          ! buffer
@@ -170,7 +191,7 @@ c     iout = icount ! icount is in 4-byte words
 c     call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
 c    &                       MPI_STATUS_IGNORE,ierr)
 c--------------------------------------------------------------------------
-      subroutine byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
+      subroutine ppiclf_byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -186,7 +207,7 @@ c--------------------------------------------------------------------------
       return
       end
 c--------------------------------------------------------------------------
-      subroutine byte_close_mpi(mpi_fh,ierr)
+      subroutine ppiclf_byte_close_mpi(mpi_fh,ierr)
       include 'mpif.h'
 
       call MPI_file_close(mpi_fh,ierr)
@@ -194,7 +215,7 @@ c--------------------------------------------------------------------------
       return
       end
 c--------------------------------------------------------------------------
-      subroutine byte_set_view(ioff_in,mpi_fh)
+      subroutine ppiclf_byte_set_view(ioff_in,mpi_fh)
       include 'mpif.h'
       integer*8 ioff_in
     
@@ -204,7 +225,7 @@ c--------------------------------------------------------------------------
       return
       end
 C--------------------------------------------------------------------------
-      subroutine bcast(buf,len)
+      subroutine ppiclf_bcast(buf,len)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"

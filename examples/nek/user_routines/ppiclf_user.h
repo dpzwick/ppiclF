@@ -35,4 +35,4 @@ C Projection grid
 #define PPICLF_LEX 6
 #define PPICLF_LEY 6
 #define PPICLF_LEZ 6
-#define PPICLF_LEE 20
+#define PPICLF_LEE 125

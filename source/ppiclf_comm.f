@@ -144,14 +144,14 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
          if (rdumr .gt. zmax) zmax = rdumr
       enddo
 
-      ppiclf_binb(1) = glmin(xmin,1)
-      ppiclf_binb(2) = glmax(xmax,1)
-      ppiclf_binb(3) = glmin(ymin,1)
-      ppiclf_binb(4) = glmax(ymax,1)
+      ppiclf_binb(1) = ppiclf_glmin(xmin,1)
+      ppiclf_binb(2) = ppiclf_glmax(xmax,1)
+      ppiclf_binb(3) = ppiclf_glmin(ymin,1)
+      ppiclf_binb(4) = ppiclf_glmax(ymax,1)
       ppiclf_binb(5) = 0.0
       ppiclf_binb(6) = 0.0
-      if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(5) = glmin(zmin,1)
-      if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(6) = glmax(zmax,1)
+      if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(5) = ppiclf_glmin(zmin,1)
+      if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
 
 
       ! comment for now.....
@@ -240,10 +240,10 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 
       
       isize = 4
-      call bcast(ppiclf_ndxgp, isize)
-      call bcast(ppiclf_ndygp, isize)
-      call bcast(ppiclf_ndzgp, isize)
-      call bcast(ppiclf_binb , 6*2*isize)
+      call ppiclf_bcast(ppiclf_ndxgp, isize)
+      call ppiclf_bcast(ppiclf_ndygp, isize)
+      call ppiclf_bcast(ppiclf_ndzgp, isize)
+      call ppiclf_bcast(ppiclf_binb , 6*2*isize)
 
       ! grid spacing for that many spacings
       ppiclf_rdxgp = (ppiclf_binb(2) -ppiclf_binb(1))/real(ppiclf_ndxgp)
@@ -538,11 +538,11 @@ c    $        , ppiclf_y     (iz,1),PPICLF_LRS ,PPICLF_NPART) !   &             
          jj    = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_rdygp) 
          kk    = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_rdzgp) 
          if (ppiclf_rparam(12) .lt. 3) kk = 0
-         if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-         if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-         if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+c        if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
+c        if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
+c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
          ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
-         nrank = modulo(ndum, ppiclf_np)
+         nrank = ndum
 
          ppiclf_iprop(8,i)  = ii
          ppiclf_iprop(9,i)  = jj

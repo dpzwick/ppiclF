@@ -37,7 +37,7 @@ c Findpts and crystal-router handles
       INTEGER  I_FP_HNDL,I_FP_HNDL1, I_CR_HNDL
 
 c Communication
-      COMMON /PPICLF_COMM/ PPICLF_COMM, PPICLF_NP, PPICLF_NID
+      COMMON /PPICLF_COMM_C/ PPICLF_COMM, PPICLF_NP, PPICLF_NID
       INTEGER PPICLF_COMM, PPICLF_NP, PPICLF_NID
 
 c Grid
@@ -99,6 +99,9 @@ C Ghost particles
      >                    ,PPICLF_LRP_PRO,PPICLF_LEE),
      >     PPICLF_XM1B    (PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,3
      >                    ,PPICLF_LEE)
+
+      REAL                          PPICLF_XERANGE(2,3,PPICLF_LEE)
+      COMMON /PPICLF_ELEMENT_RANGE/ PPICLF_XERANGE
 
       INTEGER PPICLF_LRMAX
       PARAMETER(PPICLF_LRMAX = 6)
