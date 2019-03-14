@@ -124,10 +124,11 @@ c-----------------------------------------------------------------------
       rparam(12) = 3           ! problem dimensions
 
 
-      call ppiclf_solve_InitGaussianFilter(0.1,1E-2,4)
 
       call init_particles(ppiclf_y,npart)
-      call ppiclf_init(rparam,ppiclf_y,npart,0.0) 
+      call ppiclf_solve_InitParticle(1,3,npart,ppiclf_y) 
+
+      call ppiclf_solve_InitGaussianFilter(0.1,1E-2,4)
 
       call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
 
@@ -149,6 +150,9 @@ c-----------------------------------------------------------------------
 
       rsig             = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
       ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_rparam(7)))
+
+      call ppiclf_comm_CreateBins
+      call ppiclf_comm_MapOverlapMesh
 
       return
       end

@@ -1,17 +1,22 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_init(rparam,y,npart,time_)
+      subroutine ppiclf_solve_InitParticle(imethod,ndim,npart,y)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
+      integer  imethod
+      integer  ndim
+      integer  npart
       real     y(*)
-      real     rparam(*)
 
-      ppiclf_npart = npart
+      call ppiclf_solve_InitDefault
+
+      ppiclf_rparam(2)  = imethod
+      ppiclf_rparam(12) = ndim
+      ppiclf_npart      = npart
 
       call ppiclf_comm_setup
 
-      call ppiclf_rparam_set(rparam)
       call ppiclf_tag_init
       call ppiclf_tag_set
 
@@ -37,48 +42,24 @@ c     call ppiclf_project
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_rparam_set(rparam)
+      subroutine ppiclf_solve_InitDefault
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-      real rparam(*)
-
-c     call rzero(ppiclf_rparam, ppiclf_nparam)
-c     do i=1,ppiclf_nparam
-c        ppiclf_rparam(i) = 0.0
-c     enddo
-
       ! set defaults
-      if (rparam(1) .eq. 0) then
-         ppiclf_rparam(1)  = 0        ! use custom values
-         ppiclf_rparam(2)  = 1        ! time integration method
-         ppiclf_rparam(3)  = PPICLF_LEX  ! polynomial order of mesh
-         ppiclf_rparam(4)  = 1        ! use 1 for tracers only
+      ppiclf_rparam(2) = 0     ! time integ
+c     ppiclf_rparam(3) =       ! poly order mesh... rm
+c     ppiclf_rparam(4) =       ! 1=tracers, 0=projection... rm see param5
 
-         ppiclf_rparam(8)  = 1        ! periodic in x
-         ppiclf_rparam(9)  = 1        ! periodic in y
-         ppiclf_rparam(10) = 1        ! periodic in z
-         ppiclf_rparam(11) = -1       ! time step
-         ppiclf_rparam(12) = 3        ! problem dimension
+      ppiclf_rparam(5)  = -1   ! filt default for no projection
 
-      ! custom values
-      else
-         ppiclf_rparam(1) = rparam(1)
-         ppiclf_rparam(2) = rparam(2)
-         ppiclf_rparam(3) = rparam(3)
-         ppiclf_rparam(4) = rparam(4)
+      ppiclf_rparam(8)  = 1    ! periodic in x (== 0) 
+      ppiclf_rparam(9)  = 1    ! periodic in y (==0)
+      ppiclf_rparam(10) = 1    ! periodic in z (==0)
 
+      ppiclf_rparam(12) = 3    ! ndim
 
-         ppiclf_rparam(8) = rparam(8)
-         ppiclf_rparam(9) = rparam(9)
-         ppiclf_rparam(10) = rparam(10)
-         ppiclf_rparam(11) = rparam(11)
-         ppiclf_rparam(12) = rparam(12)
-
-      endif
-
-      ppiclf_dt = ppiclf_rparam(11)
 
       return
       end
@@ -170,10 +151,12 @@ c----------------------------------------------------------------------
 #include "ppiclf.h"
 #include "PPICLF"
 
-      call ppiclf_move_outlier
-      call ppiclf_comm_bin_setup
-      call ppiclf_comm_findpts
-      call ppiclf_comm_crystal
+         call ppiclf_move_outlier
+         call ppiclf_comm_CreateBins
+      if (ppiclf_rparam(5) .gt. 0) 
+     >   call ppiclf_comm_MapOverlapMesh
+         call ppiclf_comm_findpts
+         call ppiclf_comm_crystal
 
       return
       end

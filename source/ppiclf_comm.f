@@ -82,7 +82,7 @@ c     ih_intp(2,ih) = ih_intp2
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_bin_setup
+      subroutine ppiclf_comm_createBins
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -352,17 +352,10 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
 
       endif
 
-c     rmax = glmax(ppiclf_binz(1,1),2)
-c     if (ppiclf_nid .eq. 0) write(6,*) 'MAXX:', rmax
-
-c     if (int(ppiclf_rparam(4)) .eq. 1) return ! only for projection
-
-      call ppiclf_comm_binned_grid
-
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_binned_grid
+      subroutine ppiclf_comm_MapOverlapMesh
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
