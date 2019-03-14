@@ -57,6 +57,8 @@ c     ! send particles to correct rank
       ppiclf_dt    = 0.0
       ppiclf_time  = 0.0
 
+      ppiclf_restart = .false.
+
       return
       end
 !-----------------------------------------------------------------------

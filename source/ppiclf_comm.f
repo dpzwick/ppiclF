@@ -360,9 +360,6 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
             ktmp = kdum*(ppiclf_bz-1) + (k-1)
     
             ppiclf_grid_i(i,j,k)  = itmp + ndumx*jtmp + ndumx*ndumy*ktmp
-            ppiclf_grid_ii(i,j,k) = itmp
-            ppiclf_grid_jj(i,j,k) = jtmp
-            ppiclf_grid_kk(i,j,k) = ktmp
 
          enddo
          enddo

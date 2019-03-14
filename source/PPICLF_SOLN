@@ -1,0 +1,22 @@
+c Computational particles
+      REAL  PPICLF_Y     (PPICLF_LRS ,PPICLF_LPART)  ! Solution
+     >     ,PPICLF_YDOT  (PPICLF_LRS ,PPICLF_LPART)  ! Total solution RHS
+     >     ,PPICLF_YDOTC (PPICLF_LRS ,PPICLF_LPART)  ! Coupled solution RHS
+     >     ,PPICLF_RPROP (PPICLF_LRP ,PPICLF_LPART)  ! Real particle properties
+     >     ,PPICLF_RPROP2(PPICLF_LRP2,PPICLF_LPART)  ! Secondary real particle properties
+      COMMON /PPICLF_SLN_CURRENT_R/ PPICLF_Y
+     >                             ,PPICLF_YDOT
+     >                             ,PPICLF_YDOTC
+     >                             ,PPICLF_RPROP
+     >                             ,PPICLF_RPROP2
+
+      INTEGER  PPICLF_IPROP(PPICLF_LIP,PPICLF_LPART) ! Integer particle properties
+      COMMON /PPICLF_SLN_CURRENT_I/  PPICLF_IPROP
+
+      COMMON /PPICLF_SLN_CURRENT_N/ PPICLF_NPART
+      INTEGER  PPICLF_NPART
+
+c Previous time step solutions, may grow later
+      REAL  PPICLF_Y1(PPICLF_LRS*PPICLF_LPART)
+      COMMON /PPICLF_SLN_PREVIOUS_R/  PPICLF_Y1
+
