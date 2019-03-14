@@ -11,7 +11,7 @@
 
       call ppiclf_solve_InitDefault
 
-      ppiclf_rparam(2)  = imethod
+      ppiclf_imethod    = imethod
       ppiclf_ndim       = ndim
       ppiclf_npart      = npart
 
@@ -34,9 +34,6 @@ c    >                 ,ppiclf_xdrange(1,3),ppiclf_xdrange(2,3))
 c     ! send particles to correct rank
       call ppiclf_solve_SetupInterp
 
-c     ! two-way coupling init
-c     call ppiclf_project
-
       return
       end
 !-----------------------------------------------------------------------
@@ -46,17 +43,15 @@ c     call ppiclf_project
 #include "PPICLF"
 
       ! set defaults
-      ppiclf_rparam(2) = 0     ! time integ
-c     ppiclf_rparam(3) =       ! poly order mesh... rm
-c     ppiclf_rparam(4) =       ! 1=tracers, 0=projection... rm see param5
+      ppiclf_imethod   = 0     ! time integ
 
-      ppiclf_rparam(5)  = -1   ! filt default for no projection
+      ppiclf_filter  = -1   ! filt default for no projection
 
-      ppiclf_rparam(8)  = 1    ! periodic in x (== 0) 
-      ppiclf_rparam(9)  = 1    ! periodic in y (==0)
-      ppiclf_rparam(10) = 1    ! periodic in z (==0)
+      ppiclf_iperiodic(1)  = 1    ! periodic in x (== 0) 
+      ppiclf_iperiodic(2)  = 1    ! periodic in y (==0)
+      ppiclf_iperiodic(3) = 1    ! periodic in z (==0)
 
-      ppiclf_ndim = 3    ! ndim
+      ppiclf_ndim       = 3    ! ndim
 
 
       return
@@ -71,15 +66,16 @@ c     ppiclf_rparam(4) =       ! 1=tracers, 0=projection... rm see param5
       real    alpha
       integer ngrid
 
-      ppiclf_rparam(5) = filt
-      ppiclf_rparam(6) = real(ngrid)
-      ppiclf_rparam(7) = alpha 
+      ppiclf_filter = filt
+      ppiclf_ngrids = ngrid
+      ppiclf_alpha  = alpha 
 
-      rsig             = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
-      ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_rparam(7)))
+      rsig             = ppiclf_filter/(2.*sqrt(2.*log(2.)))
+      ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_alpha))
 
       call ppiclf_comm_CreateBin
       call ppiclf_comm_MapOverlapMesh
+      call ppiclf_solve_ParallelProjection
 
       return
       end
@@ -123,7 +119,7 @@ c----------------------------------------------------------------------
       real y(*)
       real ydot(*)
 
-      if (int(ppiclf_rparam(2)) .eq. 1) 
+      if (int(ppiclf_imethod) .eq. 1) 
      >   call ppiclf_solve_IntegrateRK3(time_,y,ydot)
 
       return
@@ -173,7 +169,7 @@ c----------------------------------------------------------------------
 
          call ppiclf_solve_RemoveParticle
          call ppiclf_comm_CreateBin
-      if (ppiclf_rparam(5) .gt. 0) 
+      if (ppiclf_filter .gt. 0) 
      >   call ppiclf_comm_MapOverlapMesh
          call ppiclf_comm_FindParticle
          call ppiclf_comm_MoveParticle
@@ -225,7 +221,7 @@ c----------------------------------------------------------------------
 #include "ppiclf.h"
 #include "PPICLF"
 
-      if (int(ppiclf_rparam(4)) .ne. 1) then
+      if (ppiclf_filter .gt. 0.0) then
          call ppiclf_comm_CreateGhost
          call ppiclf_comm_MoveGhost
          call ppiclf_solve_ProjectParticleGrid
@@ -258,11 +254,11 @@ c----------------------------------------------------------------------
 #include "PPICLF"
 
       integer in_part(PPICLF_LPART), jj(3), iperiodicx, iperiodicy,
-     >                                   iperiodicz
+     >                                   iperiodicz,ndim
 
-      iperiodicx = int(ppiclf_rparam(8))
-      iperiodicy = int(ppiclf_rparam(9))
-      iperiodicz = int(ppiclf_rparam(10))
+      iperiodicx = ppiclf_iperiodic(1)
+      iperiodicy = ppiclf_iperiodic(2)
+      iperiodicz = ppiclf_iperiodic(3)
       ndim       = ppiclf_ndim
 
       jj(1) = 1
@@ -364,11 +360,9 @@ c----------------------------------------------------------------------
       ppiclf_jygp  = 2
       ppiclf_jzgp  = 3
 
-c     ppiclf_npart_gp = 0
-
       ! real particles
       do ip=1,ppiclf_npart
-         rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
+         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
          if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
@@ -391,7 +385,7 @@ c     ppiclf_npart_gp = 0
 
       ! ghost particles
       do ip=1,ppiclf_npart_gp
-         rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
+         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
          if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
@@ -412,8 +406,6 @@ c     ppiclf_npart_gp = 0
       enddo
 
       ndum = ppiclf_npart+ppiclf_npart_gp
-c     ndum = ppiclf_npart_gp
-c     ndum = ppiclf_npart
 
       do ip=1,ndum
          iip      = iproj(1,ip)
@@ -535,11 +527,9 @@ c----------------------------------------------------------------------
       ppiclf_jygp  = 2
       ppiclf_jzgp  = 3
 
-c     ppiclf_npart_gp = 0
-
       ! real particles
       do ip=1,ppiclf_npart
-         rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
+         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
          if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
@@ -564,7 +554,7 @@ c     ppiclf_npart_gp = 0
 
       ! ghost particles
       do ip=1,ppiclf_npart_gp
-         rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
+         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
          if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
@@ -587,71 +577,49 @@ c     ppiclf_npart_gp = 0
       enddo
 
       ndum = ppiclf_npart+ppiclf_npart_gp
-c     ndum = ppiclf_npart_gp
-c     ndum = ppiclf_npart
 
-      idum = floor(ppiclf_rparam(5)/2.0/ppiclf_rdx
-     >    *sqrt(-log(ppiclf_rparam(7))/log(2.0)))+1
-      jdum = floor(ppiclf_rparam(5)/2.0/ppiclf_rdy
-     >    *sqrt(-log(ppiclf_rparam(7))/log(2.0)))+1
-      kdum = floor(ppiclf_rparam(5)/2.0/ppiclf_rdz
-     >    *sqrt(-log(ppiclf_rparam(7))/log(2.0)))+1
+      idum = floor(ppiclf_filter/2.0/ppiclf_rdx
+     >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
+      jdum = floor(ppiclf_filter/2.0/ppiclf_rdy
+     >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
+      kdum = floor(ppiclf_filter/2.0/ppiclf_rdz
+     >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
 
-c     if (int(ppiclf_rparam(3)) .eq. 1) then
-         do ip=1,ndum
-            iip = iproj(1,ip)
-            jjp = iproj(2,ip)
-            kkp = iproj(3,ip)
+      do ip=1,ndum
+         iip = iproj(1,ip)
+         jjp = iproj(2,ip)
+         kkp = iproj(3,ip)
 
-            il  = max(1     ,iip-idum)
-            ir  = min(ppiclf_bx,iip+idum)
-            jl  = max(1     ,jjp-jdum)
-            jr  = min(ppiclf_by,jjp+jdum)
-            kl  = max(1     ,kkp-kdum)
-            kr  = min(ppiclf_bz,kkp+kdum)
+         il  = max(1     ,iip-idum)
+         ir  = min(ppiclf_bx,iip+idum)
+         jl  = max(1     ,jjp-jdum)
+         jr  = min(ppiclf_by,jjp+jdum)
+         kl  = max(1     ,kkp-kdum)
+         kr  = min(ppiclf_bz,kkp+kdum)
 
-c           write(6,*) il,ir,jl,jr,kl,kr
-
-c           do k=1,ppiclf_bz
-c           do j=1,ppiclf_by
-c           do i=1,ppiclf_bx
-            do k=kl,kr
-            do j=jl,jr
-            do i=il,ir
+         do k=kl,kr
+         do j=jl,jr
+         do i=il,ir
     
-c              if (ppiclf_grid_ii(i,j,k) .gt. ir) cycle
-c              if (ppiclf_grid_ii(i,j,k) .lt. il) cycle
-c              if (ppiclf_grid_jj(i,j,k) .gt. jr) cycle
-c              if (ppiclf_grid_jj(i,j,k) .lt. jl) cycle
-c              if (ppiclf_grid_kk(i,j,k) .gt. kr) cycle
-c              if (ppiclf_grid_kk(i,j,k) .lt. kl) cycle
+            rdist2  = (ppiclf_grid_x(i,j,k) - rproj(2,ip))**2 +
+     >                (ppiclf_grid_y(i,j,k) - rproj(3,ip))**2
+            if(ppiclf_ndim .gt. 2) rdist2 = rdist2 +
+     >                (ppiclf_grid_z(i,j,k) - rproj(4,ip))**2
 
+            if (rdist2 .gt. d2chk2_sq) cycle
 
-               rdist2  = (ppiclf_grid_x(i,j,k) - rproj(2,ip))**2 +
-     >                   (ppiclf_grid_y(i,j,k) - rproj(3,ip))**2
-               if(ppiclf_ndim .gt. 2) rdist2 = rdist2 +
-     >                   (ppiclf_grid_z(i,j,k) - rproj(4,ip))**2
-
-               if (rdist2 .gt. d2chk2_sq) cycle
-
-c              write(6,*) 'Made itt', ppiclf_grid_x(i,j,k)
-c    >                              , ppiclf_grid_y(i,j,k)
-c    >                              , ppiclf_grid_z(i,j,k)
-
+            rexp = exp(rdist2*rproj(1,ip))
             
-               rexp = exp(rdist2*rproj(1,ip))
-               
-               do jj=1,PPICLF_LRP_PRO
-                  j1 = jj+4
-                  ppiclf_grid_fld(i,j,k,jj) = 
-     >                            ppiclf_grid_fld(i,j,k,jj) 
-     >                          + rproj(j1,ip)*rexp
-               enddo
-            enddo
-            enddo
+            do jj=1,PPICLF_LRP_PRO
+               j1 = jj+4
+               ppiclf_grid_fld(i,j,k,jj) = 
+     >                         ppiclf_grid_fld(i,j,k,jj) 
+     >                       + rproj(j1,ip)*rexp
             enddo
          enddo
-c     endif
+         enddo
+         enddo
+      enddo
 
       return
       end

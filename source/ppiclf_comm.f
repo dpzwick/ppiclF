@@ -133,10 +133,10 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       iy = 2
       iz = 3
 
-      iperiodicx = int(ppiclf_rparam(8))
-      iperiodicy = int(ppiclf_rparam(9))
-      iperiodicz = int(ppiclf_rparam(10))
-      ndim       = int(ppiclf_ndim)
+      iperiodicx = ppiclf_iperiodic(1)
+      iperiodicy = ppiclf_iperiodic(2)
+      iperiodicz = ppiclf_iperiodic(3)
+      ndim       = ppiclf_ndim
 
       ! compute binb
       xmin = 1E10
@@ -213,7 +213,7 @@ c     endif
 
       ! dz comment 3/9/2019
 c     if (ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp .gt. ppiclf_np .or. 
-c    >    int(ppiclf_rparam(4)) .eq. 1) then
+c    >    ppiclf_filter .lt. 0.0) then
          nmax = 1000
          d2chk_save = ppiclf_d2chk(2)
          
@@ -226,8 +226,8 @@ c    >    int(ppiclf_rparam(4)) .eq. 1) then
 
             if( nbb .gt. ppiclf_np ) then
             ! dz comment 3/9/2019
-c           if( int(ppiclf_rparam(4)) .eq. 1 .or.
-c    >          int(ppiclf_rparam(4)) .eq. 0 .and.d2new(j+1).lt.d2chk_save)
+c           if( ppiclf_filter .gt. 0.0 .or.
+c    >          ppiclf_filter .lt. 0.0 .and.d2new(j+1).lt.d2chk_save)
 c    >          then
                icount(j+1) = icount(j+1) + 1
                ifac(j+1) = ifac(j+1) - icount(j+1)
@@ -314,16 +314,16 @@ c     current box coordinates
     
          ! interior grid of each bin
          ! +1 for making mesh smaller and +1 since these are vertice counts
-         ppiclf_bx = floor(ppiclf_rdxgp/ppiclf_rparam(5)) + 1 + 1
-         ppiclf_by = floor(ppiclf_rdygp/ppiclf_rparam(5)) + 1 + 1
+         ppiclf_bx = floor(ppiclf_rdxgp/ppiclf_filter) + 1 + 1
+         ppiclf_by = floor(ppiclf_rdygp/ppiclf_filter) + 1 + 1
          ppiclf_bz = 1
          if (ppiclf_ndim .gt. 2) 
-     >      ppiclf_bz = floor(ppiclf_rdzgp/ppiclf_rparam(5)) + 1 + 1
+     >      ppiclf_bz = floor(ppiclf_rdzgp/ppiclf_filter) + 1 + 1
 
-         ppiclf_bx = ppiclf_bx*int(ppiclf_rparam(6))
-         ppiclf_by = ppiclf_by*int(ppiclf_rparam(6))
+         ppiclf_bx = ppiclf_bx*ppiclf_ngrids
+         ppiclf_by = ppiclf_by*ppiclf_ngrids
          if (ppiclf_ndim .gt. 2) 
-     >      ppiclf_bz = ppiclf_bz*int(ppiclf_rparam(6))
+     >      ppiclf_bz = ppiclf_bz*ppiclf_ngrids
 
          if ((ppiclf_bx .gt. PPICLF_BX1) .or. 
      >       (ppiclf_by .gt. PPICLF_BY1) .or.
@@ -740,9 +740,9 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
          ncornergp = 8  ! number of corners
       endif
 
-      iperiodicx = int(ppiclf_rparam(8))
-      iperiodicy = int(ppiclf_rparam(9))
-      iperiodicz = int(ppiclf_rparam(10))
+      iperiodicx = ppiclf_iperiodic(1)
+      iperiodicy = ppiclf_iperiodic(2)
+      iperiodicz = ppiclf_iperiodic(3)
 
 ! ------------------------
 c CREATING GHOST PARTICLES
