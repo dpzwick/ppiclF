@@ -43,15 +43,11 @@ c-----------------------------------------------------------------------
 #include "ppiclf.h"
 #include "PPICLF"
 
-      ppiclf_cycle = istep
-      ppiclf_time  = time
-      ppiclf_dt    = dt
+      call ppiclf_user_SetYdot(istep,dt,time,ppiclf_y,ppiclf_ydot)
 
       call ppiclf_io_WriteParticleVTU('',0)
       call ppiclf_io_WriteBinVTU('',0)
       call ppiclf_io_WriteGridVTU('',0)
-
-      call ppiclf_user_SetYdot(time,ppiclf_y,ppiclf_ydot)
 
       call outpost2(ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
      >             ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)

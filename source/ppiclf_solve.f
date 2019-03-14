@@ -32,7 +32,7 @@ c    >                 ,ppiclf_xdrange(1,3),ppiclf_xdrange(2,3))
       ppiclf_nbmax = PPICLF_BMAX ! set only one bin for now...
 
 c     ! send particles to correct rank
-      call ppiclf_solve_SetupInterp
+      call ppiclf_solve_SetupInterp(ppiclf_cycle,ppiclf_dt,ppiclf_time)
 
       return
       end
@@ -53,6 +53,9 @@ c     ! send particles to correct rank
 
       ppiclf_ndim       = 3    ! ndim
 
+      ppiclf_cycle = 0
+      ppiclf_dt    = 0.0
+      ppiclf_time  = 0.0
 
       return
       end
@@ -142,7 +145,7 @@ c----------------------------------------------------------------------
       enddo
 
       ! get rk3 coeffs
-      call ppiclf_solve_SetRK3Coeff
+      call ppiclf_solve_SetRK3Coeff(ppiclf_dt)
 
       nstage = 3
       do istage=1,nstage
@@ -162,10 +165,18 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_SetupInterp
+      subroutine ppiclf_solve_SetupInterp(istep,dt,time)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
+
+      integer istep
+      real    dt
+      real    time
+
+      ppiclf_cycle = istep
+      ppiclf_dt    = dt
+      ppiclf_time  = time
 
          call ppiclf_solve_RemoveParticle
          call ppiclf_comm_CreateBin
@@ -230,20 +241,22 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_SetRK3Coeff
+      subroutine ppiclf_solve_SetRK3Coeff(dt)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
+      real dt
+
       rk3coef(1,1) = 0.0
       rk3coef(2,1) = 1.0 
-      rk3coef(3,1) = ppiclf_dt
+      rk3coef(3,1) = dt
       rk3coef(1,2) = 3.0/4.0
       rk3coef(2,2) = 1.0/4.0 
-      rk3coef(3,2) = ppiclf_dt/4.0 
+      rk3coef(3,2) = dt/4.0 
       rk3coef(1,3) = 1.0/3.0
       rk3coef(2,3) = 2.0/3.0 
-      rk3coef(3,3) = ppiclf_dt*2.0/3.0 
+      rk3coef(3,3) = dt*2.0/3.0 
 
       return
       end
