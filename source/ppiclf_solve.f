@@ -12,7 +12,7 @@
       call ppiclf_solve_InitDefault
 
       ppiclf_rparam(2)  = imethod
-      ppiclf_rparam(12) = ndim
+      ppiclf_ndim       = ndim
       ppiclf_npart      = npart
 
       call ppiclf_solve_InitParticleTag
@@ -56,7 +56,7 @@ c     ppiclf_rparam(4) =       ! 1=tracers, 0=projection... rm see param5
       ppiclf_rparam(9)  = 1    ! periodic in y (==0)
       ppiclf_rparam(10) = 1    ! periodic in z (==0)
 
-      ppiclf_rparam(12) = 3    ! ndim
+      ppiclf_ndim = 3    ! ndim
 
 
       return
@@ -263,7 +263,7 @@ c----------------------------------------------------------------------
       iperiodicx = int(ppiclf_rparam(8))
       iperiodicy = int(ppiclf_rparam(9))
       iperiodicz = int(ppiclf_rparam(10))
-      ndim       = int(ppiclf_rparam(12))
+      ndim       = ppiclf_ndim
 
       jj(1) = 1
       jj(2) = 2
@@ -370,7 +370,7 @@ c     ppiclf_npart_gp = 0
       do ip=1,ppiclf_npart
          rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
 
          rproj(1 ,ip) = rbexpi
@@ -393,7 +393,7 @@ c     ppiclf_npart_gp = 0
       do ip=1,ppiclf_npart_gp
          rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
 
          rproj(1 ,ip+ppiclf_npart) = rbexpi
@@ -447,7 +447,7 @@ c     ndum = ppiclf_npart
 
             rdist2  = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))**2 +
      >                (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))**2
-            if(ppiclf_rparam(12) .gt. 2) rdist2 = rdist2 +
+            if(ppiclf_ndim .gt. 2) rdist2 = rdist2 +
      >                (ppiclf_xm1b(i,j,k,3,ie) - rproj(4,ip))**2
 
             if (rdist2 .gt. d2chk2_sq) cycle
@@ -541,7 +541,7 @@ c     ppiclf_npart_gp = 0
       do ip=1,ppiclf_npart
          rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
 
          rproj(1 ,ip) = rbexpi
@@ -566,7 +566,7 @@ c     ppiclf_npart_gp = 0
       do ip=1,ppiclf_npart_gp
          rsig    = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_rparam(12) .gt. 2) multfci = multfci**(1.5d+0)
+         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
          rbexpi   = 1./(-2.*rsig**2)
 
          rproj(1 ,ip+ppiclf_npart) = rbexpi
@@ -629,7 +629,7 @@ c              if (ppiclf_grid_kk(i,j,k) .lt. kl) cycle
 
                rdist2  = (ppiclf_grid_x(i,j,k) - rproj(2,ip))**2 +
      >                   (ppiclf_grid_y(i,j,k) - rproj(3,ip))**2
-               if(ppiclf_rparam(12) .gt. 2) rdist2 = rdist2 +
+               if(ppiclf_ndim .gt. 2) rdist2 = rdist2 +
      >                   (ppiclf_grid_z(i,j,k) - rproj(4,ip))**2
 
                if (rdist2 .gt. d2chk2_sq) cycle

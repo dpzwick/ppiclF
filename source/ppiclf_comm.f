@@ -123,7 +123,7 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       nedgegp   = 4  ! number of edges
       ncornergp = 0  ! number of corners
 
-      if (ppiclf_rparam(12) .gt. 2) then
+      if (ppiclf_ndim .gt. 2) then
          nfacegp   = 6  ! number of faces
          nedgegp   = 12 ! number of edges
          ncornergp = 8  ! number of corners
@@ -136,7 +136,7 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       iperiodicx = int(ppiclf_rparam(8))
       iperiodicy = int(ppiclf_rparam(9))
       iperiodicz = int(ppiclf_rparam(10))
-      ndim       = int(ppiclf_rparam(12))
+      ndim       = int(ppiclf_ndim)
 
       ! compute binb
       xmin = 1E10
@@ -168,8 +168,8 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       ppiclf_binb(4) = ppiclf_glmax(ymax,1)
       ppiclf_binb(5) = 0.0
       ppiclf_binb(6) = 0.0
-      if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(5) = ppiclf_glmin(zmin,1)
-      if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
+      if(ppiclf_ndim .gt. 2) ppiclf_binb(5) = ppiclf_glmin(zmin,1)
+      if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
 
 
       ! comment for now.....
@@ -177,9 +177,9 @@ c     ppiclf_binb(1) = max(ppiclf_binb(1),ppiclf_xdrange(1,1))
 c     ppiclf_binb(2) = min(ppiclf_binb(2),ppiclf_xdrange(2,1))
 c     ppiclf_binb(3) = max(ppiclf_binb(3),ppiclf_xdrange(1,2))
 c     ppiclf_binb(4) = min(ppiclf_binb(4),ppiclf_xdrange(2,2))
-c     if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(5) = 
+c     if(ppiclf_ndim .gt. 2) ppiclf_binb(5) = 
 c    >                           max(ppiclf_binb(5),ppiclf_xdrange(1,3))
-c     if(ppiclf_rparam(12) .gt. 2) ppiclf_binb(6) = 
+c     if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = 
 c    >                           min(ppiclf_binb(6),ppiclf_xdrange(2,3))
 c     if (iperiodicx .eq. 0) then
 c        ppiclf_binb(1) = ppiclf_xdrange(1,1)
@@ -189,7 +189,7 @@ c     if (iperiodicy .eq. 0) then
 c        ppiclf_binb(3) = ppiclf_xdrange(1,2)
 c        ppiclf_binb(4) = ppiclf_xdrange(2,2)
 c     endif
-c     if (iperiodicz .eq. 0 .and. ppiclf_rparam(12) .gt. 2) then
+c     if (iperiodicz .eq. 0 .and. ppiclf_ndim .gt. 2) then
 c        ppiclf_binb(5) = ppiclf_xdrange(1,3)
 c        ppiclf_binb(6) = ppiclf_xdrange(2,3)
 c     endif
@@ -207,7 +207,7 @@ c     endif
       ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
       ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
       ppiclf_ndzgp = 1
-      if (ppiclf_rparam(12) .gt. 2) ppiclf_ndzgp = 
+      if (ppiclf_ndim .gt. 2) ppiclf_ndzgp = 
      >                floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
 
 
@@ -253,7 +253,7 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
       ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
       ppiclf_ndzgp = 1
-      if (ppiclf_rparam(12) .gt. 2) ppiclf_ndzgp = 
+      if (ppiclf_ndim .gt. 2) ppiclf_ndzgp = 
      >                floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
 
       
@@ -267,7 +267,7 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       ppiclf_rdxgp = (ppiclf_binb(2) -ppiclf_binb(1))/real(ppiclf_ndxgp)
       ppiclf_rdygp = (ppiclf_binb(4) -ppiclf_binb(3))/real(ppiclf_ndygp)
       ppiclf_rdzgp = 1.
-      if (ppiclf_rparam(12) .gt. 2) 
+      if (ppiclf_ndim .gt. 2) 
      >ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
 
 c     ninc = 2
@@ -290,7 +290,7 @@ c        rylbin = max(rylbin,ppiclf_xdrange(1,2))
 c        ryrbin = min(ryrbin,ppiclf_xdrange(2,2))
 c     endif
 c     if (iperiodicz .ne. 0) then
-c     if (ppiclf_rparam(12) .gt. 2) then
+c     if (ppiclf_ndim .gt. 2) then
 c        rzlbin = rzlbin - ninc/2*ppiclf_rdzgp
 c        rzrbin = rzrbin + ninc/2*ppiclf_rdzgp
 c        rzlbin = max(rzlbin,ppiclf_xdrange(1,3))
@@ -317,12 +317,12 @@ c     current box coordinates
          ppiclf_bx = floor(ppiclf_rdxgp/ppiclf_rparam(5)) + 1 + 1
          ppiclf_by = floor(ppiclf_rdygp/ppiclf_rparam(5)) + 1 + 1
          ppiclf_bz = 1
-         if (ppiclf_rparam(12) .gt. 2) 
+         if (ppiclf_ndim .gt. 2) 
      >      ppiclf_bz = floor(ppiclf_rdzgp/ppiclf_rparam(5)) + 1 + 1
 
          ppiclf_bx = ppiclf_bx*int(ppiclf_rparam(6))
          ppiclf_by = ppiclf_by*int(ppiclf_rparam(6))
-         if (ppiclf_rparam(12) .gt. 2) 
+         if (ppiclf_ndim .gt. 2) 
      >      ppiclf_bz = ppiclf_bz*int(ppiclf_rparam(6))
 
          if ((ppiclf_bx .gt. PPICLF_BX1) .or. 
@@ -337,7 +337,7 @@ c     current box coordinates
          ppiclf_rdx = ppiclf_rdxgp/(ppiclf_bx-1)
          ppiclf_rdy = ppiclf_rdygp/(ppiclf_by-1)
          ppiclf_rdz = 0
-         if (ppiclf_rparam(12) .gt. 2) 
+         if (ppiclf_ndim .gt. 2) 
      >      ppiclf_rdz = ppiclf_rdzgp/(ppiclf_bz-1)
 
          ndumx = ppiclf_ndxgp*(ppiclf_bx-1) + 1
@@ -391,7 +391,7 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
          rxval = ppiclf_xm1b(i,j,k,1,ie)
          ryval = ppiclf_xm1b(i,j,k,2,ie)
          rzval = 0.
-         if(ppiclf_rparam(12).gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
+         if(ppiclf_ndim.gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
 
          ppiclf_xm1bd(i,j,k,1,ie) = rxval
          ppiclf_xm1bd(i,j,k,2,ie) = ryval
@@ -401,15 +401,15 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
          if (rxval .lt. ppiclf_binb(1)) goto 1233
          if (ryval .gt. ppiclf_binb(4)) goto 1233
          if (ryval .lt. ppiclf_binb(3)) goto 1233
-         if (ppiclf_rparam(12).gt.2 .and. rzval .gt. ppiclf_binb(6)) 
+         if (ppiclf_ndim.gt.2 .and. rzval .gt. ppiclf_binb(6)) 
      >      goto 1233
-         if (ppiclf_rparam(12).gt.2 .and. rzval .lt. ppiclf_binb(5))
+         if (ppiclf_ndim.gt.2 .and. rzval .lt. ppiclf_binb(5))
      >      goto 1233
 
          ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
          jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
          kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
-         if (ppiclf_rparam(12).lt.3) kk = 0
+         if (ppiclf_ndim.lt.3) kk = 0
          !if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
          !if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
          !if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
@@ -506,12 +506,12 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
          rxval = ppiclf_xm1b(i,j,k,1,ie)
          ryval = ppiclf_xm1b(i,j,k,2,ie)
          rzval = 0.
-         if(ppiclf_rparam(12).gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
+         if(ppiclf_ndim.gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
          
          ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
          jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
          kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
-         if (ppiclf_rparam(12).eq.2) kk = 0
+         if (ppiclf_ndim.eq.2) kk = 0
          !if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
          !if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
          !if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
@@ -553,7 +553,7 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
      >     floor((ppiclf_xerange(1,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
          khigh = 
      >     floor((ppiclf_xerange(2,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
-         if (ppiclf_rparam(12).lt.3) then
+         if (ppiclf_ndim.lt.3) then
             klow = 0
             khigh = 0
          endif
@@ -642,7 +642,7 @@ c    $        , ppiclf_y     (iz,1),PPICLF_LRS ,PPICLF_NPART) !   &             
          ii    = floor((ppiclf_y(ix,i)-ppiclf_binb(1))/ppiclf_rdxgp) 
          jj    = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_rdygp) 
          kk    = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_rdzgp) 
-         if (ppiclf_rparam(12) .lt. 3) kk = 0
+         if (ppiclf_ndim .lt. 3) kk = 0
 c        if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
 c        if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
 c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
@@ -734,7 +734,7 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       nedgegp   = 4  ! number of edges
       ncornergp = 0  ! number of corners
 
-      if (ppiclf_rparam(12) .gt. 2) then
+      if (ppiclf_ndim .gt. 2) then
          nfacegp   = 6  ! number of faces
          nedgegp   = 12 ! number of edges
          ncornergp = 8  ! number of corners
@@ -754,7 +754,7 @@ c CREATING GHOST PARTICLES
       xdlen = ppiclf_binb(2) - ppiclf_binb(1)
       ydlen = ppiclf_binb(4) - ppiclf_binb(3)
       zdlen = -1.
-      if (ppiclf_rparam(12) .gt. 2) 
+      if (ppiclf_ndim .gt. 2) 
      >   zdlen = ppiclf_binb(6) - ppiclf_binb(5)
       if (iperiodicx .ne. 0) xdlen = -1
       if (iperiodicy .ne. 0) ydlen = -1
@@ -783,7 +783,7 @@ c CREATING GHOST PARTICLES
          rxval = ppiclf_cp_map(1,ip)
          ryval = ppiclf_cp_map(2,ip)
          rzval = 0.
-         if (ppiclf_rparam(12) .gt. 2) rzval = ppiclf_cp_map(3,ip)
+         if (ppiclf_ndim .gt. 2) rzval = ppiclf_cp_map(3,ip)
 
          iip    = ppiclf_iprop(8,ip)
          jjp    = ppiclf_iprop(9,ip)
@@ -795,7 +795,7 @@ c CREATING GHOST PARTICLES
          ryr = ryl + ppiclf_rdygp
          rzl = 0.0
          rzr = 0.0
-         if (ppiclf_rparam(12) .gt. 2) then
+         if (ppiclf_ndim .gt. 2) then
             rzl = ppiclf_binb(5) + ppiclf_rdzgp*kkp
             rzr = rzl + ppiclf_rdzgp
          endif
@@ -825,7 +825,7 @@ c CREATING GHOST PARTICLES
                if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
                if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
             endif
-            if (ppiclf_rparam(12) .gt. 2) then
+            if (ppiclf_ndim .gt. 2) then
             if (kk1-kkp .ne. 0) then
                distchk = distchk + (rfac*ppiclf_d2chk(2))**2
                if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
@@ -920,7 +920,7 @@ c CREATING GHOST PARTICLES
                if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
                if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
             endif
-            if (ppiclf_rparam(12) .gt. 2) then
+            if (ppiclf_ndim .gt. 2) then
             if (kk1-kkp .ne. 0) then
                distchk = distchk + (rfac*ppiclf_d2chk(2))**2
                if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
@@ -1016,7 +1016,7 @@ c CREATING GHOST PARTICLES
                if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
                if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
             endif
-            if (ppiclf_rparam(12) .gt. 2) then
+            if (ppiclf_ndim .gt. 2) then
             if (kk1-kkp .ne. 0) then
                distchk = distchk + (rfac*ppiclf_d2chk(2))**2
                if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
@@ -1149,7 +1149,7 @@ c
       endif
   124 continue
 
-      if (ppiclf_rparam(12) .gt. 2) then
+      if (ppiclf_ndim .gt. 2) then
          if (zdlen .gt. 0 ) then
          if (kk .ge. ppiclf_ndzgp) then
             zloc = zloc - zdlen

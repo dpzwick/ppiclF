@@ -32,7 +32,7 @@
       nnp   = ppiclf_np
       nxx   = PPICLF_NPART
 
-      if (ppiclf_rparam(12) .gt. 2) then
+      if (ppiclf_ndim .gt. 2) then
          ncll_total = ppiclf_ndxgp*(ppiclf_bx-1)
      >               *ppiclf_ndygp*(ppiclf_by-1)
      >               *ppiclf_ndzgp*(ppiclf_bz-1)
@@ -500,10 +500,10 @@ c1511 continue
       nxx   = PPICLF_NPART
 
       nvtx_total = (ppiclf_ndxgp+1)*(ppiclf_ndygp+1)
-      if (ppiclf_rparam(12) .gt. 2) 
+      if (ppiclf_ndim .gt. 2) 
      >    nvtx_total = nvtx_total*(ppiclf_ndzgp+1)
       ncll_total = ppiclf_ndxgp*ppiclf_ndygp
-      if (ppiclf_rparam(12) .gt. 2) ncll_total = ncll_total*ppiclf_ndzgp
+      if (ppiclf_ndim .gt. 2) ncll_total = ncll_total*ppiclf_ndzgp
 
 
       ppiclf_ndxgpp1 = ppiclf_ndxgp + 1
@@ -763,7 +763,7 @@ c1511 continue
       call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
 
       ! 3d
-      if (ppiclf_rparam(12) .gt. 2) then
+      if (ppiclf_ndim .gt. 2) then
 
          ! point B
          icount_pos = 0
