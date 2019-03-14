@@ -1,17 +1,15 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_user_SetYdot(istep,dt,time,y,ydot)
+      subroutine ppiclf_user_SetYdot(time,y,ydot)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-      integer istep
-      real    dt
       real    time
       real    y(*)
       real    ydot(*)
 
 c setup interpolation
-      call ppiclf_solve_SetupInterp(istep,dt,time)
+      call ppiclf_solve_SetupInterp
 c setup interpolation
 
 C interpolate fields
@@ -55,7 +53,7 @@ c evaluate ydot
 c evaluate ydot
 
 c project fields
-      call ppiclf_solve_ProjectParticleGrid
+      call ppiclf_solve_ParallelProjection
 c project fields
 
       return

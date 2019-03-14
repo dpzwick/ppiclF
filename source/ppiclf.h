@@ -57,3 +57,11 @@ c max gridpts per processor
 #ifndef PPICLF_BZ1
 #define PPICLF_BZ1 1
 #endif
+
+#ifndef PPICLF_LIP_GP
+#define PPICLF_LIP_GP 5
+#endif
+
+#ifndef PPICLF_LRMAX
+#define PPICLF_LRMAX 6
+#endif

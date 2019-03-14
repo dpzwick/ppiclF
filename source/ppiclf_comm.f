@@ -22,80 +22,7 @@
 #include "ppiclf.h"
 #include "PPICLF"
 
-c     call ppiclf_comm_SetupInterp(i_fp_hndl,0.0,idum,ppiclf_nelt)
       call fgslib_crystal_setup(ppiclf_cr_hndl,ppiclf_comm,ppiclf_np)
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_comm_SetupInterp(ih,tolin,nmsh,nelm)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
-#include "PPICLF"
-
-      ! need to add xm1, etc in PPICLF for this case
-
-c     common /intp_h/ ih_intp(2,1)
-c     common /intp/   tol
-
-c     data ihcounter /0/
-c     save ihcounter
-
-c     real xmi, ymi, zmi
-c     common /CBXMI/ xmi(PPICLF_LX1*PPICLF_LY1*PPICLF_LZ1*PPICLF_LELT),
-c    $               ymi(PPICLF_LX1*PPICLF_LY1*PPICLF_LZ1*PPICLF_LELT),
-c    $               zmi(PPICLF_LX1*PPICLF_LY1*PPICLF_LZ1*PPICLF_LELT)
-c
-c     real w(2*PPICLF_LX1*PPICLF_LY1*PPICLF_LZ1)
-c     logical if3d
-
-c     tol = max(5e-13,tolin)
-c     npt_max = 128
-c     bb_t    = 0.01
-
-c     ! fix below
-c     if3d = .true.
-
-c     if (nmsh.ge.1 .and. nmsh.lt.PPICLF_LX1-1) then
-c        nxi = nmsh+1
-c        nyi = nxi
-c        nzi = 1
-c        if (if3d) nzi = nxi
-c        do ie = 1,nelm
-c          call map_m_to_n(xmi((ie-1)*nxi*nyi*nzi + 1),nxi,xm1(1,1,1,ie)
-c    $                     ,lx1,if3d,w,size(w))
-c          call map_m_to_n(ymi((ie-1)*nxi*nyi*nzi + 1),nyi,ym1(1,1,1,ie)
-c    $                     ,ly1,if3d,w,size(w))
-c          if (if3d) 
-c    $     call map_m_to_n(zmi((ie-1)*nxi*nyi*nzi + 1),nzi,zm1(1,1,1,ie)
-c    $                     ,lz1,if3d,w,size(w))
-c        enddo
-
-c        n = nelm*nxi*nyi*nzi 
-c        call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
-c    &                             xm1,ym1,zm1,nx1,ny1,nz1,
-c    &                             nelm,nx1,ny1,nz1,bb_t,nelm+2,nelm+2,
-c    &                             npt_max,tol)
-
-c        call fgslib_findpts_setup(ih_intp2,nekcomm,npp,ldim,
-c    $                             xmi,ymi,zmi,nxi,nyi,nzi,
-c    $                             nelm,2*nxi,2*nyi,2*nzi,bb_t,n,n,
-c    $                             npt_max,tol)
-c     else
-c        n = nelm*nx1*ny1*nz1
-c        call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
-c    &                             xm1,ym1,zm1,nx1,ny1,nz1,
-c    &                             nelm,2*nx1,2*ny1,2*nz1,bb_t,n,n,
-c    &                             npt_max,tol)
-c        ih_intp2 = ih_intp1
-c     endif
-
-c     ihcounter = ihcounter + 1 
-c     ih = ihcounter
-c     if (ih .gt. INTP_HMAX)
-c    $   call exitti('Maximum number of handles exceeded!$',INTP_HMAX)
-c     ih_intp(1,ih) = ih_intp1
-c     ih_intp(2,ih) = ih_intp2
 
       return
       end
@@ -375,24 +302,16 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
 #include "ppiclf.h"
 #include "PPICLF"
 
-      real ppiclf_xm1bd(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,3,PPICLF_LEE)
-      common /ppiclf_mesh_orig/ ppiclf_xm1bd
-
-
       ! see which bins are in which elements
       ppiclf_neltb = 0
       do ie=1,ppiclf_nee
       do k=1,PPICLF_LEZ
       do j=1,PPICLF_LEY
       do i=1,PPICLF_LEX
-         rxval = ppiclf_xm1b(i,j,k,1,ie)
-         ryval = ppiclf_xm1b(i,j,k,2,ie)
+         rxval = ppiclf_xm1bs(i,j,k,1,ie)
+         ryval = ppiclf_xm1bs(i,j,k,2,ie)
          rzval = 0.
-         if(ppiclf_ndim.gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
-
-         ppiclf_xm1bd(i,j,k,1,ie) = rxval
-         ppiclf_xm1bd(i,j,k,2,ie) = ryval
-         ppiclf_xm1bd(i,j,k,3,ie) = rzval
+         if(ppiclf_ndim.gt.2) rzval = ppiclf_xm1bs(i,j,k,3,ie)
 
          if (rxval .gt. ppiclf_binb(2)) goto 1233
          if (rxval .lt. ppiclf_binb(1)) goto 1233
@@ -470,11 +389,11 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       do ie=1,ppiclf_neltb
        iee = ppiclf_er_map(1,ie)
        call ppiclf_copy(ppiclf_xm1b(1,1,1,1,ie)
-     >                 ,ppiclf_xm1bd(1,1,1,1,iee),nxyz)
+     >                 ,ppiclf_xm1bs(1,1,1,1,iee),nxyz)
        call ppiclf_copy(ppiclf_xm1b(1,1,1,2,ie)
-     >                 ,ppiclf_xm1bd(1,1,1,2,iee),nxyz)
+     >                 ,ppiclf_xm1bs(1,1,1,2,iee),nxyz)
        call ppiclf_copy(ppiclf_xm1b(1,1,1,3,ie)
-     >                 ,ppiclf_xm1bd(1,1,1,3,iee),nxyz)
+     >                 ,ppiclf_xm1bs(1,1,1,3,iee),nxyz)
       enddo
 
       ppiclf_neltbb = ppiclf_neltb
@@ -595,9 +514,9 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       do ie=1,ppiclf_nee
       do i=1,nxyz
          j = (ie-1)*nxyz + i
-         ppiclf_xm1b(i,1,1,1,ie) = xgrid(j)
-         ppiclf_xm1b(i,1,1,2,ie) = ygrid(j)
-         ppiclf_xm1b(i,1,1,3,ie) = zgrid(j)
+         ppiclf_xm1bs(i,1,1,1,ie) = xgrid(j)
+         ppiclf_xm1bs(i,1,1,2,ie) = ygrid(j)
+         ppiclf_xm1bs(i,1,1,3,ie) = zgrid(j)
       enddo
       enddo
 

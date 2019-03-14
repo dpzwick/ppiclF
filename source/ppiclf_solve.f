@@ -19,12 +19,6 @@
       call ppiclf_solve_SetParticleTag
 
 c     ! get domain bounds
-      ppiclf_xdrange(1,1) = -1E8
-      ppiclf_xdrange(2,1) =  1E8
-      ppiclf_xdrange(1,2) = -1E8
-      ppiclf_xdrange(2,2) =  1E8
-      ppiclf_xdrange(1,3) = -1E8
-      ppiclf_xdrange(2,3) =  1E8
 c     call domain_size( ppiclf_xdrange(1,1),ppiclf_xdrange(2,1)
 c    >                 ,ppiclf_xdrange(1,2),ppiclf_xdrange(2,2)
 c    >                 ,ppiclf_xdrange(1,3),ppiclf_xdrange(2,3))
@@ -32,7 +26,7 @@ c    >                 ,ppiclf_xdrange(1,3),ppiclf_xdrange(2,3))
       ppiclf_nbmax = PPICLF_BMAX ! set only one bin for now...
 
 c     ! send particles to correct rank
-      call ppiclf_solve_SetupInterp(ppiclf_cycle,ppiclf_dt,ppiclf_time)
+      call ppiclf_solve_SetupInterp
 
       return
       end
@@ -58,6 +52,13 @@ c     ! send particles to correct rank
       ppiclf_time  = 0.0
 
       ppiclf_restart = .false.
+
+      ppiclf_xdrange(1,1) = -1E8
+      ppiclf_xdrange(2,1) =  1E8
+      ppiclf_xdrange(1,2) = -1E8
+      ppiclf_xdrange(2,2) =  1E8
+      ppiclf_xdrange(1,3) = -1E8
+      ppiclf_xdrange(2,3) =  1E8
 
       return
       end
@@ -115,17 +116,23 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_IntegrateParticle(time_,y,ydot)
+      subroutine ppiclf_solve_IntegrateParticle(istep,dt,time,y,ydot)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-      real time_
-      real y(*)
-      real ydot(*)
+      integer istep
+      real    dt
+      real    time
+      real    y(*)
+      real    ydot(*)
 
-      if (int(ppiclf_imethod) .eq. 1) 
-     >   call ppiclf_solve_IntegrateRK3(time_,y,ydot)
+      ppiclf_cycle = istep
+      ppiclf_dt    = dt
+      ppiclf_time  = time
+
+      if (ppiclf_imethod .eq. 1) 
+     >   call ppiclf_solve_IntegrateRK3(time,y,ydot)
 
       return
       end
@@ -167,18 +174,10 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_SetupInterp(istep,dt,time)
+      subroutine ppiclf_solve_SetupInterp
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
-
-      integer istep
-      real    dt
-      real    time
-
-      ppiclf_cycle = istep
-      ppiclf_dt    = dt
-      ppiclf_time  = time
 
          call ppiclf_solve_RemoveParticle
          call ppiclf_comm_CreateBin
@@ -259,6 +258,7 @@ c----------------------------------------------------------------------
       ppiclf_rk3coef(1,3) = 1.0/3.0
       ppiclf_rk3coef(2,3) = 2.0/3.0 
       ppiclf_rk3coef(3,3) = dt*2.0/3.0 
+
 
       return
       end
