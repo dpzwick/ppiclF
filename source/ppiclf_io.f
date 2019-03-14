@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_vtu_write_grd(filein1,iobig)
+      subroutine ppiclf_io_WriteGridVTU(filein1,iobig)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -23,9 +23,9 @@
 
       real*4 rpoint(3)
 
-      call ppiclf_comm_ghost_create
-      call ppiclf_comm_ghost_send
-      call ppiclf_solve_project_bins
+      call ppiclf_comm_CreateGhost
+      call ppiclf_comm_MoveGhost
+      call ppiclf_solve_ProjectParticleBin
 
       icalld1 = icalld1+1
 
@@ -129,7 +129,7 @@ c     goto 1511
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call ppiclf_io_vtu_data(vtu,"Position",3   ,iint)
+      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3   ,iint)
       iint = iint + 3   *isize*nvtx_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
@@ -139,7 +139,7 @@ c     goto 1511
       write(vtu,'(A)',advance='yes') '   <PointData>'
       do ie=1,PPICLF_LRP_PRO
          write(prostr,'(A4,I2.2)') "PRO-",ie
-         call ppiclf_io_vtu_data(vtu,prostr,1,iint)
+         call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
          iint = iint + 1*isize*nvtx_total + isize
       enddo
       write(vtu,'(A)',advance='yes') '   </PointData> '
@@ -291,7 +291,6 @@ c1511 continue
         write(vtu) if_pos
         close(vtu)
       endif
-
 
       call mpi_barrier(ppiclf_comm,ierr)
 
@@ -474,7 +473,7 @@ c1511 continue
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_vtu_write_bins(filein1,iobig)
+      subroutine ppiclf_io_WriteBinVTU(filein1,iobig)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -631,7 +630,7 @@ c     goto 1511
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call ppiclf_io_vtu_data(vtu,"Position",3   ,iint)
+      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3   ,iint)
       iint = iint + 3   *isize*nvtx_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
@@ -641,7 +640,7 @@ c     goto 1511
       write(vtu,'(A)',advance='yes') '   <PointData>'
       write(vtu,'(A)',advance='yes') '   </PointData> '
       write(vtu,'(A)',advance='yes') '   <CellData>'
-      call ppiclf_io_vtu_data(vtu,"PPR",1,iint)
+      call ppiclf_io_WriteDataArrayVTU(vtu,"PPR",1,iint)
       iint = iint + 1   *isize*ncll_total + isize
       write(vtu,'(A)',advance='yes') '   </CellData> '
 
@@ -933,7 +932,7 @@ c1511 continue
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_vtu_write(filein1,iobig)
+      subroutine ppiclf_io_WriteParticleVTU(filein1,iobig)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -1102,7 +1101,7 @@ c        endif
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call ppiclf_io_vtu_data(vtu,"Position",3   ,iint)
+      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3   ,iint)
       iint = iint + 3   *isize*npt_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
@@ -1111,13 +1110,14 @@ c        endif
 ! ----
       write(vtu,'(A)',advance='yes') '   <PointData>'
 
-      call ppiclf_io_vtu_data(vtu,'ppiclf-y',PPICLF_LRS,iint)
+      call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-y',PPICLF_LRS,iint)
       iint = iint + PPICLF_LRS*isize*npt_total + isize
 
-      call ppiclf_io_vtu_data(vtu,'ppiclf-rprop',PPICLF_LRP,iint)
+      call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-rprop',PPICLF_LRP
+     >                                ,iint)
       iint = iint + PPICLF_LRP*isize*npt_total + isize
 
-      call ppiclf_io_vtu_data(vtu,'ppiclf-iprop',3,iint)
+      call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-iprop',3,iint)
       iint = iint + 3*isize*npt_total + isize
 
       write(vtu,'(A)',advance='yes') '   </PointData> '
@@ -1252,7 +1252,7 @@ c        endif
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_vtu_data(vtu,dataname,ncomp,idist)
+      subroutine ppiclf_io_WriteDataArrayVTU(vtu,dataname,ncomp,idist)
 
       integer vtu,ncomp
       integer*4 idist

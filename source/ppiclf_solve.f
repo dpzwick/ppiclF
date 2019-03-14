@@ -15,10 +15,8 @@
       ppiclf_rparam(12) = ndim
       ppiclf_npart      = npart
 
-      call ppiclf_comm_setup
-
-      call ppiclf_tag_init
-      call ppiclf_tag_set
+      call ppiclf_solve_InitParticleTag
+      call ppiclf_solve_SetParticleTag
 
 c     ! get domain bounds
       ppiclf_xdrange(1,1) = -1E8
@@ -34,7 +32,7 @@ c    >                 ,ppiclf_xdrange(1,3),ppiclf_xdrange(2,3))
       ppiclf_nbmax = PPICLF_BMAX ! set only one bin for now...
 
 c     ! send particles to correct rank
-      call ppiclf_interpolate_setup
+      call ppiclf_solve_SetupInterp
 
 c     ! two-way coupling init
 c     call ppiclf_project
@@ -64,21 +62,43 @@ c     ppiclf_rparam(4) =       ! 1=tracers, 0=projection... rm see param5
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_tag_set
+      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      real    filt
+      real    alpha
+      integer ngrid
+
+      ppiclf_rparam(5) = filt
+      ppiclf_rparam(6) = real(ngrid)
+      ppiclf_rparam(7) = alpha 
+
+      rsig             = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
+      ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_rparam(7)))
+
+      call ppiclf_comm_CreateBin
+      call ppiclf_comm_MapOverlapMesh
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_SetParticleTag
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
       do i=1,ppiclf_npart
-         if (ppiclf_iprop(5,i) .eq. -1) ppiclf_iprop(5,i) = 0 ! nid
-         if (ppiclf_iprop(6,i) .eq. -1) ppiclf_iprop(6,i) = 0 ! istep
+         if (ppiclf_iprop(5,i) .eq. -1) ppiclf_iprop(5,i) = ppiclf_nid 
+         if (ppiclf_iprop(6,i) .eq. -1) ppiclf_iprop(6,i) = ppiclf_cycle
          if (ppiclf_iprop(7,i) .eq. -1) ppiclf_iprop(7,i) = i
       enddo
 
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_tag_init
+      subroutine ppiclf_solve_InitParticleTag
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -94,7 +114,7 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve(time_,y,ydot)
+      subroutine ppiclf_solve_IntegrateParticle(time_,y,ydot)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -104,12 +124,12 @@ c----------------------------------------------------------------------
       real ydot(*)
 
       if (int(ppiclf_rparam(2)) .eq. 1) 
-     >   call ppiclf_rk3_driver(time_,y,ydot)
+     >   call ppiclf_solve_IntegrateRK3(time_,y,ydot)
 
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_rk3_driver(time_,y,ydot)
+      subroutine ppiclf_solve_IntegrateRK3(time_,y,ydot)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -126,13 +146,13 @@ c----------------------------------------------------------------------
       enddo
 
       ! get rk3 coeffs
-      call ppiclf_rk3_coeff
+      call ppiclf_solve_SetRK3Coeff
 
       nstage = 3
       do istage=1,nstage
 
          ! evaluate ydot
-         call ppiclf_fun(time_,y,ydot)
+         call ppiclf_user_SetYdot(time_,y,ydot)
 
          ndum = PPICLF_NPART*PPICLF_LRS
          ! rk3 integrate
@@ -146,22 +166,22 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_interpolate_setup
+      subroutine ppiclf_solve_SetupInterp
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-         call ppiclf_move_outlier
-         call ppiclf_comm_CreateBins
+         call ppiclf_solve_RemoveParticle
+         call ppiclf_comm_CreateBin
       if (ppiclf_rparam(5) .gt. 0) 
      >   call ppiclf_comm_MapOverlapMesh
-         call ppiclf_comm_findpts
-         call ppiclf_comm_crystal
+         call ppiclf_comm_FindParticle
+         call ppiclf_comm_MoveParticle
 
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_interpolate_fld(jp,fld)
+      subroutine ppiclf_solve_InterpField(jp,fld)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -200,21 +220,21 @@ c    >                           ,fld)
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_project
+      subroutine ppiclf_solve_ParallelProjection
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
       if (int(ppiclf_rparam(4)) .ne. 1) then
-         call ppiclf_comm_ghost_create
-         call ppiclf_comm_ghost_send
-         call ppiclf_solve_project
+         call ppiclf_comm_CreateGhost
+         call ppiclf_comm_MoveGhost
+         call ppiclf_solve_ProjectParticleGrid
       endif
 
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_rk3_coeff
+      subroutine ppiclf_solve_SetRK3Coeff
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -232,7 +252,7 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_move_outlier
+      subroutine ppiclf_solve_RemoveParticle
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -290,19 +310,19 @@ c----------------------------------------------------------------------
             if (i .ne. ic) then
                isl = (i -1) * PPICLF_LRS + 1
                isr = (ic-1) * PPICLF_LRS + 1
-               call copy
+               call ppiclf_copy
      >              (ppiclf_y     (1,ic),ppiclf_y(1,i)     ,PPICLF_LRS)
-               call copy
+               call ppiclf_copy
      >              (ppiclf_y1    (isr) ,ppiclf_y1(isl)    ,PPICLF_LRS)
-               call copy
+               call ppiclf_copy
      >              (ppiclf_ydot  (1,ic),ppiclf_ydot(1,i)  ,PPICLF_LRS)
-               call copy
+               call ppiclf_copy
      >              (ppiclf_ydotc (1,ic),ppiclf_ydotc(1,i) ,PPICLF_LRS)
-               call copy
+               call ppiclf_copy
      >              (ppiclf_rprop (1,ic),ppiclf_rprop(1,i) ,PPICLF_LRP)
-               call copy
+               call ppiclf_copy
      >              (ppiclf_rprop2(1,ic),ppiclf_rprop2(1,i),PPICLF_LRP2)
-               call icopy
+               call ppiclf_icopy
      >              (ppiclf_iprop(1,ic) ,ppiclf_iprop(1,i) ,PPICLF_LIP)
             endif
          endif
@@ -312,7 +332,7 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_project
+      subroutine ppiclf_solve_ProjectParticleGrid
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -450,7 +470,7 @@ c     ndum = ppiclf_npart
 
       neltbc = ppiclf_neltb
       ndum = PPICLF_LRMAX*neltbc
-      call icopy(ppiclf_er_mapc,ppiclf_er_map,ndum)
+      call ppiclf_icopy(ppiclf_er_mapc,ppiclf_er_map,ndum)
       do ie=1,neltbc
          ppiclf_er_mapc(5,ie) = ppiclf_er_mapc(2,ie)
          ppiclf_er_mapc(6,ie) = ppiclf_er_mapc(2,ie)
@@ -486,7 +506,7 @@ c     ndum = ppiclf_npart
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_project_bins
+      subroutine ppiclf_solve_ProjectParticleBin
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"

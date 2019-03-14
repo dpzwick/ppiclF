@@ -47,11 +47,11 @@ c-----------------------------------------------------------------------
       ppiclf_time  = time
       ppiclf_dt    = dt
 
-      call ppiclf_io_vtu_write('',0)
-      call ppiclf_io_vtu_write_bins('',0)
-      call ppiclf_io_vtu_write_grd('',0)
+      call ppiclf_io_WriteParticleVTU('',0)
+      call ppiclf_io_WriteBinVTU('',0)
+      call ppiclf_io_WriteGridVTU('',0)
 
-      call ppiclf_fun(time,ppiclf_y,ppiclf_ydot)
+      call ppiclf_user_SetYdot(time,ppiclf_y,ppiclf_ydot)
 
       call outpost2(ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
      >             ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
@@ -107,68 +107,13 @@ c-----------------------------------------------------------------------
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      real rparam(ppiclf_nparam) 
+      call ppiclf_comm_InitMPI(nekcomm,nid,np)
 
-      call ppiclf_solve_InitMPI(nekcomm,nid,np)
-
-      rparam(1)  = 1           ! use custom values
-      rparam(2)  = 1           ! time integration method
-      rparam(3)  = 2           ! polynomial order of mesh
-      rparam(4)  = 0           ! use 1 for tracers only
-
-
-      rparam(8)  = 1           ! periodic in x (== 0) ! dont do periodic without bounds!!!
-      rparam(9)  = 1           ! periodic in y (== 0)
-      rparam(10) = 1           ! periodic in z (== 0)
-      rparam(11) = 8E-4        ! time step
-      rparam(12) = 3           ! problem dimensions
-
-
-
-      call init_particles(ppiclf_y,npart)
+      call init_particles(npart,ppiclf_y)
       call ppiclf_solve_InitParticle(1,3,npart,ppiclf_y) 
 
       call ppiclf_solve_InitGaussianFilter(0.1,1E-2,4)
-
       call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
-#include "PPICLF"
-
-      real    filt
-      real    alpha
-      integer ngrid
-
-      ppiclf_rparam(5) = filt
-      ppiclf_rparam(6) = real(ngrid)
-      ppiclf_rparam(7) = alpha 
-
-      rsig             = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
-      ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_rparam(7)))
-
-      call ppiclf_comm_CreateBins
-      call ppiclf_comm_MapOverlapMesh
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitMPI(comm,id,np)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
-#include "PPICLF"
-
-      integer comm
-      integer id
-      integer np
-
-      ppiclf_comm = comm
-      ppiclf_nid  = id
-      ppiclf_np   = np
 
       return
       end
@@ -177,11 +122,12 @@ c-----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine init_particles(y,npart)
+      subroutine init_particles(npart,y)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
+      integer   npart
       real      y(*)
       real      pi
       real      ran2

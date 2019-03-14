@@ -1,16 +1,34 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_setup
+      subroutine ppiclf_comm_InitMPI(comm,id,np)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-c     call ppiclf_comm_interp_setup(i_fp_hndl,0.0,idum,ppiclf_nelt)
+      integer comm
+      integer id
+      integer np
+
+      ppiclf_comm = comm
+      ppiclf_nid  = id
+      ppiclf_np   = np
+
+      call ppiclf_comm_InitCrystal
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_comm_InitCrystal
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+c     call ppiclf_comm_SetupInterp(i_fp_hndl,0.0,idum,ppiclf_nelt)
       call fgslib_crystal_setup(i_cr_hndl,ppiclf_comm,ppiclf_np)
 
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_interp_setup(ih,tolin,nmsh,nelm)
+      subroutine ppiclf_comm_SetupInterp(ih,tolin,nmsh,nelm)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -82,7 +100,7 @@ c     ih_intp(2,ih) = ih_intp2
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_createBins
+      subroutine ppiclf_comm_CreateBin
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -454,14 +472,17 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       do ie=1,ppiclf_neltb
        iee = ppiclf_er_map(1,ie)
-       call copy(ppiclf_xm1b(1,1,1,1,ie),ppiclf_xm1bd(1,1,1,1,iee),nxyz)
-       call copy(ppiclf_xm1b(1,1,1,2,ie),ppiclf_xm1bd(1,1,1,2,iee),nxyz)
-       call copy(ppiclf_xm1b(1,1,1,3,ie),ppiclf_xm1bd(1,1,1,3,iee),nxyz)
+       call ppiclf_copy(ppiclf_xm1b(1,1,1,1,ie)
+     >                 ,ppiclf_xm1bd(1,1,1,1,iee),nxyz)
+       call ppiclf_copy(ppiclf_xm1b(1,1,1,2,ie)
+     >                 ,ppiclf_xm1bd(1,1,1,2,iee),nxyz)
+       call ppiclf_copy(ppiclf_xm1b(1,1,1,3,ie)
+     >                 ,ppiclf_xm1bd(1,1,1,3,iee),nxyz)
       enddo
 
       ppiclf_neltbb = ppiclf_neltb
       do ie=1,ppiclf_neltbb
-         call icopy(ppiclf_er_maps(1,ie),ppiclf_er_map(1,ie)
+         call ppiclf_icopy(ppiclf_er_maps(1,ie),ppiclf_er_map(1,ie)
      >             ,PPICLF_LRMAX)
       enddo
 
@@ -586,7 +607,7 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       return
       end
 c-----------------------------------------------------------------------
-      subroutine ppiclf_comm_findpts
+      subroutine ppiclf_comm_FindParticle
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -640,7 +661,7 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_crystal
+      subroutine ppiclf_comm_MoveParticle
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -652,17 +673,18 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
 
       do i=1,ppiclf_npart
          ic = 1
-         call copy(rwork(ic,i),ppiclf_y(1,i),PPICLF_LRS)
+         call ppiclf_copy(rwork(ic,i),ppiclf_y(1,i),PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(rwork(ic,i),ppiclf_y1((i-1)*PPICLF_LRS+1),PPICLF_LRS)
+         call ppiclf_copy(rwork(ic,i),ppiclf_y1((i-1)*PPICLF_LRS+1)
+     >                   ,PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(rwork(ic,i),ppiclf_ydot(1,i),PPICLF_LRS)
+         call ppiclf_copy(rwork(ic,i),ppiclf_ydot(1,i),PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(rwork(ic,i),ppiclf_ydotc(1,i),PPICLF_LRS)
+         call ppiclf_copy(rwork(ic,i),ppiclf_ydotc(1,i),PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(rwork(ic,i),ppiclf_rprop(1,i),PPICLF_LRP)
+         call ppiclf_copy(rwork(ic,i),ppiclf_rprop(1,i),PPICLF_LRP)
          ic = ic + PPICLF_LRP
-         call copy(rwork(ic,i),ppiclf_rprop2(1,i),PPICLF_LRP2)
+         call ppiclf_copy(rwork(ic,i),ppiclf_rprop2(1,i),PPICLF_LRP2)
       enddo
 
       j0 = 4
@@ -671,41 +693,24 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
 
       do i=1,ppiclf_npart
          ic = 1
-         call copy(ppiclf_y(1,i),rwork(ic,i),PPICLF_LRS)
+         call ppiclf_copy(ppiclf_y(1,i),rwork(ic,i),PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(ppiclf_y1((i-1)*PPICLF_LRS+1),rwork(ic,i),PPICLF_LRS)
+         call ppiclf_copy(ppiclf_y1((i-1)*PPICLF_LRS+1),rwork(ic,i)
+     >                   ,PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(ppiclf_ydot(1,i),rwork(ic,i),PPICLF_LRS)
+         call ppiclf_copy(ppiclf_ydot(1,i),rwork(ic,i),PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(ppiclf_ydotc(1,i),rwork(ic,i),PPICLF_LRS)
+         call ppiclf_copy(ppiclf_ydotc(1,i),rwork(ic,i),PPICLF_LRS)
          ic = ic + PPICLF_LRS
-         call copy(ppiclf_rprop(1,i),rwork(ic,i),PPICLF_LRP)
+         call ppiclf_copy(ppiclf_rprop(1,i),rwork(ic,i),PPICLF_LRP)
          ic = ic + PPICLF_LRP
-         call copy(ppiclf_rprop2(1,i),rwork(ic,i),PPICLF_LRP2)
+         call ppiclf_copy(ppiclf_rprop2(1,i),rwork(ic,i),PPICLF_LRP2)
       enddo
         
       return
       end
-!-----------------------------------------------------------------------
-      subroutine copy(a,b,n)
-      real a(1),b(1)
-
-      do i=1,n
-         a(i)=b(i)
-      enddo
-
-      return
-      end
 c-----------------------------------------------------------------------
-      subroutine icopy(a,b,n)
-      INTEGER A(1), B(1)
-C
-      DO 100 I = 1, N
- 100     A(I) = B(I)
-      return
-      END
-c-----------------------------------------------------------------------
-      subroutine ppiclf_comm_ghost_create
+      subroutine ppiclf_comm_CreateGhost
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -766,8 +771,8 @@ c CREATING GHOST PARTICLES
 
       do ip=1,ppiclf_npart
 
-         call ppiclf_project_map(map,ppiclf_y(1,ip),ppiclf_ydot(1,ip)
-     >                       ,ppiclf_ydotc(1,ip),ppiclf_rprop(1,ip))
+         call ppiclf_user_MapProjPart(map,ppiclf_y(1,ip)
+     >         ,ppiclf_ydot(1,ip),ppiclf_ydotc(1,ip),ppiclf_rprop(1,ip))
          ppiclf_cp_map(1,ip) = ppiclf_y(jx,ip)      ! x coord
          ppiclf_cp_map(2,ip) = ppiclf_y(jy,ip)      ! y coord
          ppiclf_cp_map(3,ip) = ppiclf_y(jz,ip)      ! z coord
@@ -874,7 +879,7 @@ c CREATING GHOST PARTICLES
             iadd(2) = jj1
             iadd(3) = kk1
 
-            call ppiclf_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+            call ppiclf_comm_CheckPeriodicBC(rxnew,rxdrng,iadd)
                  
             ppiclf_npart_gp = ppiclf_npart_gp + 1
             ppiclf_iprop_gp(1,ppiclf_npart_gp) = nrank
@@ -969,7 +974,7 @@ c CREATING GHOST PARTICLES
             iadd(2) = jj1
             iadd(3) = kk1
 
-            call ppiclf_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+            call ppiclf_comm_CheckPeriodicBC(rxnew,rxdrng,iadd)
                  
             ppiclf_npart_gp = ppiclf_npart_gp + 1
             ppiclf_iprop_gp(1,ppiclf_npart_gp) = nrank
@@ -1065,7 +1070,7 @@ c CREATING GHOST PARTICLES
             iadd(2) = jj1
             iadd(3) = kk1
 
-            call ppiclf_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+            call ppiclf_comm_CheckPeriodicBC(rxnew,rxdrng,iadd)
                  
             ppiclf_npart_gp = ppiclf_npart_gp + 1
             ppiclf_iprop_gp(1,ppiclf_npart_gp) = nrank
@@ -1088,7 +1093,7 @@ c CREATING GHOST PARTICLES
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_comm_check_periodic_gp(rxnew,rxdrng,iadd)
+      subroutine ppiclf_comm_CheckPeriodicBC(rxnew,rxdrng,iadd)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -1169,7 +1174,7 @@ c
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_comm_ghost_send
+      subroutine ppiclf_comm_MoveGhost
 c
 #include "ppiclf_user.h"
 #include "ppiclf.h"

@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_fun(time_,y,ydot)
+      subroutine ppiclf_user_SetYdot(time_,y,ydot)
 c
 c     Set ydot(*) for system of d/dt y(*) = ydot(*)
 c
@@ -14,7 +14,7 @@ c
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_project_map(map,y,ydot,ydotc,rprop)
+      subroutine ppiclf_user_MapProjPart(map,y,ydot,ydotc,rprop)
 c
 c     Map Lagrangian quantity to Eulerian field:
 c

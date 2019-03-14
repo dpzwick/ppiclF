@@ -154,6 +154,23 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
+      subroutine ppiclf_copy(a,b,n)
+      real a(1),b(1)
+
+      do i=1,n
+         a(i)=b(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ppiclf_icopy(a,b,n)
+      INTEGER A(1), B(1)
+C
+      DO 100 I = 1, N
+ 100     A(I) = B(I)
+      return
+      END
       subroutine ppiclf_byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
