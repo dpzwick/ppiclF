@@ -8,8 +8,8 @@ c Particle options
      >                           ,PPICLF_IPERIODIC, PPICLF_NGRIDS
      >                           ,PPICLF_CYCLE
 
-      REAL PPICLF_FILTER, PPICLF_ALPHA, RK3COEF(3,3), PPICLF_DT
+      REAL PPICLF_FILTER, PPICLF_ALPHA, PPICLF_RK3COEF(3,3), PPICLF_DT
      >    ,PPICLF_TIME, PPICLF_D2CHK(3)
       COMMON /PPICLF_OPT_PARAM_R/ PPICLF_FILTER, PPICLF_ALPHA
-     >                           ,RK3COEFF, PPICLF_DT, PPICLF_TIME
-     >                           ,PPICLF_D2CHK
+     >                           ,PPICLF_RK3COEFF, PPICLF_DT
+     >                           ,PPICLF_TIME, PPICLF_D2CHK

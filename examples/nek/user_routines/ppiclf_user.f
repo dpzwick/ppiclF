@@ -1,21 +1,23 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_fun(time_,y,ydot)
+      subroutine ppiclf_user_SetYdot(istep,dt,time,y,ydot)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-      real time_
-      real y(*)
-      real ydot(*)
+      integer istep
+      real    dt
+      real    time
+      real    y(*)
+      real    ydot(*)
 
 c setup interpolation
-      call ppiclf_interpolate_setup
+      call ppiclf_solve_SetupInterp(istep,dt,time)
 c setup interpolation
 
 C interpolate fields
-c     call ppiclf_interpolate_fld(PPICLF_R_JUX  , vx_e    )
-c     call ppiclf_interpolate_fld(PPICLF_R_JUY  , vy_e    )
-c     call ppiclf_interpolate_fld(PPICLF_R_JUZ  , vz_e    )
+c     call ppiclf_solve_InterpField(PPICLF_R_JUX  , vx_e    )
+c     call ppiclf_solve_InterpField(PPICLF_R_JUY  , vy_e    )
+c     call ppiclf_solve_InterpField(PPICLF_R_JUZ  , vz_e    )
 C interpolate fields
 
 c evaluate ydot
@@ -53,13 +55,13 @@ c evaluate ydot
 c evaluate ydot
 
 c project fields
-      call ppiclf_project
+      call ppiclf_solve_ProjectParticleGrid
 c project fields
 
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_project_map(map,y,ydot,ydotc,rprop)
+      subroutine ppiclf_user_MapProjPart(map,y,ydot,ydotc,rprop)
 c
 c     map Lagrangian quantity to Eulerian field
 c

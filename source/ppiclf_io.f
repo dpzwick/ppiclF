@@ -1037,9 +1037,9 @@ c        endif
       nglob = 1 ! unique key to sort by
       nkey  = 1 ! number of keys (just 1 here)
       ndum = 2
-      call fgslib_crystal_ituple_transfer(i_cr_hndl,prevs,
+      call fgslib_crystal_ituple_transfer(ppiclf_cr_hndl,prevs,
      >                 ndum,nnp,nnp,nps)
-      call fgslib_crystal_ituple_sort(i_cr_hndl,prevs,
+      call fgslib_crystal_ituple_sort(ppiclf_cr_hndl,prevs,
      >                 ndum,nnp,nglob,nkey)
 
       stride_len = 0

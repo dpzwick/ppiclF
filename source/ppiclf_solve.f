@@ -158,9 +158,9 @@ c----------------------------------------------------------------------
          ndum = PPICLF_NPART*PPICLF_LRS
          ! rk3 integrate
          do i=1,ndum
-            y(i) =  rk3coef(1,istage)*ppiclf_y1 (i)
-     >            + rk3coef(2,istage)*y      (i)
-     >            + rk3coef(3,istage)*ydot   (i)
+            y(i) =  ppiclf_rk3coef(1,istage)*ppiclf_y1 (i)
+     >            + ppiclf_rk3coef(2,istage)*y      (i)
+     >            + ppiclf_rk3coef(3,istage)*ydot   (i)
          enddo
       enddo
 
@@ -250,15 +250,15 @@ c----------------------------------------------------------------------
 
       real dt
 
-      rk3coef(1,1) = 0.0
-      rk3coef(2,1) = 1.0 
-      rk3coef(3,1) = dt
-      rk3coef(1,2) = 3.0/4.0
-      rk3coef(2,2) = 1.0/4.0 
-      rk3coef(3,2) = dt/4.0 
-      rk3coef(1,3) = 1.0/3.0
-      rk3coef(2,3) = 2.0/3.0 
-      rk3coef(3,3) = dt*2.0/3.0 
+      ppiclf_rk3coef(1,1) = 0.0
+      ppiclf_rk3coef(2,1) = 1.0 
+      ppiclf_rk3coef(3,1) = dt
+      ppiclf_rk3coef(1,2) = 3.0/4.0
+      ppiclf_rk3coef(2,2) = 1.0/4.0 
+      ppiclf_rk3coef(3,2) = dt/4.0 
+      ppiclf_rk3coef(1,3) = 1.0/3.0
+      ppiclf_rk3coef(2,3) = 2.0/3.0 
+      ppiclf_rk3coef(3,3) = dt*2.0/3.0 
 
       return
       end
@@ -486,8 +486,8 @@ c----------------------------------------------------------------------
       nii = PPICLF_LRMAX
       njj = 6
       nrr = nxyz*PPICLF_LRP_PRO
-      call fgslib_crystal_tuple_transfer(i_cr_hndl,neltbc,PPICLF_LEE
-     >            , ppiclf_er_mapc,nii,partl,nl,ppiclf_pro_fldb,nrr,njj)
+      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,neltbc,
+     >   PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,ppiclf_pro_fldb,nrr,njj)
 
       ! add the fields from the bins to ptw array
       nlxyzep = nxyz*PPICLF_LEE*PPICLF_LRP_PRO

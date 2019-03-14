@@ -23,7 +23,7 @@
 #include "PPICLF"
 
 c     call ppiclf_comm_SetupInterp(i_fp_hndl,0.0,idum,ppiclf_nelt)
-      call fgslib_crystal_setup(i_cr_hndl,ppiclf_comm,ppiclf_np)
+      call fgslib_crystal_setup(ppiclf_cr_hndl,ppiclf_comm,ppiclf_np)
 
       return
       end
@@ -490,9 +490,9 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       nrr  = nxyz*3
       nkey = 3
-      call fgslib_crystal_tuple_transfer(i_cr_hndl,ppiclf_neltb
+      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltb
      >       ,PPICLF_LEE,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,njj)
-      call fgslib_crystal_tuple_sort    (i_cr_hndl,ppiclf_neltb
+      call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltb
      >       ,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,nkey,1)
 
 
@@ -685,7 +685,7 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       enddo
 
       j0 = 4
-      call fgslib_crystal_tuple_transfer(i_cr_hndl,ppiclf_npart 
+      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_npart 
      >      ,PPICLF_LPART,ppiclf_iprop ,PPICLF_LIP,partl,0,rwork,lrf,j0)
 
       do i=1,ppiclf_npart
@@ -1180,7 +1180,7 @@ c
       logical partl         
 
       ! send ghost particles
-      call fgslib_crystal_tuple_transfer(i_cr_hndl
+      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl
      >                                  ,ppiclf_npart_gp,PPICLF_LPART_GP
      >                                  ,ppiclf_iprop_gp,PPICLF_LIP_GP
      >                                  ,partl,0
