@@ -45,6 +45,7 @@ c-----------------------------------------------------------------------
 
       ppiclf_cycle = istep
       ppiclf_time  = time
+      ppiclf_dt    = dt
 
       call ppiclf_io_vtu_write('',0)
       call ppiclf_io_vtu_write_bins('',0)
@@ -108,27 +109,62 @@ c-----------------------------------------------------------------------
 
       real rparam(ppiclf_nparam) 
 
-      ppiclf_comm = nekcomm
-      ppiclf_nid  = nid
-      ppiclf_np   = np
+      call ppiclf_solve_InitMPI(nekcomm,nid,np)
 
       rparam(1)  = 1           ! use custom values
       rparam(2)  = 1           ! time integration method
       rparam(3)  = 2           ! polynomial order of mesh
       rparam(4)  = 0           ! use 1 for tracers only
-      rparam(5)  = 0.1        ! filter width in real units
-      rparam(6)  = 4           ! how many grid points to resolve filter over
-      rparam(7)  = 1E-2        ! percent decay of Gaussian filter
+
+
       rparam(8)  = 1           ! periodic in x (== 0) ! dont do periodic without bounds!!!
       rparam(9)  = 1           ! periodic in y (== 0)
       rparam(10) = 1           ! periodic in z (== 0)
       rparam(11) = 8E-4        ! time step
       rparam(12) = 3           ! problem dimensions
 
+
+      call ppiclf_solve_InitGaussianFilter(0.1,1E-2,4)
+
       call init_particles(ppiclf_y,npart)
       call ppiclf_init(rparam,ppiclf_y,npart,0.0) 
 
-      call ppiclf_comm_grid_map(nelt,xm1,ym1,zm1)
+      call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      real    filt
+      real    alpha
+      integer ngrid
+
+      ppiclf_rparam(5) = filt
+      ppiclf_rparam(6) = real(ngrid)
+      ppiclf_rparam(7) = alpha 
+
+      rsig             = ppiclf_rparam(5)/(2.*sqrt(2.*log(2.)))
+      ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_rparam(7)))
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitMPI(comm,id,np)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      integer comm
+      integer id
+      integer np
+
+      ppiclf_comm = comm
+      ppiclf_nid  = id
+      ppiclf_np   = np
 
       return
       end

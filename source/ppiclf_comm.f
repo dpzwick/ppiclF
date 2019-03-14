@@ -559,19 +559,27 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_grid_map(ncell,xgrid,ygrid,zgrid)
+      subroutine ppiclf_comm_InitOverlapMesh(ncell,lx1,ly1,lz1,
+     >                                       xgrid,ygrid,zgrid)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
       integer ncell
+      integer lx1
+      integer ly1
+      integer lz1
       real    xgrid(*)
       real    ygrid(*)
       real    zgrid(*)
 
-      ppiclf_nee = ncell
+      if (ncell .gt. PPICLF_LEE) write(6,*) 'ERROR LEE'
+      if (lx1   .ne. PPICLF_LEX) write(6,*) 'ERROR LEX'
+      if (ly1   .ne. PPICLF_LEY) write(6,*) 'ERROR LEY'
+      if (lz1   .ne. PPICLF_LEZ) write(6,*) 'ERROR LEZ'
 
-      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      ppiclf_nee = ncell
+      nxyz       = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
 
       do ie=1,ppiclf_nee
       do i=1,nxyz
