@@ -30,9 +30,9 @@
             call ppiclf_solve_SetParticleTag
          call ppiclf_prints('    End ParticleTag$')
          
-         call ppiclf_prints('   *Begin RemoveParticle$')
-            call ppiclf_solve_RemoveParticle
-         call ppiclf_prints('    End RemoveParticle$')
+c        call ppiclf_prints('   *Begin RemoveParticle$')
+c           call ppiclf_solve_RemoveParticle
+c        call ppiclf_prints('    End RemoveParticle$')
          
          call ppiclf_prints('   *Begin CreateBin$')
             call ppiclf_comm_CreateBin
@@ -62,7 +62,7 @@
 
       call ppiclf_solve_OutputDiagGen
       call ppiclf_solve_OutputDiagGhost
-      if (ppiclf_filter .gt. 0.0) call ppiclf_solve_OutputDiagSubBin
+      if (ppiclf_lfilt) call ppiclf_solve_OutputDiagSubBin
       if (ppiclf_overlap) call ppiclf_solve_OutputDiagGrid
 
       return
@@ -332,7 +332,7 @@ c----------------------------------------------------------------------
 
          call ppiclf_io_WriteParticleVTU('',0)
 
-         if (ppiclf_filter .gt. 0.0)
+         if (ppiclf_lfilt)
      >      call ppiclf_io_WriteSubBinVTU('',0)
       endif
 
@@ -354,7 +354,7 @@ c----------------------------------------------------------------------
 
          call ppiclf_io_WriteParticleVTU('',0)
 
-         if (ppiclf_filter .gt. 0.0)
+         if (ppiclf_lfilt)
      >      call ppiclf_io_WriteSubBinVTU('',0)
       endif
 
@@ -398,17 +398,15 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_SetupInterp
+      subroutine ppiclf_solve_InitSolve
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-         call ppiclf_solve_RemoveParticle
+c        call ppiclf_solve_RemoveParticle
          call ppiclf_comm_CreateBin
-      if (ppiclf_filter .gt. 0) then
-         call ppiclf_comm_CreateSubBin
+         if (ppiclf_lfilt) call ppiclf_comm_CreateSubBin
          if (ppiclf_overlap) call ppiclf_comm_MapOverlapMesh
-      endif
          call ppiclf_comm_FindParticle
          call ppiclf_comm_MoveParticle
 
@@ -420,13 +418,82 @@ c----------------------------------------------------------------------
 #include "ppiclf.h"
 #include "PPICLF"
 
-      common /intp_h/ ih_intp(2,1)
-
       real fld(*)
+      logical partl
 
-      ih_intp1 = ih_intp(1,i_fp_hndl)
+      ! should group all fields together if more than one ...
 
-c     call fgslib_findpts_eval_local( ih_intp1
+      ! also throw error if overlap is not set
+
+c     real xm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
+c    >     ym1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
+c    >     zm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
+c     common /ppiclf_tmp_grid/ xm1, ym1, zm1
+
+c     n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+c     do ie=1,ppiclf_neltb
+c        call ppiclf_copy(xm1(1,1,1,ie),ppiclf_xm1b(1,1,1,1,ie),n)
+c        call ppiclf_copy(ym1(1,1,1,ie),ppiclf_xm1b(1,1,1,2,ie),n)
+c        call ppiclf_copy(zm1(1,1,1,ie),ppiclf_xm1b(1,1,1,3,ie),n)
+c     enddo
+
+c     tol     = 5e-13
+c     bb_t    = 0.01
+c     npt_max = 128
+
+c     call fgslib_findpts_setup(ppiclf_fp_hndl
+c    >                         ,ppiclf_comm_nid
+c    >                         ,1 ! only 1 rank on this comm
+c    >                         ,ppiclf_ndim
+c    >                         ,xm1
+c    >                         ,ym1
+c    >                         ,zm1
+c    >                         ,PPICLF_LEX
+c    >                         ,PPICLF_LEY
+c    >                         ,PPICLF_LEZ
+c    >                         ,ppiclf_neltb
+c    >                         ,2*PPICLF_LEX
+c    >                         ,2*PPICLF_LEY
+c    >                         ,2*PPICLF_LEZ
+c    >                         ,bb_t
+c    >                         ,ppiclf_neltb+2
+c    >                         ,ppiclf_neltb+2
+c    >                         ,npt_max
+c    >                         ,tol)
+
+
+c     neltbc = ppiclf_neltbb
+c     do ie=1,neltbc
+c        call ppiclf_icopy(ppiclf_er_mapc(1,ie),ppiclf_er_maps(1,ie)
+c    >             ,PPICLF_LRMAX)
+c     enddo
+
+c     nl   = 0
+c     nii  = PPICLF_LRMAX
+c     njj  = 6
+c     nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+c     nrr  = nxyz*1
+c     nkey = 3
+c     call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,neltbc
+c    >      ,PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,fld,nrr,njj)
+c     call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,neltbc
+c    >       ,ppiclf_er_mapc,nii,partl,nl,fld,nrr,nkey,1)
+
+c     ix = 1
+c     iy = 2
+c     iz = 3
+
+c     call fgslib_findpts(PPICLF_FP_HNDL           !   call fgslib_findpts( ihndl,
+c    $        , ppiclf_iprop (1 ,1),PPICLF_LIP        !   $             rcode,1,
+c    $        , ppiclf_iprop (3 ,1),PPICLF_LIP        !   &             proc,1,
+c    $        , ppiclf_iprop (2 ,1),PPICLF_LIP        !   &             elid,1,
+c    $        , ppiclf_rprop2(1 ,1),PPICLF_LRP2       !   &             rst,ndim,
+c    $        , ppiclf_rprop2(4 ,1),PPICLF_LRP2       !   &             dist,1,
+c    $        , ppiclf_y     (ix,1),PPICLF_LRS        !   &             pts(    1),1,
+c    $        , ppiclf_y     (iy,1),PPICLF_LRS        !   &             pts(  n+1),1,
+c    $        , ppiclf_y     (iz,1),PPICLF_LRS ,PPICLF_NPART) !   &             pts(2*n+1),1,n)
+
+c     call fgslib_findpts_eval_local( PPICLF_FP_HNDL
 c    >                               ,ppiclf_rprop (jp,1)
 c    >                               ,PPICLF_LRP
 c    >                               ,ppiclf_iprop (2,1)
@@ -436,20 +503,7 @@ c    >                               ,PPICLF_LRP2
 c    >                               ,PPICLF_NPART
 c    >                               ,fld)
 
-      ! this one
-c        call fgslib_findpts_eval( ih_intp1
-c    >                           ,ppiclf_rprop (jp,1)
-c    >                           ,PPICLF_LRP
-c    >                           ,ppiclf_iprop (1,1)
-c    >                           ,PPICLF_LIP
-c    >                           ,ppiclf_iprop (3,1)
-c    >                           ,PPICLF_LIP
-c    >                           ,ppiclf_iprop (2,1)
-c    >                           ,PPICLF_LIP
-c    >                           ,ppiclf_rprop2(1,1)
-c    >                           ,PPICLF_LRP2
-c    >                           ,PPICLF_NPART
-c    >                           ,fld)
+c     call fgslib_findpts_free(PPICLF_FP_HNDL)
 
       return
       end
@@ -459,7 +513,7 @@ c----------------------------------------------------------------------
 #include "ppiclf.h"
 #include "PPICLF"
 
-      if (ppiclf_filter .gt. 0.0) then
+      if (ppiclf_lfilt) then
          call ppiclf_comm_CreateGhost
          call ppiclf_comm_MoveGhost
          if (ppiclf_overlap) call ppiclf_solve_ProjectParticleGrid

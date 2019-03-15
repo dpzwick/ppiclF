@@ -15,9 +15,55 @@
       ppiclf_nid  = id
       ppiclf_np   = np
 
-      call ppiclf_comm_InitCrystal
+      call ppiclf_prints('   *Begin InitParam$')
+         call ppiclf_comm_InitCrystal
+      call ppiclf_prints('    End InitCrystal$')
 
       PPICLF_LCOMM = .true.
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_comm_InitFindptsDum
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      real xm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
+     >     ym1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
+     >     zm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
+      common /ppiclf_tmp_grid/ xm1, ym1, zm1
+
+      n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      do ie=1,ppiclf_neltb
+         call ppiclf_copy(xm1(1,1,1,ie),ppiclf_xm1b(1,1,1,1,ie),n)
+         call ppiclf_copy(ym1(1,1,1,ie),ppiclf_xm1b(1,1,1,2,ie),n)
+         call ppiclf_copy(zm1(1,1,1,ie),ppiclf_xm1b(1,1,1,3,ie),n)
+      enddo
+
+      tol     = 5e-13
+      bb_t    = 0.01
+      npt_max = 128
+
+      call fgslib_findpts_setup(ppiclf_fp_hndl
+     >                         ,ppiclf_comm_nid
+     >                         ,1 ! only 1 rank on this comm
+     >                         ,ppiclf_ndim
+     >                         ,xm1
+     >                         ,ym1
+     >                         ,zm1
+     >                         ,PPICLF_LEX
+     >                         ,PPICLF_LEY
+     >                         ,PPICLF_LEZ
+     >                         ,ppiclf_neltb
+     >                         ,2*PPICLF_LEX
+     >                         ,2*PPICLF_LEY
+     >                         ,2*PPICLF_LEZ
+     >                         ,bb_t
+     >                         ,ppiclf_neltb+2
+     >                         ,ppiclf_neltb+2
+     >                         ,npt_max
+     >                         ,tol)
 
       return
       end
@@ -158,7 +204,7 @@ c    >    ppiclf_filter .lt. 0.0) then
 
             if( nbb .gt. ppiclf_np ) then
             ! dz comment 3/9/2019
-c           if( ppiclf_filter .gt. 0.0 .or.
+c           if( ppiclf_lfilt .or.
 c    >          ppiclf_filter .lt. 0.0 .and.d2new(j+1).lt.d2chk_save)
 c    >          then
                icount(j+1) = icount(j+1) + 1
@@ -283,11 +329,11 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
+      include 'mpif.h'
 
       integer icalld
       save    icalld
       data    icalld /0/
-
 
       ! see which bins are in which elements
       ppiclf_neltb = 0
@@ -471,6 +517,19 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       enddo
 
       if (icalld .eq. 0) then 
+
+         call ppiclf_prints('   *Begin mpi_comm_split$')
+           call mpi_comm_split(ppiclf_comm,ppiclf_nid,0,ppiclf_comm_nid
+     >                        ,ierr)
+         call ppiclf_prints('    End mpi_comm_split$')
+
+c        call ppiclf_prints('   *Begin InitFindpts$')
+c           call ppiclf_comm_InitFindpts
+c        call ppiclf_prints('    End InitFindpts$')
+      endif
+
+
+      if (icalld .eq. 0) then 
          icalld = icalld + 1
          call ppiclf_solve_OutputDiagGrid
       endif
@@ -520,7 +579,7 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       enddo
 
       call ppiclf_comm_MapOverlapMesh
-      if (ppiclf_filter .gt. 0.0) call ppiclf_solve_ParallelProjection
+      if (ppiclf_lfilt) call ppiclf_solve_ParallelProjection
 
       ppiclf_overlap = .true.
 
@@ -535,10 +594,6 @@ c-----------------------------------------------------------------------
       ix = 1
       iy = 2
       iz = 3
-
-      do i=1,ppiclf_npart
-         ppiclf_iprop(4,i) = ppiclf_iprop(3,i)
-      enddo
 
       do i=1,ppiclf_npart
          ! check if particles are greater or less than binb bounds....
@@ -557,6 +612,7 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
          ppiclf_iprop(10,i) = kk
          ppiclf_iprop(11,i) = ndum
 
+         ppiclf_iprop(3,i)  = nrank ! where particle is actually moved
          ppiclf_iprop(4,i)  = nrank ! where particle is actually moved
       enddo
 

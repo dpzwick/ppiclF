@@ -101,11 +101,11 @@ c-----------------------------------------------------------------------
 
       call ppiclf_comm_InitMPI(nekcomm,nid,np)
 
-c     call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
          call init_particles(npart,ppiclf_y)
       call ppiclf_solve_InitParticle(1,3,npart,ppiclf_y) 
 
-      call ppiclf_solve_InitGaussianFilter(0.1,1E-2,2)
+      call ppiclf_solve_InitGaussianFilter(0.2,1E-2,2)
+      call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
 
 
       return

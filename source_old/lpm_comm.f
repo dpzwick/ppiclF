@@ -7,7 +7,10 @@
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
-      call interp_setup(i_fp_hndl,0.0,idum,nelt)
+      call fgslib_findpts_setup(ih_intp1,nekcomm,npp,ldim,
+     >                          xm1,ym1,zm1,nx1,ny1,nz1,
+     >                          nelm,nx1,ny1,nz1,bb_t,nelm+2,nelm+2,
+     >                          npt_max,tol)
       call fgslib_crystal_setup(i_cr_hndl,nekcomm,np)
 
       return
