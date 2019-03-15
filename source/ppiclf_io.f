@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_WriteGridVTU(filein1,iobig)
+      subroutine ppiclf_io_WriteSubBinVTU(filein1,iobig)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
@@ -23,9 +23,10 @@
 
       real*4 rpoint(3)
 
+      call ppiclf_comm_CreateSubBin
       call ppiclf_comm_CreateGhost
       call ppiclf_comm_MoveGhost
-      call ppiclf_solve_ProjectParticleBin
+      call ppiclf_solve_ProjectParticleSubBin
 
       icalld1 = icalld1+1
 

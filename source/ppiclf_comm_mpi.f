@@ -171,6 +171,185 @@ C
  100     A(I) = B(I)
       return
       END
+c-----------------------------------------------------------------------
+      subroutine ppiclf_chcopy(a,b,n)
+      CHARACTER*1 A(1), B(1)
+C
+      DO 100 I = 1, N
+ 100     A(I) = B(I)
+      return
+      END
+c-----------------------------------------------------------------------
+      subroutine ppiclf_exittr(stringi,rdata,idata)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+      include 'mpif.h'
+      character*1 stringi(132)
+      character*1 stringo(132)
+      character*25 s25
+      integer ilen
+      integer ppiclf_indx1
+      external ppiclf_indx1
+
+      call ppiclf_blank(stringo,132)
+      call ppiclf_chcopy(stringo,stringi,132)
+      ilen = ppiclf_indx1(stringo,'$',1)
+      write(s25,25) rdata,idata
+   25 format(1x,1p1e14.6,i10)
+      call ppiclf_chcopy(stringo(ilen),s25,25)
+
+      if (ppiclf_nid.eq.0) write(6,1) (stringo(k),k=1,ilen+24)
+    1 format('PPICLF: ERROR ',132a1)
+
+c     call mpi_finalize (ierr)
+      call mpi_abort(ppiclf_comm, 1, ierr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ppiclf_printsri(stringi,rdata,idata)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+      include 'mpif.h'
+      character*1 stringi(132)
+      character*1 stringo(132)
+      character*25 s25
+      integer ilen
+      integer ppiclf_indx1
+      external ppiclf_indx1
+
+      call ppiclf_blank(stringo,132)
+      call ppiclf_chcopy(stringo,stringi,132)
+      ilen = ppiclf_indx1(stringo,'$',1)
+      write(s25,25) rdata,idata
+   25 format(1x,1p1e14.6,i10)
+      call ppiclf_chcopy(stringo(ilen),s25,25)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      if (ppiclf_nid.eq.0) write(6,1) (stringo(k),k=1,ilen+24)
+    1 format('PPICLF: ',132a1)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ppiclf_printsi(stringi,idata)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+      include 'mpif.h'
+      character*1 stringi(132)
+      character*1 stringo(132)
+      character*10 s10
+      integer ilen
+      integer ppiclf_indx1
+      external ppiclf_indx1
+
+      call ppiclf_blank(stringo,132)
+      call ppiclf_chcopy(stringo,stringi,132)
+      ilen = ppiclf_indx1(stringo,'$',1)
+      write(s10,10) idata
+   10 format(1x,i9)
+      call ppiclf_chcopy(stringo(ilen),s10,10)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      if (ppiclf_nid.eq.0) write(6,1) (stringo(k),k=1,ilen+9)
+    1 format('PPICLF: ',132a1)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ppiclf_printsr(stringi,rdata)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+      include 'mpif.h'
+      character*1 stringi(132)
+      character*1 stringo(132)
+      character*15 s15
+      integer ilen
+      integer ppiclf_indx1
+      external ppiclf_indx1
+
+      call ppiclf_blank(stringo,132)
+      call ppiclf_chcopy(stringo,stringi,132)
+      ilen = ppiclf_indx1(stringo,'$',1)
+      write(s15,15) rdata
+   15 format(1x,1p1e14.6)
+      call ppiclf_chcopy(stringo(ilen),s15,15)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      if (ppiclf_nid.eq.0) write(6,1) (stringo(k),k=1,ilen+14)
+    1 format('PPICLF: ',132a1)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine ppiclf_prints(stringi)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+      include 'mpif.h'
+      character*1 stringi(132)
+      character*1 stringo(132)
+      integer ilen
+      integer ppiclf_indx1
+      external ppiclf_indx1
+
+      call ppiclf_blank(stringo,132)
+      call ppiclf_chcopy(stringo,stringi,132)
+      ilen = ppiclf_indx1(stringo,'$',1)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      if (ppiclf_nid.eq.0) write(6,1) (stringo(k),k=1,ilen-1)
+    1 format('PPICLF: ',132a1)
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      SUBROUTINE PPICLF_BLANK(A,N)
+      CHARACTER*1 A(1)
+      CHARACTER*1 BLNK
+      SAVE        BLNK
+      DATA        BLNK /' '/
+C
+      DO 10 I=1,N
+         A(I)=BLNK
+   10 CONTINUE
+      RETURN
+      END
+c-----------------------------------------------------------------------
+      INTEGER FUNCTION PPICLF_INDX1(S1,S2,L2)
+      CHARACTER*132 S1,S2
+C
+      N1=132-L2+1
+      PPICLF_INDX1=0
+      IF (N1.LT.1) return
+C
+      DO 100 I=1,N1
+         I2=I+L2-1
+         IF (S1(I:I2).EQ.S2(1:L2)) THEN
+            PPICLF_INDX1=I
+            return
+         ENDIF
+  100 CONTINUE
+C
+      return
+      END
+c-----------------------------------------------------------------------
       subroutine ppiclf_byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
 #include "ppiclf_user.h"
 #include "ppiclf.h"

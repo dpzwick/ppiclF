@@ -9,49 +9,217 @@
       integer  npart
       real     y(*)
 
-      call ppiclf_solve_InitDefault
+      if (.not.PPICLF_LCOMM)
+     >call ppiclf_exittr('InitMPI must be before InitParticle$',0.
+     >   ,ppiclf_nid)
+      if (PPICLF_LFILT)
+     >call ppiclf_exittr('InitFilter must be before InitParticle$',0.,0)
+      if (PPICLF_OVERLAP)
+     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.,0)
 
-      ppiclf_imethod    = imethod
-      ppiclf_ndim       = ndim
-      ppiclf_npart      = npart
+      call ppiclf_prints('*Begin InitParticle$')
 
-      call ppiclf_solve_InitParticleTag
-      call ppiclf_solve_SetParticleTag
+         call ppiclf_prints('   *Begin InitParam$')
+            call ppiclf_solve_InitParam(imethod,ndim,npart)
+         call ppiclf_prints('    End InitParam$')
+         
+            call ppiclf_copy(ppiclf_y,y,ppiclf_npart)
+         
+         call ppiclf_prints('   *Begin ParticleTag$')
+            call ppiclf_solve_InitParticleTag
+            call ppiclf_solve_SetParticleTag
+         call ppiclf_prints('    End ParticleTag$')
+         
+         call ppiclf_prints('   *Begin RemoveParticle$')
+            call ppiclf_solve_RemoveParticle
+         call ppiclf_prints('    End RemoveParticle$')
+         
+         call ppiclf_prints('   *Begin CreateBin$')
+            call ppiclf_comm_CreateBin
+         call ppiclf_prints('    End CreateBin$')
+         
+         call ppiclf_prints('   *Begin FindParticle$')
+            call ppiclf_comm_FindParticle
+         call ppiclf_prints('    End FindParticle$')
+         
+         call ppiclf_prints('   *Begin MoveParticle$')
+            call ppiclf_comm_MoveParticle
+         call ppiclf_prints('    End MoveParticle$')
 
-c     ! get domain bounds
-c     call domain_size( ppiclf_xdrange(1,1),ppiclf_xdrange(2,1)
-c    >                 ,ppiclf_xdrange(1,2),ppiclf_xdrange(2,2)
-c    >                 ,ppiclf_xdrange(1,3),ppiclf_xdrange(2,3))
+            call ppiclf_solve_OutputDiagGen
 
-      ppiclf_nbmax = PPICLF_BMAX ! set only one bin for now...
+      call ppiclf_prints(' End InitParticle$')
 
-c     ! send particles to correct rank
-      call ppiclf_solve_SetupInterp
+      PPICLF_LINIT = .true.
 
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitDefault
+      subroutine ppiclf_solve_OutputDiagAll
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
-      ! set defaults
-      ppiclf_imethod   = 0     ! time integ
+      call ppiclf_solve_OutputDiagGen
+      call ppiclf_solve_OutputDiagGhost
+      if (ppiclf_filter .gt. 0.0) call ppiclf_solve_OutputDiagSubBin
+      if (ppiclf_overlap) call ppiclf_solve_OutputDiagGrid
 
-      ppiclf_filter  = -1   ! filt default for no projection
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_OutputDiagGen
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
 
-      ppiclf_iperiodic(1)  = 1    ! periodic in x (== 0) 
-      ppiclf_iperiodic(2)  = 1    ! periodic in y (==0)
+      call ppiclf_prints(' *Begin General Info$')
+         npart_max = ppiclf_iglmax(ppiclf_npart,1)
+         npart_min = ppiclf_iglmin(ppiclf_npart,1)
+         npart_tot = ppiclf_iglsum(ppiclf_npart,1)
+         npart_ide = npart_tot/ppiclf_np
+
+         nbin_total = PPICLF_NDXGP*PPICLF_NDYGP*PPICLF_NDZGP
+
+      call ppiclf_printsi('  -Cycle                  :$',ppiclf_cycle)
+      call ppiclf_printsi('  -Output Freq.           :$',ppiclf_iostep)
+      call ppiclf_printsr('  -Time                   :$',ppiclf_time)
+      call ppiclf_printsr('  -dt                     :$',ppiclf_dt)
+      call ppiclf_printsi('  -Global particles       :$',npart_tot)
+      call ppiclf_printsi('  -Local particles (Max)  :$',npart_max)
+      call ppiclf_printsi('  -Local particles (Min)  :$',npart_min)
+      call ppiclf_printsi('  -Local particles (Ideal):$',npart_ide)
+      call ppiclf_printsi('  -Total ranks            :$',ppiclf_np)
+      call ppiclf_printsi('  -Problem dimensions     :$',ppiclf_ndim)
+      call ppiclf_printsi('  -Integration method     :$',ppiclf_imethod)
+      call ppiclf_printsi('  -Number of bins total   :$',nbin_total)
+      call ppiclf_printsi('  -Number of bins (x)     :$',PPICLF_NDXGP)
+      call ppiclf_printsi('  -Number of bins (y)     :$',PPICLF_NDYGP)
+      if (ppiclf_ndim .gt. 2)
+     >call ppiclf_printsi('  -Number of bins (z)     :$',PPICLF_NDZGP)
+      call ppiclf_printsr('  -Bin xl coordinate      :$',ppiclf_binb(1))
+      call ppiclf_printsr('  -Bin xr coordinate      :$',ppiclf_binb(2))
+      call ppiclf_printsr('  -Bin yl coordinate      :$',ppiclf_binb(3))
+      call ppiclf_printsr('  -Bin yr coordinate      :$',ppiclf_binb(4))
+      if (ppiclf_ndim .gt. 2)
+     >call ppiclf_printsr('  -Bin zl coordinate      :$',ppiclf_binb(5))
+      if (ppiclf_ndim .gt. 2)
+     >call ppiclf_printsr('  -Bin zr coordinate      :$',ppiclf_binb(6))
+
+      call ppiclf_prints('  End General Info$')
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_OutputDiagGrid
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      call ppiclf_prints(' *Begin Grid Info$')
+
+         nel_max_orig   = ppiclf_iglmax(ppiclf_nee,1)
+         nel_min_orig   = ppiclf_iglmin(ppiclf_nee,1)
+         nel_total_orig = ppiclf_iglsum(ppiclf_nee,1)
+
+         nel_max_map   = ppiclf_iglmax(ppiclf_neltb,1)
+         nel_min_map   = ppiclf_iglmin(ppiclf_neltb,1)
+         nel_total_map = ppiclf_iglsum(ppiclf_neltb,1)
+
+      call ppiclf_printsi('  -Orig. Global cells     :$',nel_total_orig)
+      call ppiclf_printsi('  -Orig. Local cells (Max):$',nel_max_orig)
+      call ppiclf_printsi('  -Orig. Local cells (Min):$',nel_min_orig)
+      call ppiclf_printsi('  -Map Global cells       :$',nel_total_map)
+      call ppiclf_printsi('  -Map Local cells (Max)  :$',nel_max_map)
+      call ppiclf_printsi('  -Map Local cells (Min)  :$',nel_min_map)
+
+      call ppiclf_prints('  End Grid Info$')
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_OutputDiagGhost
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      call ppiclf_prints(' *Begin Ghost Info$')
+
+         npart_max = ppiclf_iglmax(ppiclf_npart_gp,1)
+         npart_min = ppiclf_iglmin(ppiclf_npart_gp,1)
+         npart_tot = ppiclf_iglsum(ppiclf_npart_gp,1)
+
+      call ppiclf_printsi('  -Global ghosts          :$',npart_tot)
+      call ppiclf_printsi('  -Local ghosts (Max)     :$',npart_max)
+      call ppiclf_printsi('  -Local ghosts (Min)     :$',npart_min)
+
+      call ppiclf_prints('  End Ghost Info$')
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_OutputDiagSubBin
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+
+      call ppiclf_prints(' *Begin SubBin Info$')
+
+      nbin_total = ppiclf_bx*ppiclf_by*ppiclf_bz
+
+      call ppiclf_printsi('  -Number of local bin    :$',nbin_total)
+      call ppiclf_printsi('  -Number of local bin (x):$',PPICLF_BX)
+      call ppiclf_printsi('  -Number of local bin (y):$',PPICLF_BY)
+      if (ppiclf_ndim .gt. 2)
+     >call ppiclf_printsi('  -Number of local bin (z):$',PPICLF_BZ)
+      call ppiclf_printsr('  -Bin width (x)          :$',ppiclf_rdx)
+      call ppiclf_printsr('  -Bin width (y)          :$',ppiclf_rdy)
+      if (ppiclf_ndim .gt. 2)
+     >call ppiclf_printsr('  -Bin width (z)          :$',ppiclf_rdz)
+      call ppiclf_printsr('  -Filter width           :$',ppiclf_filter)
+      call ppiclf_printsr('  -Filter cut-off         :$'
+     >                                                 ,ppiclf_d2chk(2))
+      call ppiclf_printsi('  -SubBins per filter res.:$',ppiclf_ngrids)
+
+      call ppiclf_prints('  End SubBin Info$')
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitParam(imethod,ndim,npart)
+#include "ppiclf_user.h"
+#include "ppiclf.h"
+#include "PPICLF"
+      integer  imethod
+      integer  ndim
+      integer  npart
+
+      if (imethod .le. 0 .or. imethod .ge. 2)
+     >   call ppiclf_exittr('Invalid integration method$',0.0,imethod)
+      if (ndim .le. 1 .or. ndim .ge. 4)
+     >   call ppiclf_exittr('Invalid problem dimension$',0.0,ndim)
+      if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
+     >   call ppiclf_exittr('Invalid number of particles$',0.0,npart)
+
+      ppiclf_imethod      = imethod
+      ppiclf_ndim         = ndim
+      ppiclf_npart        = npart
+
+      ppiclf_filter       = -1   ! filt default for no projection
+
+      ppiclf_iperiodic(1) = 1    ! periodic in x (== 0) 
+      ppiclf_iperiodic(2) = 1    ! periodic in y (==0)
       ppiclf_iperiodic(3) = 1    ! periodic in z (==0)
 
-      ppiclf_ndim       = 3    ! ndim
-
-      ppiclf_cycle = 0
-      ppiclf_dt    = 0.0
-      ppiclf_time  = 0.0
+      ppiclf_cycle  = 0
+      ppiclf_iostep = 1
+      ppiclf_dt     = 0.0
+      ppiclf_time   = 0.0
 
       ppiclf_restart = .false.
+      ppiclf_overlap = .false.
+      ppiclf_linit   = .false.
+      ppiclf_lfilt   = .false.
 
       ppiclf_xdrange(1,1) = -1E8
       ppiclf_xdrange(2,1) =  1E8
@@ -72,6 +240,13 @@ c     ! send particles to correct rank
       real    alpha
       integer ngrid
 
+      if (.not.PPICLF_LCOMM)
+     >call ppiclf_exittr('InitMPI must be before InitFilter$',0.,0)
+      if (.not.PPICLF_LINIT)
+     >call ppiclf_exittr('InitParticle must be before InitFilter$',0.,0)
+      if (PPICLF_OVERLAP)
+     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.,0)
+
       ppiclf_filter = filt
       ppiclf_ngrids = ngrid
       ppiclf_alpha  = alpha 
@@ -79,9 +254,25 @@ c     ! send particles to correct rank
       rsig             = ppiclf_filter/(2.*sqrt(2.*log(2.)))
       ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_alpha))
 
-      call ppiclf_comm_CreateBin
-      call ppiclf_comm_MapOverlapMesh
-      call ppiclf_solve_ParallelProjection
+      call ppiclf_prints('   *Redo CreateBin$')
+         call ppiclf_comm_CreateBin
+      call ppiclf_prints('    End CreateBin$')
+
+      call ppiclf_prints('   *Begin CreateSubBin$')
+         call ppiclf_comm_CreateSubBin
+      call ppiclf_prints('    End CreateSubBin$')
+
+      call ppiclf_prints('   *Redo FindParticle$')
+         call ppiclf_comm_FindParticle
+      call ppiclf_prints('    End FindParticle$')
+
+      call ppiclf_prints('   *Redo MoveParticle$')
+         call ppiclf_comm_MoveParticle
+      call ppiclf_prints('    End MoveParticle$')
+
+      call ppiclf_solve_OutputDiagSubBin
+
+      PPICLF_LFILT = .true.
 
       return
       end
@@ -116,23 +307,56 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_IntegrateParticle(istep,dt,time,y,ydot)
+      subroutine ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
+     >                                         ,y,ydot)
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"
 
       integer istep
+      integer iostep
       real    dt
       real    time
       real    y(*)
       real    ydot(*)
 
-      ppiclf_cycle = istep
-      ppiclf_dt    = dt
-      ppiclf_time  = time
+      integer icalld
+      save    icalld
+      data    icalld /0/
 
+      ! write initial condition (with projection)
+      if (icalld .eq. 0) then
+         icalld = icalld + 1
+
+         call ppiclf_solve_OutputDiagAll
+
+         call ppiclf_io_WriteParticleVTU('',0)
+
+         if (ppiclf_filter .gt. 0.0)
+     >      call ppiclf_io_WriteSubBinVTU('',0)
+      endif
+
+
+      ppiclf_cycle  = istep
+      ppiclf_iostep = iostep
+      ppiclf_dt     = dt
+      ppiclf_time   = time
+
+      ! integerate in time
       if (ppiclf_imethod .eq. 1) 
      >   call ppiclf_solve_IntegrateRK3(time,y,ydot)
+
+
+      ! output files
+      if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0) then
+
+         call ppiclf_solve_OutputDiagAll
+
+         call ppiclf_io_WriteParticleVTU('',0)
+
+         if (ppiclf_filter .gt. 0.0)
+     >      call ppiclf_io_WriteSubBinVTU('',0)
+      endif
 
       return
       end
@@ -181,8 +405,10 @@ c----------------------------------------------------------------------
 
          call ppiclf_solve_RemoveParticle
          call ppiclf_comm_CreateBin
-      if (ppiclf_filter .gt. 0) 
-     >   call ppiclf_comm_MapOverlapMesh
+      if (ppiclf_filter .gt. 0) then
+         call ppiclf_comm_CreateSubBin
+         if (ppiclf_overlap) call ppiclf_comm_MapOverlapMesh
+      endif
          call ppiclf_comm_FindParticle
          call ppiclf_comm_MoveParticle
 
@@ -236,7 +462,7 @@ c----------------------------------------------------------------------
       if (ppiclf_filter .gt. 0.0) then
          call ppiclf_comm_CreateGhost
          call ppiclf_comm_MoveGhost
-         call ppiclf_solve_ProjectParticleGrid
+         if (ppiclf_overlap) call ppiclf_solve_ProjectParticleGrid
       endif
 
       return
@@ -513,7 +739,7 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_ProjectParticleBin
+      subroutine ppiclf_solve_ProjectParticleSubBin
 #include "ppiclf_user.h"
 #include "ppiclf.h"
 #include "PPICLF"

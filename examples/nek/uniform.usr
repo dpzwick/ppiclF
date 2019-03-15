@@ -43,21 +43,15 @@ c-----------------------------------------------------------------------
 #include "ppiclf.h"
 #include "PPICLF"
 
-      call ppiclf_solve_IntegrateParticle(istep,dt,time
+      call ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
      >                                   ,ppiclf_y,ppiclf_ydot)
 
-      if (mod(istep,iostep) .eq. 0) then
-
-         call ppiclf_io_WriteParticleVTU('',0)
-         call ppiclf_io_WriteBinVTU('',0)
-         call ppiclf_io_WriteGridVTU('',0)
-         
-         call outpost2(ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
+      if (mod(istep,iostep) .eq. 0)
+     >   call outpost2(ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
      >             ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
      >             ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
      >             ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
      >             ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP),1,'ptw')
-      endif
 
       return
       end
@@ -107,11 +101,12 @@ c-----------------------------------------------------------------------
 
       call ppiclf_comm_InitMPI(nekcomm,nid,np)
 
-      call init_particles(npart,ppiclf_y)
+c     call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
+         call init_particles(npart,ppiclf_y)
       call ppiclf_solve_InitParticle(1,3,npart,ppiclf_y) 
 
-      call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
-      call ppiclf_solve_InitGaussianFilter(0.1,1E-2,4)
+      call ppiclf_solve_InitGaussianFilter(0.1,1E-2,2)
+
 
       return
       end
