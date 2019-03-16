@@ -17,7 +17,7 @@ c Number of particle equations being solved
 #define PPICLF_JVZ 6
 
 c Number of real properties for a particle
-#define PPICLF_LRP 6
+#define PPICLF_LRP 7
 
 #define PPICLF_R_JRHOP 1
 #define PPICLF_R_JDP   2
@@ -25,6 +25,7 @@ c Number of real properties for a particle
 #define PPICLF_R_JUX   4
 #define PPICLF_R_JUY   5
 #define PPICLF_R_JUZ   6
+#define PPICLF_R_JPHIP 7
 
 C Number of properties to project
 #define PPICLF_LRP_PRO 1

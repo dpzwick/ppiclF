@@ -23,10 +23,23 @@
 
       real*4 rpoint(3)
 
-      call ppiclf_comm_CreateSubBin
-      call ppiclf_comm_CreateGhost
-      call ppiclf_comm_MoveGhost
-      call ppiclf_solve_ProjectParticleSubBin
+      call ppiclf_printsi(' *Begin WriteSubBinVTU$',ppiclf_cycle)
+
+      call ppiclf_prints('  -Begin CreateSubBin$')
+         call ppiclf_comm_CreateSubBin
+      call ppiclf_prints('   End CreateSubBin$')
+
+      call ppiclf_prints('  -Begin CreateGhost$')
+         call ppiclf_comm_CreateGhost
+      call ppiclf_prints('   End CreateGhost$')
+
+      call ppiclf_prints('  -Begin MoveGhost$')
+         call ppiclf_comm_MoveGhost
+      call ppiclf_prints('   End MoveGhost$')
+
+      call ppiclf_prints('  -Begin ProjectParticleSubBin$')
+         call ppiclf_solve_ProjectParticleSubBin
+      call ppiclf_prints('   End ProjectParticleSubBin$')
 
       icalld1 = icalld1+1
 
@@ -471,6 +484,8 @@ c1511 continue
       close(vtu)
       endif
 
+      call ppiclf_printsi('  End WriteSubBinVTU$',ppiclf_cycle)
+
       return
       end
 !-----------------------------------------------------------------------
@@ -494,6 +509,8 @@ c1511 continue
       integer*8 stride_lenv(8), stride_lenc
 
       real*4 rpoint(3)
+
+      call ppiclf_printsi(' *Begin WriteBinVTU$',ppiclf_cycle)
 
       icalld1 = icalld1+1
 
@@ -930,6 +947,8 @@ c1511 continue
       close(vtu)
       endif
 
+      call ppiclf_printsi('  End WriteBinVTU$',ppiclf_cycle)
+
       return
       end
 !-----------------------------------------------------------------------
@@ -958,6 +977,8 @@ c1511 continue
       integer*8 stride_len
 
       integer iobig
+
+      call ppiclf_printsi(' *Begin WriteParticleVTU$',ppiclf_cycle)
 
       icalld1 = icalld1+1
 
@@ -1249,6 +1270,8 @@ c        endif
 
       close(vtu)
       endif
+
+      call ppiclf_printsi(' *End WriteParticleVTU$',ppiclf_cycle)
 
       return
       end

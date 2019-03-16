@@ -438,7 +438,7 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       njj  = 6
       nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       nrr  = nxyz*3
-      nkey = 3
+      nkey = 1
       call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltb
      >       ,PPICLF_LEE,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,njj)
       call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltb
@@ -519,8 +519,8 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       if (icalld .eq. 0) then 
 
          call ppiclf_prints('   *Begin mpi_comm_split$')
-           call mpi_comm_split(ppiclf_comm,ppiclf_nid,0,ppiclf_comm_nid
-     >                        ,ierr)
+          icolor = ppiclf_nid
+          call mpi_comm_split(ppiclf_comm,icolor,0,ppiclf_comm_nid,ierr)
          call ppiclf_prints('    End mpi_comm_split$')
 
 c        call ppiclf_prints('   *Begin InitFindpts$')

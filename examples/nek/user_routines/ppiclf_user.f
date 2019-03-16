@@ -8,12 +8,10 @@
       real    y(*)
       real    ydot(*)
 
-c setup interpolation
-      call ppiclf_solve_SetupInterp
-c setup interpolation
+      call ppiclf_solve_InitSolve
 
 C interpolate fields
-c     call ppiclf_solve_InterpField(PPICLF_R_JUX  , vx_e    )
+      call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
 c     call ppiclf_solve_InterpField(PPICLF_R_JUY  , vy_e    )
 c     call ppiclf_solve_InterpField(PPICLF_R_JUZ  , vz_e    )
 C interpolate fields
@@ -55,6 +53,7 @@ c evaluate ydot
 c project fields
       call ppiclf_solve_ParallelProjection
 c project fields
+
 
       return
       end
