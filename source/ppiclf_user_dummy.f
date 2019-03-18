@@ -3,8 +3,6 @@
 c
 c     Set ydot(*) for system of d/dt y(*) = ydot(*)
 c
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real time_

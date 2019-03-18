@@ -16,10 +16,9 @@ c Maximum number of ghost particles
 
 #ifndef PPICLF_LRP_PRO
 #define PPICLF_LRP_PRO 1
-#endif
-#if PPICLF_LRP_PRO == 0
-#undef PPICLF_LRP_PRO
-#define PPICLF_LRP_PRO 1
+#define PPICLF_PROJECT 0
+#else
+#define PPICLF_PROJECT 1
 #endif
 
 #ifndef PPICLF_LRP_GP
@@ -64,4 +63,12 @@ c max gridpts per processor
 
 #ifndef PPICLF_LRMAX
 #define PPICLF_LRMAX 6
+#endif
+
+C Interpolation
+#ifndef PPICLF_LRP_INT
+#define PPICLF_LRP_INT 1
+#define PPICLF_INTERP 0
+#else
+#define PPICLF_INTERP 1
 #endif

@@ -1,7 +1,5 @@
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitMPI(comm,id,np)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       integer comm
@@ -25,8 +23,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitFindptsDum
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real xm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
@@ -69,8 +65,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitCrystal
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call fgslib_crystal_setup(ppiclf_cr_hndl,ppiclf_comm,ppiclf_np)
@@ -79,8 +73,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_CreateBin
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
@@ -245,8 +237,6 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_CreateSubBin
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       ppiclf_nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
@@ -326,8 +316,6 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_MapOverlapMesh
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
@@ -539,8 +527,6 @@ c        call ppiclf_prints('    End InitFindpts$')
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitOverlapMesh(ncell,lx1,ly1,lz1,
      >                                       xgrid,ygrid,zgrid)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       integer ncell
@@ -587,8 +573,6 @@ c        call ppiclf_prints('    End InitFindpts$')
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_comm_FindParticle
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       ix = 1
@@ -620,8 +604,6 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_MoveParticle
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       logical partl    
@@ -672,8 +654,6 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_comm_CreateGhost
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
@@ -1055,8 +1035,6 @@ c CREATING GHOST PARTICLES
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_comm_CheckPeriodicBC(rxnew,rxdrng,iadd)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 c
       real rxnew(3), rxdrng(3)
@@ -1137,8 +1115,6 @@ c
 c----------------------------------------------------------------------
       subroutine ppiclf_comm_MoveGhost
 c
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       logical partl         

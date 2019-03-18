@@ -1,7 +1,5 @@
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_InitParticle(imethod,ndim,npart,y)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       integer  imethod
@@ -56,8 +54,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_OutputDiagAll
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call ppiclf_solve_OutputDiagGen
@@ -69,8 +65,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_OutputDiagGen
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call ppiclf_prints(' *Begin General Info$')
@@ -112,8 +106,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_OutputDiagGrid
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call ppiclf_prints(' *Begin Grid Info$')
@@ -139,8 +131,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_OutputDiagGhost
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call ppiclf_prints(' *Begin Ghost Info$')
@@ -159,8 +149,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_OutputDiagSubBin
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call ppiclf_prints(' *Begin SubBin Info$')
@@ -187,8 +175,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_InitParam(imethod,ndim,npart)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       integer  imethod
       integer  ndim
@@ -220,6 +206,10 @@
       ppiclf_overlap = .false.
       ppiclf_linit   = .false.
       ppiclf_lfilt   = .false.
+      ppiclf_lintp   = .false.
+      ppiclf_lproj   = .false.
+      if (PPICLF_INTERP .eq. 1)  ppiclf_lintp = .true.
+      if (PPICLF_PROJECT .eq. 1) ppiclf_lproj = .true.
 
       ppiclf_xdrange(1,1) = -1E8
       ppiclf_xdrange(2,1) =  1E8
@@ -232,8 +222,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real    filt
@@ -278,8 +266,6 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_SetParticleTag
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       do i=1,ppiclf_npart
@@ -292,8 +278,6 @@
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_InitParticleTag
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       if (.not. PPICLF_RESTART) then
@@ -309,8 +293,6 @@ c----------------------------------------------------------------------
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
      >                                         ,y,ydot)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       integer istep
@@ -362,8 +344,6 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_IntegrateRK3(time_,y,ydot)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real time_
@@ -399,8 +379,6 @@ c----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_InitSolve
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call ppiclf_solve_RemoveParticle
@@ -412,30 +390,26 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InterpField(jp,infld)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
+      subroutine ppiclf_solve_InitInterp
 #include "PPICLF"
-
-      logical partl
 
       ! should group all fields together if more than one ...
 
       ! also throw error if overlap is not set
 
-      real infld(*)
+      INTEGER PPICLF_INT_ICNT, PPICLF_INT_MAP(PPICLF_LRP_INT)
+      COMMON /PPICLF_INTERP_I/ PPICLF_INT_ICNT, PPICLF_INT_MAP
 
-      real xm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
-     >     ym1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
-     >     zm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE),
-     >     fld(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
-      common /ppiclf_tmp_grid/ xm1, ym1, zm1, fld
+      PPICLF_INT_ICNT = 0
 
       n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       do ie=1,ppiclf_neltb
-         call ppiclf_copy(xm1(1,1,1,ie),ppiclf_xm1b(1,1,1,1,ie),n)
-         call ppiclf_copy(ym1(1,1,1,ie),ppiclf_xm1b(1,1,1,2,ie),n)
-         call ppiclf_copy(zm1(1,1,1,ie),ppiclf_xm1b(1,1,1,3,ie),n)
+         call ppiclf_copy(ppiclf_xm1bi(1,1,1,ie,1)
+     >                   ,ppiclf_xm1b(1,1,1,1,ie),n)
+         call ppiclf_copy(ppiclf_xm1bi(1,1,1,ie,2)
+     >                   ,ppiclf_xm1b(1,1,1,2,ie),n)
+         call ppiclf_copy(ppiclf_xm1bi(1,1,1,ie,3)
+     >                   ,ppiclf_xm1b(1,1,1,3,ie),n)
       enddo
 
       tol     = 5e-13
@@ -450,9 +424,9 @@ c     ndum    = ppiclf_neltb*n
      >                         ,ppiclf_comm_nid
      >                         ,np ! only 1 rank on this comm
      >                         ,ppiclf_ndim
-     >                         ,xm1
-     >                         ,ym1
-     >                         ,zm1
+     >                         ,ppiclf_xm1bi(1,1,1,1,1)
+     >                         ,ppiclf_xm1bi(1,1,1,1,2)
+     >                         ,ppiclf_xm1bi(1,1,1,1,3)
      >                         ,PPICLF_LEX
      >                         ,PPICLF_LEY
      >                         ,PPICLF_LEZ
@@ -468,31 +442,67 @@ c     ndum    = ppiclf_neltb*n
 
 
       ! copy MapOverlapMesh mapping from prior to communicating map
-      neltbc = ppiclf_neltbb
-      do ie=1,neltbc
+      ppiclf_neltbbb = ppiclf_neltbb
+      do ie=1,ppiclf_neltbbb
          call ppiclf_icopy(ppiclf_er_mapc(1,ie),ppiclf_er_maps(1,ie)
      >             ,PPICLF_LRMAX)
       enddo
 
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InterpField(jp,infld)
+#include "PPICLF"
+
+      real infld(*)
+
+      INTEGER PPICLF_INT_ICNT, PPICLF_INT_MAP(PPICLF_LRP_INT)
+      COMMON /PPICLF_INTERP_I/ PPICLF_INT_ICNT, PPICLF_INT_MAP
+
+      PPICLF_INT_ICNT = PPICLF_INT_ICNT + 1
+
+      if (PPICLF_INT_ICNT .gt. PPICLF_LRP_INT)
+     >   call ppiclf_exittr('Interpolating too many fields$'
+     >                     ,0.0,PPICLF_INT_ICNT)
+      if (jp .le. 0 .or. jp .gt. PPICLF_LRP)
+     >   call ppiclf_exittr('Invalid particle array interp. location$'
+     >                     ,0.0,jp)
+
+      PPICLF_INT_MAP(PPICLF_INT_ICNT) = jp
+
       ! use the map to take original grid and map to fld which will be
       ! sent to mapped processors
-      do ie=1,neltbc
+      n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      do ie=1,ppiclf_neltbbb
          iee = ppiclf_er_mapc(1,ie)
          j = (iee-1)*n + 1
-         call ppiclf_copy(fld(1,1,1,ie),infld(j),n)
+         call ppiclf_copy(ppiclf_int_fld(1,1,1,PPICLF_INT_ICNT,ie)
+     >                   ,infld(j),n)
       enddo
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_FinalizeInterp
+#include "PPICLF"
+
+      INTEGER PPICLF_INT_ICNT, PPICLF_INT_MAP(PPICLF_LRP_INT)
+      COMMON /PPICLF_INTERP_I/ PPICLF_INT_ICNT, PPICLF_INT_MAP
+
+      REAL FLD(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
 
       ! send it all
       nl   = 0
       nii  = PPICLF_LRMAX
       njj  = 6
       nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
-      nrr  = nxyz*1
+      nrr  = nxyz*PPICLF_LRP_INT
       nkey = 1
-      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,neltbc
-     >      ,PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,fld,nrr,njj)
-      call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,neltbc
-     >       ,ppiclf_er_mapc,nii,partl,nl,fld,nrr,nkey,1)
+      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltbbb
+     >      ,PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,ppiclf_int_fld
+     >      ,nrr,njj)
+      call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltbbb
+     >       ,ppiclf_er_mapc,nii,partl,nl,ppiclf_int_fld,nrr,nkey,1)
 
       ! find which cell particle is in locally
       ix = 1
@@ -500,25 +510,35 @@ c     ndum    = ppiclf_neltb*n
       iz = 3
 
       call fgslib_findpts(PPICLF_FP_HNDL           !   call fgslib_findpts( ihndl,
-     $        , ppiclf_iprop (1 ,1),PPICLF_LIP        !   $             rcode,1,
-     $        , ppiclf_iprop (3 ,1),PPICLF_LIP        !   &             proc,1,
-     $        , ppiclf_iprop (2 ,1),PPICLF_LIP        !   &             elid,1,
-     $        , ppiclf_rprop2(1 ,1),PPICLF_LRP2       !   &             rst,ndim,
-     $        , ppiclf_rprop2(4 ,1),PPICLF_LRP2       !   &             dist,1,
-     $        , ppiclf_y     (ix,1),PPICLF_LRS        !   &             pts(    1),1,
-     $        , ppiclf_y     (iy,1),PPICLF_LRS        !   &             pts(  n+1),1,
-     $        , ppiclf_y     (iz,1),PPICLF_LRS ,PPICLF_NPART) !   &             pts(2*n+1),1,n)
+     >        , ppiclf_iprop (1 ,1),PPICLF_LIP        !   $             rcode,1,
+     >        , ppiclf_iprop (3 ,1),PPICLF_LIP        !   &             proc,1,
+     >        , ppiclf_iprop (2 ,1),PPICLF_LIP        !   &             elid,1,
+     >        , ppiclf_rprop2(1 ,1),PPICLF_LRP2       !   &             rst,ndim,
+     >        , ppiclf_rprop2(4 ,1),PPICLF_LRP2       !   &             dist,1,
+     >        , ppiclf_y     (ix,1),PPICLF_LRS        !   &             pts(    1),1,
+     >        , ppiclf_y     (iy,1),PPICLF_LRS        !   &             pts(  n+1),1,
+     >        , ppiclf_y     (iz,1),PPICLF_LRS ,PPICLF_NPART) !   &             pts(2*n+1),1,n)
 
-      ! interpolate field locally
-      call fgslib_findpts_eval_local( PPICLF_FP_HNDL
-     >                               ,ppiclf_rprop (jp,1)
-     >                               ,PPICLF_LRP
-     >                               ,ppiclf_iprop (2,1)
-     >                               ,PPICLF_LIP
-     >                               ,ppiclf_rprop2(1,1)
-     >                               ,PPICLF_LRP2
-     >                               ,PPICLF_NPART
-     >                               ,fld)
+      do i=1,PPICLF_INT_ICNT
+         jp = PPICLF_INT_MAP(i)
+
+         do ie=1,ppiclf_neltbbb
+            call ppiclf_copy(fld(1,1,1,ie)
+     >                      ,ppiclf_int_fld(1,1,1,i,ie),nxyz)
+         enddo
+
+         ! interpolate field locally
+         call fgslib_findpts_eval_local( PPICLF_FP_HNDL
+     >                                  ,ppiclf_rprop (jp,1)
+     >                                  ,PPICLF_LRP
+     >                                  ,ppiclf_iprop (2,1)
+     >                                  ,PPICLF_LIP
+     >                                  ,ppiclf_rprop2(1,1)
+     >                                  ,PPICLF_LRP2
+     >                                  ,PPICLF_NPART
+     >                                  ,fld)
+
+      enddo
 
       ! free since mapping can change on next call
       call fgslib_findpts_free(PPICLF_FP_HNDL)
@@ -527,22 +547,19 @@ c     ndum    = ppiclf_neltb*n
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_ParallelProjection
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
+      call ppiclf_comm_CreateGhost
+      call ppiclf_comm_MoveGhost
+
       if (ppiclf_lfilt) then
-         call ppiclf_comm_CreateGhost
-         call ppiclf_comm_MoveGhost
-         if (ppiclf_overlap) call ppiclf_solve_ProjectParticleGrid
+         if (ppiclf_lproj) call ppiclf_solve_ProjectParticleGrid
       endif
 
       return
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_SetRK3Coeff(dt)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real dt
@@ -562,8 +579,6 @@ c----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_RemoveParticle
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       integer in_part(PPICLF_LPART), jj(3), iperiodicx, iperiodicy,
@@ -642,8 +657,6 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_ProjectParticleGrid
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real    multfci
@@ -812,8 +825,6 @@ c----------------------------------------------------------------------
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_ProjectParticleSubBin
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       real    multfci

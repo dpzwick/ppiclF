@@ -1,7 +1,5 @@
 c-----------------------------------------------------------------------
       subroutine ppiclf_gop( x, w, op, n)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
@@ -30,8 +28,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_igop( x, w, op, n)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
@@ -181,8 +177,6 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine ppiclf_exittr(stringi,rdata,idata)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
       character*1 stringi(132)
@@ -209,8 +203,6 @@ c     call mpi_finalize (ierr)
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_printsri(stringi,rdata,idata)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
       character*1 stringi(132)
@@ -238,8 +230,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_printsi(stringi,idata)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
       character*1 stringi(132)
@@ -267,8 +257,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_printsr(stringi,rdata)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
       character*1 stringi(132)
@@ -296,8 +284,6 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_prints(stringi)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
       character*1 stringi(132)
@@ -351,8 +337,6 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine ppiclf_byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
@@ -388,8 +372,6 @@ c     call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
 c    &                       MPI_STATUS_IGNORE,ierr)
 c--------------------------------------------------------------------------
       subroutine ppiclf_byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
@@ -422,8 +404,6 @@ c--------------------------------------------------------------------------
       end
 C--------------------------------------------------------------------------
       subroutine ppiclf_bcast(buf,len)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
       real*4 buf(1)

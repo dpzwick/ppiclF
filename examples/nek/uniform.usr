@@ -39,8 +39,6 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       call ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
@@ -93,8 +91,6 @@ c-----------------------------------------------------------------------
       subroutine usrdat2
       include 'SIZE'
       include 'TOTAL'
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
@@ -115,8 +111,6 @@ c-----------------------------------------------------------------------
       end
 !-----------------------------------------------------------------------
       subroutine init_particles(npart,y)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
 
       integer   npart

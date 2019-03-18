@@ -1,7 +1,5 @@
 !-----------------------------------------------------------------------
       subroutine ppiclf_io_WriteSubBinVTU(filein1,iobig)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
@@ -490,8 +488,6 @@ c1511 continue
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_io_WriteBinVTU(filein1,iobig)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
@@ -953,8 +949,6 @@ c1511 continue
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_io_WriteParticleVTU(filein1,iobig)
-#include "ppiclf_user.h"
-#include "ppiclf.h"
 #include "PPICLF"
       include 'mpif.h'
 
