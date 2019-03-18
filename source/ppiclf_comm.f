@@ -718,8 +718,11 @@ c CREATING GHOST PARTICLES
          ppiclf_cp_map(1,ip) = ppiclf_y(jx,ip)      ! x coord
          ppiclf_cp_map(2,ip) = ppiclf_y(jy,ip)      ! y coord
          ppiclf_cp_map(3,ip) = ppiclf_y(jz,ip)      ! z coord
+
+         idum = 3
          do j=1,PPICLF_LRP_PRO
-            ppiclf_cp_map(3+j,ip) = map(j)
+            idum = idum + 1
+            ppiclf_cp_map(idum,ip) = map(j)
          enddo
 
          rxval = ppiclf_cp_map(1,ip)
@@ -933,7 +936,6 @@ c CREATING GHOST PARTICLES
             enddo
   222 continue
          enddo
-
 
          ! corners
          do ifc=1,ncornergp

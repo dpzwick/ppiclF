@@ -702,9 +702,11 @@ c----------------------------------------------------------------------
          rproj(3 ,ip) = ppiclf_cp_map(ppiclf_jygp,ip)
          rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
 
-
-         do j=5,PPICLF_LRP_GP+1
-            rproj(j,ip) = ppiclf_cp_map(j-1,ip)*multfci
+         idum = 3
+         ic = 4
+         do j=idum+1,idum+PPICLF_LRP_GP
+            ic = ic + 1
+            rproj(ic,ip) = ppiclf_cp_map(j,ip)*multfci
          enddo
                     
          iproj(1,ip)  = ppiclf_iprop(8,ip)
@@ -725,8 +727,11 @@ c----------------------------------------------------------------------
          rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
          rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
 
-         do j=5,PPICLF_LRP_GP+1
-            rproj(j,ip+ppiclf_npart) = ppiclf_rprop_gp(j-1,ip)*multfci
+         idum = 3
+         ic = 4
+         do j=idum+1,idum+PPICLF_LRP_GP
+            ic = ic + 1
+            rproj(ic,ip+ppiclf_npart) = ppiclf_rprop_gp(j,ip)*multfci
          enddo
                     
          iproj(1,ip+ppiclf_npart)  = ppiclf_iprop_gp(2,ip)
