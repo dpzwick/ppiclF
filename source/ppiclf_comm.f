@@ -116,18 +116,18 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       ymax = -1E10
       zmax = -1E10
       do i=1,ppiclf_npart
-         rduml = ppiclf_y(ix,i) - ppiclf_d2chk(2)
-         rdumr = ppiclf_y(ix,i) + ppiclf_d2chk(2)
+         rduml = ppiclf_y(ix,i) - ppiclf_d2chk(1)
+         rdumr = ppiclf_y(ix,i) + ppiclf_d2chk(1)
          if (rduml .lt. xmin) xmin = rduml
          if (rdumr .gt. xmax) xmax = rdumr
 
-         rduml = ppiclf_y(iy,i) - ppiclf_d2chk(2)
-         rdumr = ppiclf_y(iy,i) + ppiclf_d2chk(2)
+         rduml = ppiclf_y(iy,i) - ppiclf_d2chk(1)
+         rdumr = ppiclf_y(iy,i) + ppiclf_d2chk(1)
          if (rduml .lt. ymin) ymin = rduml
          if (rdumr .gt. ymax) ymax = rdumr
 
-         rduml = ppiclf_y(iz,i) - ppiclf_d2chk(2)
-         rdumr = ppiclf_y(iz,i) + ppiclf_d2chk(2)
+         rduml = ppiclf_y(iz,i) - ppiclf_d2chk(1)
+         rdumr = ppiclf_y(iz,i) + ppiclf_d2chk(1)
          if (rduml .lt. zmin) zmin = rduml
          if (rdumr .gt. zmax) zmax = rdumr
       enddo
@@ -170,9 +170,10 @@ c     endif
       icount(1) = 0
       icount(2) = 0
       icount(3) = 0
-      d2new(1) = ppiclf_d2chk(2)
-      d2new(2) = ppiclf_d2chk(2)
-      d2new(3) = ppiclf_d2chk(2)
+      ppiclf_d2chk(1) = max(ppiclf_d2chk(2),ppiclf_d2chk(3))
+      d2new(1) = ppiclf_d2chk(1)
+      d2new(2) = ppiclf_d2chk(1)
+      d2new(3) = ppiclf_d2chk(1)
 
       ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
       ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
@@ -185,7 +186,7 @@ c     endif
 c     if (ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp .gt. ppiclf_np .or. 
 c    >    ppiclf_filter .lt. 0.0) then
          nmax = 1000
-         d2chk_save = ppiclf_d2chk(2)
+         d2chk_save = ppiclf_d2chk(1)
          
          do i=1,nmax
          do j=0,ndim-1
@@ -716,6 +717,13 @@ c CREATING GHOST PARTICLES
          call ppiclf_user_MapProjPart(map,ppiclf_y(1,ip)
      >         ,ppiclf_ydot(1,ip),ppiclf_ydotc(1,ip),ppiclf_rprop(1,ip))
 
+c        idum = 1
+c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
+c        idum = 2
+c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
+c        idum = 3
+c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
+
          idum = 0
          do j=1,PPICLF_LRS
             idum = idum + 1
@@ -768,18 +776,18 @@ c CREATING GHOST PARTICLES
             distchk = 0.0
             dist = 0.0
             if (ii1-iip .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
                if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
             endif
             if (jj1-jjp .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
                if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
             endif
             if (ppiclf_ndim .gt. 2) then
             if (kk1-kkp .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
                if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
             endif
@@ -863,18 +871,18 @@ c CREATING GHOST PARTICLES
             distchk = 0.0
             dist = 0.0
             if (ii1-iip .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
                if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
             endif
             if (jj1-jjp .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
                if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
             endif
             if (ppiclf_ndim .gt. 2) then
             if (kk1-kkp .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
                if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
             endif
@@ -958,18 +966,18 @@ c CREATING GHOST PARTICLES
             distchk = 0.0
             dist = 0.0
             if (ii1-iip .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
                if (ii1-iip .gt. 0) dist = dist +(rxval - rxr)**2
             endif
             if (jj1-jjp .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (jj1-jjp .lt. 0) dist = dist +(ryval - ryl)**2
                if (jj1-jjp .gt. 0) dist = dist +(ryval - ryr)**2
             endif
             if (ppiclf_ndim .gt. 2) then
             if (kk1-kkp .ne. 0) then
-               distchk = distchk + (rfac*ppiclf_d2chk(2))**2
+               distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (kk1-kkp .lt. 0) dist = dist +(rzval - rzl)**2
                if (kk1-kkp .gt. 0) dist = dist +(rzval - rzr)**2
             endif

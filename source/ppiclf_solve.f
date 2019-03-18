@@ -202,13 +202,14 @@
       ppiclf_dt     = 0.0
       ppiclf_time   = 0.0
 
-      ppiclf_restart = .false.
-      ppiclf_overlap = .false.
-      ppiclf_linit   = .false.
-      ppiclf_lfilt   = .false.
-      ppiclf_lintp   = .false.
-      ppiclf_lproj   = .false.
-      ppiclf_lsubbin = .false.
+      ppiclf_restart    = .false.
+      ppiclf_overlap    = .false.
+      ppiclf_linit      = .false.
+      ppiclf_lfilt      = .false.
+      ppiclf_lintp      = .false.
+      ppiclf_lproj      = .false.
+      ppiclf_lsubbin    = .false.
+      ppiclf_lsubsubbin = .false.
       if (PPICLF_INTERP .eq. 1)  ppiclf_lintp = .true.
       if (PPICLF_PROJECT .eq. 1) ppiclf_lproj = .true.
 
@@ -218,6 +219,149 @@
       ppiclf_xdrange(2,2) =  1E8
       ppiclf_xdrange(1,3) = -1E8
       ppiclf_xdrange(2,3) =  1E8
+
+      ppiclf_d2chk(1) = 0
+      ppiclf_d2chk(2) = 0
+      ppiclf_d2chk(3) = 0
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitNeighborBin(rwidth)
+#include "PPICLF"
+
+      real rwidth
+
+      if (.not.PPICLF_LCOMM)
+     >call ppiclf_exittr('InitMPI must be before InitNeighborBin$',0.,0)
+      if (.not.PPICLF_LINIT)
+     >call ppiclf_exittr('InitParticle must be before InitNeighborBin$'
+     >                  ,0.,0)
+
+      ppiclf_lsubsubbin = .true.
+
+      ppiclf_d2chk(3) = rwidth
+
+      call ppiclf_prints('   *Redo CreateBin$')
+         call ppiclf_comm_CreateBin
+      call ppiclf_prints('    End CreateBin$')
+
+      call ppiclf_prints('   *Begin CreateSubBin$')
+         if (ppiclf_lsubbin) call ppiclf_comm_CreateSubBin
+      call ppiclf_prints('    End CreateSubBin$')
+
+      call ppiclf_prints('   *Redo FindParticle$')
+         call ppiclf_comm_FindParticle
+      call ppiclf_prints('    End FindParticle$')
+
+      call ppiclf_prints('   *Redo MoveParticle$')
+         call ppiclf_comm_MoveParticle
+      call ppiclf_prints('    End MoveParticle$')
+
+      call ppiclf_prints('   *Redo SetNeighborBin$')
+         call ppiclf_solve_SetNeighborBin
+      call ppiclf_prints('    End SetNeighborBin$')
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_SetNeighborBin
+#include "PPICLF"
+
+      do i=1,ppiclf_npart
+         ppiclf_nb_r(1,i) = floor((ppiclf_cp_map(1,i)-ppiclf_binb(1))/
+     >                             ppiclf_d2chk(3))
+         ppiclf_nb_r(2,i) = floor((ppiclf_cp_map(2,i)-ppiclf_binb(3))/
+     >                             ppiclf_d2chk(3))
+         if (ppiclf_ndim .eq. 3)
+     >   ppiclf_nb_r(3,i) = floor((ppiclf_cp_map(3,i)-ppiclf_binb(5))/
+     >                             ppiclf_d2chk(3))
+      enddo
+
+      do i=1,ppiclf_npart_gp
+         ppiclf_nb_g(1,i) = floor((ppiclf_rprop_gp(1,i)-ppiclf_binb(1))/
+     >                             ppiclf_d2chk(3))
+         ppiclf_nb_g(2,i) = floor((ppiclf_rprop_gp(2,i)-ppiclf_binb(3))/
+     >                             ppiclf_d2chk(3))
+         if (ppiclf_ndim .eq. 3)
+     >   ppiclf_nb_g(3,i) = floor((ppiclf_rprop_gp(3,i)-ppiclf_binb(5))/
+     >                             ppiclf_d2chk(3))
+      enddo
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_NearestNeighbor(i)
+#include "PPICLF"
+
+      integer i
+
+      i_iim = ppiclf_nb_r(1,i) - 1
+      i_iip = ppiclf_nb_r(1,i) + 1
+      i_jjm = ppiclf_nb_r(2,i) - 1
+      i_jjp = ppiclf_nb_r(2,i) + 1
+      i_kkm = ppiclf_nb_r(3,i) - 1
+      i_kkp = ppiclf_nb_r(3,i) + 1
+
+      dist2 = ppiclf_d2chk(3)**2
+
+      do j=1,ppiclf_npart
+         if (j .eq. i) cycle
+
+         j_ii = ppiclf_nb_r(1,j)
+         j_jj = ppiclf_nb_r(2,j)
+         j_kk = ppiclf_nb_r(3,j)
+
+         if (j_ii .gt. i_iip .or. j_ii .lt. i_iim) cycle
+         if (j_jj .gt. i_jjp .or. j_jj .lt. i_jjm) cycle
+         if (ppiclf_ndim .eq. 3) then
+         if (j_kk .gt. i_kkp .or. j_kk .lt. i_kkm) cycle
+         endif
+
+         xdist2 = (ppiclf_cp_map(1,i)-ppiclf_cp_map(1,j))**2
+         if (xdist2 .gt. dist2) cycle
+         ydist2 = (ppiclf_cp_map(2,i)-ppiclf_cp_map(2,j))**2
+         if (ydist2 .gt. dist2) cycle
+         zdist2 = (ppiclf_cp_map(3,i)-ppiclf_cp_map(3,j))**2
+         if (zdist2 .gt. dist2) cycle
+         dist_total = xdist2+ydist2+zdist2
+         if (dist_total .gt. dist2) cycle
+
+         call ppiclf_user_EvalNearestNeighbor(i,ppiclf_cp_map(1,i)
+     >                                 ,ppiclf_cp_map(1+PPICLF_LRS,i)
+     >                                 ,ppiclf_cp_map(1,j)
+     >                                 ,ppiclf_cp_map(1+PPICLF_LRS,j))
+
+      enddo
+
+      do j=1,ppiclf_npart_gp
+         if (j .eq. i) cycle
+
+         j_ii = ppiclf_nb_g(1,j)
+         j_jj = ppiclf_nb_g(2,j)
+         j_kk = ppiclf_nb_g(3,j)
+
+         if (j_ii .gt. i_iip .or. j_ii .lt. i_iim) cycle
+         if (j_jj .gt. i_jjp .or. j_jj .lt. i_jjm) cycle
+         if (ppiclf_ndim .eq. 3) then
+         if (j_kk .gt. i_kkp .or. j_kk .lt. i_kkm) cycle
+         endif
+
+         xdist2 = (ppiclf_cp_map(1,i)-ppiclf_rprop_gp(1,j))**2
+         if (xdist2 .gt. dist2) cycle
+         ydist2 = (ppiclf_cp_map(2,i)-ppiclf_rprop_gp(2,j))**2
+         if (ydist2 .gt. dist2) cycle
+         zdist2 = (ppiclf_cp_map(3,i)-ppiclf_rprop_gp(3,j))**2
+         if (zdist2 .gt. dist2) cycle
+         dist_total = xdist2+ydist2+zdist2
+         if (dist_total .gt. dist2) cycle
+
+         call ppiclf_user_EvalNearestNeighbor(i,ppiclf_cp_map(1,i)
+     >                                 ,ppiclf_cp_map(1+PPICLF_LRS,i)
+     >                                 ,ppiclf_rprop_gp(1,j)
+     >                                 ,ppiclf_rprop_gp(1+PPICLF_LRS,j))
+
+      enddo
 
       return
       end
@@ -251,7 +395,7 @@
       call ppiclf_prints('    End CreateBin$')
 
       call ppiclf_prints('   *Begin CreateSubBin$')
-         call ppiclf_comm_CreateSubBin
+         if (ppiclf_lsubbin) call ppiclf_comm_CreateSubBin
       call ppiclf_prints('    End CreateSubBin$')
 
       call ppiclf_prints('   *Redo FindParticle$')
@@ -368,7 +512,7 @@ c----------------------------------------------------------------------
       do istage=1,nstage
 
          ! evaluate ydot
-         call ppiclf_user_SetYdot(time_,y,ydot)
+         call ppiclf_solve_SetYdot(time_,y,ydot)
 
          ndum = PPICLF_NPART*PPICLF_LRS
          ! rk3 integrate
@@ -382,6 +526,19 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
+      subroutine ppiclf_solve_SetYdot(time_,y,ydot)
+#include "PPICLF"
+
+      real time_
+      real y(*)
+      real ydot(*)
+
+      call ppiclf_solve_InitSolve
+      call ppiclf_user_SetYdot(time_,y,ydot)
+
+      return
+      end
+!-----------------------------------------------------------------------
       subroutine ppiclf_solve_InitSolve
 #include "PPICLF"
 
@@ -391,13 +548,25 @@ c----------------------------------------------------------------------
       call ppiclf_comm_FindParticle
       call ppiclf_comm_MoveParticle
 
+      if (ppiclf_lsubsubbin .or. ppiclf_lproj) then
+         call ppiclf_comm_CreateGhost
+         call ppiclf_comm_MoveGhost
+      endif
+
+      if (ppiclf_lproj) call ppiclf_solve_ProjectParticleGrid
+      if (ppiclf_lsubsubbin) call ppiclf_solve_SetNeighborBin
+
+      do i=1,ppiclf_npart
+      do j=1,PPICLF_LRP
+         ppiclf_ydotc(j,i) = 0.0
+      enddo
+      enddo
+
       return
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_InitInterp
 #include "PPICLF"
-
-      ! should group all fields together if more than one ...
 
       ! also throw error if overlap is not set
 
@@ -553,12 +722,10 @@ c----------------------------------------------------------------------
       subroutine ppiclf_solve_ParallelProjection
 #include "PPICLF"
 
-      call ppiclf_comm_CreateGhost
-      call ppiclf_comm_MoveGhost
+c     call ppiclf_comm_CreateGhost
+c     call ppiclf_comm_MoveGhost
 
-      if (ppiclf_lfilt) then
-         if (ppiclf_lproj) call ppiclf_solve_ProjectParticleGrid
-      endif
+      if (ppiclf_lproj) call ppiclf_solve_ProjectParticleGrid
 
       return
       end

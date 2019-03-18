@@ -102,6 +102,7 @@ c-----------------------------------------------------------------------
 
       call ppiclf_solve_InitGaussianFilter(0.15,1E-2,0)
       call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
+      call ppiclf_solve_InitNeighborBin(0.07)
 
       return
       end
@@ -120,7 +121,7 @@ c-----------------------------------------------------------------------
       external  ran2
 
       npart   = 50       ! particles/rank to distribute
-      dp      = 0.01   ! particle diameter
+      dp      = 0.07   ! particle diameter
       rhop    = 3307.327 ! particle density
       rdum    = ran2(-1-ppiclf_nid) ! initialize random number generator
       PI      = 4.D0*DATAN(1.D0)

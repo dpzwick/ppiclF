@@ -1,10 +1,13 @@
-C> Example doxygen comment
-c Maximum number of real particles on a processor
+C> Maximum number of particles per processor
 #define PPICLF_LPART 50000
 
-c Number of particle equations being solved
+C> Max number of equations being solved for each particle
 #define PPICLF_LRS 6
 
+C> Pointers to PPICLF_Y(i,*) and PPICLF_YDOT(i,*)
+C>    -CANNOT exceed PPICLF_LRS
+C>    -Entirely user defined
+C>    -X,Y,Z coordinates of particle MUST be ordered 1,2,3
 #define PPICLF_JX  1
 #define PPICLF_JY  2
 #define PPICLF_JZ  3
@@ -12,9 +15,12 @@ c Number of particle equations being solved
 #define PPICLF_JVY 5
 #define PPICLF_JVZ 6
 
-c Number of real properties for a particle
+C> Max number of additional properties for each particle
 #define PPICLF_LRP 7
 
+C> Pointers to PPICLF_RPROP(i,*)
+C>    -CANNOT exceed PPICLF_LRP
+C>    -Entirely user defined
 #define PPICLF_R_JRHOP 1
 #define PPICLF_R_JDP   2
 #define PPICLF_R_JVOLP 3
@@ -23,23 +29,21 @@ c Number of real properties for a particle
 #define PPICLF_R_JUZ   6
 #define PPICLF_R_JPHIP 7
 
-C Number of properties to interpolate
-#define PPICLF_LRP_INT 1
-
-#define PPICLF_I_JPHIP 1   
-
-C Number of properties to project
-#define PPICLF_LRP_PRO 1
-
-#define PPICLF_P_JPHIP 1   
-
-C Overlap grid
+C> Max size of external overlap grid (x,y,z,cell)
+C>    -Ex: (2,2,2,local_cells) for quad grid in 3D
 #define PPICLF_LEX 6
 #define PPICLF_LEY 6
 #define PPICLF_LEZ 6
 #define PPICLF_LEE 125
 
-C SubBin local grid size
-#define PPICLF_BX1 100
-#define PPICLF_BY1 100
-#define PPICLF_BZ1 100
+C> Number of fields being interpolated
+#define PPICLF_LRP_INT 1
+
+C> Number of fields being projected
+#define PPICLF_LRP_PRO 1
+
+C> Pointers to projected field in PPICLF_PRO_FLD(*,*,*,*,i)
+C>    -CANNOT exceed PPICLF_LRP_PRO
+C>    -Entirely user defined
+#define PPICLF_P_JPHIP 1   
+
