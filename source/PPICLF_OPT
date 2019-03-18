@@ -1,10 +1,11 @@
 c Particle options
       LOGICAL PPICLF_RESTART, PPICLF_OVERLAP, PPICLF_LCOMM
      >       ,PPICLF_LINIT, PPICLF_LFILT, PPICLF_LINTP, PPICLF_LPROJ
+     >       ,PPICLF_LSUBBIN
       COMMON /PPICLF_OPT_PARAM_L/ PPICLF_RESTART, PPICLF_OVERLAP
      >                           ,PPICLF_LCOMM, PPICLF_LINIT
      >                           ,PPICLF_LFILT, PPICLF_LINTP
-     >                           ,PPICLF_LPROJ
+     >                           ,PPICLF_LPROJ, PPICLF_LSUBBIN
       DATA PPICLF_LCOMM /.false./
 
       INTEGER PPICLF_NDIM, PPICLF_IMETHOD, PPICLF_IPERIODIC(3)

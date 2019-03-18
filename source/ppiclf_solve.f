@@ -58,7 +58,7 @@
 
       call ppiclf_solve_OutputDiagGen
       call ppiclf_solve_OutputDiagGhost
-      if (ppiclf_lfilt) call ppiclf_solve_OutputDiagSubBin
+      if (ppiclf_lsubbin) call ppiclf_solve_OutputDiagSubBin
       if (ppiclf_overlap) call ppiclf_solve_OutputDiagGrid
 
       return
@@ -208,6 +208,7 @@
       ppiclf_lfilt   = .false.
       ppiclf_lintp   = .false.
       ppiclf_lproj   = .false.
+      ppiclf_lsubbin = .false.
       if (PPICLF_INTERP .eq. 1)  ppiclf_lintp = .true.
       if (PPICLF_PROJECT .eq. 1) ppiclf_lproj = .true.
 
@@ -241,6 +242,9 @@
 
       rsig             = ppiclf_filter/(2.*sqrt(2.*log(2.)))
       ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_alpha))
+
+      PPICLF_LSUBBIN = .true.
+      if (ppiclf_ngrids .eq. 0) PPICLF_LSUBBIN = .false.
 
       call ppiclf_prints('   *Redo CreateBin$')
          call ppiclf_comm_CreateBin
@@ -314,7 +318,7 @@ c----------------------------------------------------------------------
 
          call ppiclf_io_WriteParticleVTU('',0)
 
-         if (ppiclf_lfilt)
+         if (ppiclf_lsubbin)
      >      call ppiclf_io_WriteSubBinVTU('',0)
       endif
 
@@ -336,7 +340,7 @@ c----------------------------------------------------------------------
 
          call ppiclf_io_WriteParticleVTU('',0)
 
-         if (ppiclf_lfilt)
+         if (ppiclf_lsubbin)
      >      call ppiclf_io_WriteSubBinVTU('',0)
       endif
 

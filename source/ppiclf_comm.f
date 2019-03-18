@@ -239,6 +239,8 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       subroutine ppiclf_comm_CreateSubBin
 #include "PPICLF"
 
+      if (.not. ppiclf_lsubbin) return
+
       ppiclf_nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
 
 c     current box coordinates
