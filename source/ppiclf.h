@@ -39,10 +39,10 @@ C> Number of fields being projected
 #endif
 
 C> Max number of real ghost particle properties
-C>    -3 (X,Y,Z) + Projected properties
+C>    -Solution + Real properties + Projected properties
 C>    -User never touches
 #ifndef PPICLF_LRP_GP
-#define PPICLF_LRP_GP 3+PPICLF_LRP_PRO
+#define PPICLF_LRP_GP PPICLF_LRS+PPICLF_LRP+PPICLF_LRP_PRO
 #endif
 
 C> Max number of integer ghost particle properties

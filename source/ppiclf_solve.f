@@ -702,7 +702,7 @@ c----------------------------------------------------------------------
          rproj(3 ,ip) = ppiclf_cp_map(ppiclf_jygp,ip)
          rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
 
-         idum = 3
+         idum = PPICLF_LRS+PPICLF_LRP
          ic = 4
          do j=idum+1,idum+PPICLF_LRP_GP
             ic = ic + 1
@@ -727,7 +727,7 @@ c----------------------------------------------------------------------
          rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
          rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
 
-         idum = 3
+         idum = PPICLF_LRS+PPICLF_LRP
          ic = 4
          do j=idum+1,idum+PPICLF_LRP_GP
             ic = ic + 1

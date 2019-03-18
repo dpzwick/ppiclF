@@ -715,11 +715,18 @@ c CREATING GHOST PARTICLES
 
          call ppiclf_user_MapProjPart(map,ppiclf_y(1,ip)
      >         ,ppiclf_ydot(1,ip),ppiclf_ydotc(1,ip),ppiclf_rprop(1,ip))
-         ppiclf_cp_map(1,ip) = ppiclf_y(jx,ip)      ! x coord
-         ppiclf_cp_map(2,ip) = ppiclf_y(jy,ip)      ! y coord
-         ppiclf_cp_map(3,ip) = ppiclf_y(jz,ip)      ! z coord
 
-         idum = 3
+         idum = 0
+         do j=1,PPICLF_LRS
+            idum = idum + 1
+            ppiclf_cp_map(idum,ip) = ppiclf_y(j,ip)
+         enddo
+         idum = PPICLF_LRS
+         do j=1,PPICLF_LRP
+            idum = idum + 1
+            ppiclf_cp_map(idum,ip) = ppiclf_rprop(j,ip)
+         enddo
+         idum = PPICLF_LRS+PPICLF_LRP
          do j=1,PPICLF_LRP_PRO
             idum = idum + 1
             ppiclf_cp_map(idum,ip) = map(j)
