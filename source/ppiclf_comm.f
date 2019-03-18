@@ -711,7 +711,6 @@ c CREATING GHOST PARTICLES
 
       rfac = 1.0
 
-
       do ip=1,ppiclf_npart
 
          call ppiclf_user_MapProjPart(map,ppiclf_y(1,ip)
