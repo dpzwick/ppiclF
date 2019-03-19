@@ -1,10 +1,12 @@
 ENAME            = test.out
 FC               = mpif77
-FFLAGS          += -fdefault-real-8   \
-                   -fdefault-double-8 \
-	           -cpp               \
-          	   -fbacktrace        \
-	           -Wall
+FFLAGS          += -fdefault-real-8                  \
+                   -fdefault-double-8                \
+	           -cpp                              \
+          	   -fbacktrace                       \
+ 	           -Wall                             \
+		   -z muldefs
+#,--allow-multiple-definition 
 PPICLF_LOCATION  = $(HOME)/libraries/ppiclF
 
 ####################

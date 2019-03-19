@@ -1,9 +1,10 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitParticle(imethod,ndim,npart,y)
+      subroutine ppiclf_solve_InitParticle(imethod,ndim,iendian,npart,y)
 #include "PPICLF"
 
       integer  imethod
       integer  ndim
+      integer  iendian
       integer  npart
       real     y(*)
 
@@ -18,7 +19,7 @@
       call ppiclf_prints('*Begin InitParticle$')
 
          call ppiclf_prints('   *Begin InitParam$')
-            call ppiclf_solve_InitParam(imethod,ndim,npart)
+            call ppiclf_solve_InitParam(imethod,ndim,iendian,npart)
          call ppiclf_prints('    End InitParam$')
          
             call ppiclf_copy(ppiclf_y,y,ppiclf_npart)
@@ -53,21 +54,25 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitParam(imethod,ndim,npart)
+      subroutine ppiclf_solve_InitParam(imethod,ndim,iendian,npart)
 #include "PPICLF"
       integer  imethod
       integer  ndim
+      integer  iendian
       integer  npart
 
       if (imethod .le. 0 .or. imethod .ge. 2)
      >   call ppiclf_exittr('Invalid integration method$',0.0,imethod)
       if (ndim .le. 1 .or. ndim .ge. 4)
      >   call ppiclf_exittr('Invalid problem dimension$',0.0,ndim)
+      if (iendian .lt. 0 .or. iendian .gt. 1)
+     >   call ppiclf_exittr('Invalid Endian$',0.0,iendian)
       if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
      >   call ppiclf_exittr('Invalid number of particles$',0.0,npart)
 
       ppiclf_imethod      = imethod
       ppiclf_ndim         = ndim
+      ppiclf_iendian      = iendian
       ppiclf_npart        = npart
 
       ppiclf_filter       = -1   ! filt default for no projection
@@ -102,6 +107,8 @@
       ppiclf_d2chk(1) = 0
       ppiclf_d2chk(2) = 0
       ppiclf_d2chk(3) = 0
+
+      ppiclf_nwall = 0
 
       return
       end
@@ -175,6 +182,8 @@
 
       integer i
 
+      real ydum(PPICLF_LRS), rpropdum(PPICLF_LRP)
+
       i_iim = ppiclf_nb_r(1,i) - 1
       i_iip = ppiclf_nb_r(1,i) + 1
       i_jjm = ppiclf_nb_r(2,i) - 1
@@ -206,7 +215,7 @@
          dist_total = xdist2+ydist2+zdist2
          if (dist_total .gt. dist2) cycle
 
-         call ppiclf_user_EvalNearestNeighbor(i,ppiclf_cp_map(1,i)
+         call ppiclf_user_EvalNearestNeighbor(i,j,ppiclf_cp_map(1,i)
      >                                 ,ppiclf_cp_map(1+PPICLF_LRS,i)
      >                                 ,ppiclf_cp_map(1,j)
      >                                 ,ppiclf_cp_map(1+PPICLF_LRS,j))
@@ -235,12 +244,84 @@
          dist_total = xdist2+ydist2+zdist2
          if (dist_total .gt. dist2) cycle
 
-         call ppiclf_user_EvalNearestNeighbor(i,ppiclf_cp_map(1,i)
+         jp = -1*j
+         call ppiclf_user_EvalNearestNeighbor(i,jp,ppiclf_cp_map(1,i)
      >                                 ,ppiclf_cp_map(1+PPICLF_LRS,i)
      >                                 ,ppiclf_rprop_gp(1,j)
      >                                 ,ppiclf_rprop_gp(1+PPICLF_LRS,j))
 
       enddo
+
+      do j=1,ppiclf_nwall
+
+         rnx = ppiclf_wall(1,j)
+         rny = ppiclf_wall(2,j)
+         rnz = 0.0
+         if (ppiclf_ndim .eq. 3) rnz = ppiclf_wall(3,j)
+         rpx = ppiclf_wall(4,j)
+         rpy = ppiclf_wall(5,j)
+         rpz = 0.0
+         if (ppiclf_ndim .eq. 3) rpz = ppiclf_wall(6,j)
+
+         rd    = -(rnx*rpx + rny*rpy + rnz*rpz)
+
+         rdist = abs(rnx*ppiclf_cp_map(1,i)+rny*ppiclf_cp_map(2,i)
+     >              +rnz*ppiclf_cp_map(3,i)+rd)
+         rdist = rdist/sqrt(rnx**2 + rny**2 + rnz**2)
+
+         ydum(1) = ppiclf_cp_map(1,i) - rdist*rnx
+         ydum(2) = ppiclf_cp_map(2,i) - rdist*rny
+         ydum(3) = ppiclf_cp_map(3,i) - rdist*rnz
+
+         j_ii = floor((ydum(1)-ppiclf_binb(1))/ppiclf_d2chk(3))
+         j_jj = floor((ydum(2)-ppiclf_binb(3))/ppiclf_d2chk(3))
+         j_kk = floor((ydum(3)-ppiclf_binb(5))/ppiclf_d2chk(3))
+
+         if (j_ii .gt. i_iip .or. j_ii .lt. i_iim) cycle
+         if (j_jj .gt. i_jjp .or. j_jj .lt. i_jjm) cycle
+         if (ppiclf_ndim .eq. 3) then
+         if (j_kk .gt. i_kkp .or. j_kk .lt. i_kkm) cycle
+         endif
+
+         jp = 0
+         call ppiclf_user_EvalNearestNeighbor(i,jp,ppiclf_cp_map(1,i)
+     >                                 ,ppiclf_cp_map(1+PPICLF_LRS,i)
+     >                                 ,ydum
+     >                                 ,rpropdum)
+
+      enddo
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitWall(x,y,z,xp,yp,zp)
+#include "PPICLF"
+
+      real x
+      real y
+      real z
+      real xp
+      real yp
+      real zp
+
+      if (.not.PPICLF_LCOMM)
+     >call ppiclf_exittr('InitMPI must be before InitWall$',0.,0)
+      if (.not.PPICLF_LINIT)
+     >call ppiclf_exittr('InitParticle must be before InitWall$'
+     >                  ,0.,0)
+
+      ppiclf_nwall = ppiclf_nwall + 1 
+
+      if (ppiclf_nwall .gt. PPICLF_LWALL)
+     >call ppiclf_exittr('Increase LWALL in user file$'
+     >                  ,0.,ppiclf_nwall)
+
+      ppiclf_wall(1,ppiclf_nwall) = x
+      ppiclf_wall(2,ppiclf_nwall) = y
+      ppiclf_wall(3,ppiclf_nwall) = z
+      ppiclf_wall(4,ppiclf_nwall) = xp
+      ppiclf_wall(5,ppiclf_nwall) = yp
+      ppiclf_wall(6,ppiclf_nwall) = zp
 
       return
       end
@@ -339,10 +420,10 @@ c----------------------------------------------------------------------
 
          call ppiclf_io_OutputDiagAll
 
-         call ppiclf_io_WriteParticleVTU('',0)
+         call ppiclf_io_WriteParticleVTU('')
 
          if (ppiclf_lsubbin)
-     >      call ppiclf_io_WriteSubBinVTU('',0)
+     >      call ppiclf_io_WriteSubBinVTU('')
       endif
 
 
@@ -361,10 +442,10 @@ c----------------------------------------------------------------------
 
          call ppiclf_io_OutputDiagAll
 
-         call ppiclf_io_WriteParticleVTU('',0)
+         call ppiclf_io_WriteParticleVTU('')
 
          if (ppiclf_lsubbin)
-     >      call ppiclf_io_WriteSubBinVTU('',0)
+     >      call ppiclf_io_WriteSubBinVTU('')
       endif
 
       return

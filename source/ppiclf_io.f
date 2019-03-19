@@ -1,5 +1,5 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_WriteSubBinVTU(filein1,iobig)
+      subroutine ppiclf_io_WriteSubBinVTU(filein1)
 #include "PPICLF"
       include 'mpif.h'
 
@@ -103,9 +103,9 @@ c     goto 1511
       write(vtu,'(A)',advance='no') '<VTKFile '
       write(vtu,'(A)',advance='no') 'type="UnstructuredGrid" '
       write(vtu,'(A)',advance='no') 'version="1.0" '
-      if (iobig .eq. 0) then
+      if (ppiclf_iendian .eq. 0) then
          write(vtu,'(A)',advance='yes') 'byte_order="LittleEndian">'
-      elseif (iobig .eq. 1) then
+      elseif (ppiclf_iendian .eq. 1) then
          write(vtu,'(A)',advance='yes') 'byte_order="BigEndian">'
       endif
 
@@ -487,7 +487,7 @@ c1511 continue
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_WriteBinVTU(filein1,iobig)
+      subroutine ppiclf_io_WriteBinVTU(filein1)
 #include "PPICLF"
       include 'mpif.h'
 
@@ -606,9 +606,9 @@ c     goto 1511
       write(vtu,'(A)',advance='no') '<VTKFile '
       write(vtu,'(A)',advance='no') 'type="UnstructuredGrid" '
       write(vtu,'(A)',advance='no') 'version="1.0" '
-      if (iobig .eq. 0) then
+      if (ppiclf_iendian .eq. 0) then
          write(vtu,'(A)',advance='yes') 'byte_order="LittleEndian">'
-      elseif (iobig .eq. 1) then
+      elseif (ppiclf_iendian .eq. 1) then
          write(vtu,'(A)',advance='yes') 'byte_order="BigEndian">'
       endif
 
@@ -948,7 +948,7 @@ c1511 continue
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_io_WriteParticleVTU(filein1,iobig)
+      subroutine ppiclf_io_WriteParticleVTU(filein1)
 #include "PPICLF"
       include 'mpif.h'
 
@@ -969,8 +969,6 @@ c1511 continue
       integer*4 iint
       integer*8 idisp_pos,idisp_sln,idisp_lrp,idisp_lip
       integer*8 stride_len
-
-      integer iobig
 
       call ppiclf_printsi(' *Begin WriteParticleVTU$',ppiclf_cycle)
 
@@ -1081,9 +1079,9 @@ c        endif
       write(vtu,'(A)',advance='no') '<VTKFile '
       write(vtu,'(A)',advance='no') 'type="UnstructuredGrid" '
       write(vtu,'(A)',advance='no') 'version="1.0" '
-      if (iobig .eq. 0) then
+      if (ppiclf_iendian .eq. 0) then
          write(vtu,'(A)',advance='yes') 'byte_order="LittleEndian">'
-      elseif (iobig .eq. 1) then
+      elseif (ppiclf_iendian .eq. 1) then
          write(vtu,'(A)',advance='yes') 'byte_order="BigEndian">'
       endif
 

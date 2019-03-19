@@ -7,11 +7,11 @@
       real    ydot(*)
 
 C interpolate fields
-      call ppiclf_solve_InitInterp
-         call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
+c     call ppiclf_solve_InitInterp
+c        call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
 c        call ppiclf_solve_InterpField(PPICLF_R_JUY  , vy_e    )
 c        call ppiclf_solve_InterpField(PPICLF_R_JUZ  , vz_e    )
-      call ppiclf_solve_FinalizeInterp
+c     call ppiclf_solve_FinalizeInterp
 C interpolate fields
 
 c evaluate ydot
@@ -72,61 +72,103 @@ c
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_user_EvalNearestNeighbor(i,yi,rpropi,yj,rpropj)
+      subroutine ppiclf_user_EvalNearestNeighbor
+     >                                        (i,j,yi,rpropi,yj,rpropj)
 #include "PPICLF"
 c
 c     called for every j nearest neighbor of particle i
 c
       integer i
+      integer j
       real yi(*)     ! PPICLF_LRS
       real rpropi(*) ! PPICLF_LRP
       real yj(*)     ! PPICLF_LRS
       real rpropj(*) ! PPICLF_LRP
 
-c     write(6,*) 'yo',yi(1), yj(1), yi(2), yj(2), yi(3), yj(3),rpropi(7)
-
-      rthresh  = 0.5*(rpropi(PPICLF_R_JDP) + rpropj(PPICLF_R_JDP))
-
-      rxdiff = yj(PPICLF_JX) - yi(PPICLF_JX)
-      rydiff = yj(PPICLF_JY) - yi(PPICLF_JY)
-      rzdiff = yj(PPICLF_JZ) - yi(PPICLF_JZ)
-
-      rdiff = sqrt(rxdiff**2 + rydiff**2 + rzdiff**2)
-
-      if (rdiff .gt. rthresh) return
-
-      rm1 = rpropi(PPICLF_R_JRHOP)*rpropi(PPICLF_R_JVOLP)
-      rm2 = rpropj(PPICLF_R_JRHOP)*rpropj(PPICLF_R_JVOLP)
-
       rksp  = 1000
       erest = 0.9
-
+      
       rpi2  =  9.869604401089358
 
-      rmult = 1./sqrt(1./rm1+1./rm2)
-      eta   = 2.*sqrt(rksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
-
-      rbot = 1./rdiff
-      rn_12x = rxdiff*rbot
-      rn_12y = rydiff*rbot
-      rn_12z = rzdiff*rbot
-
-      rdelta12 = rthresh - rdiff
-
-      rv12_mag = (yj(PPICLF_JVX)-yi(PPICLF_JVX))*rn_12x +
+      if (j .ne. 0) then
+         rthresh  = 0.5*(rpropi(PPICLF_R_JDP) + rpropj(PPICLF_R_JDP))
+         
+         rxdiff = yj(PPICLF_JX) - yi(PPICLF_JX)
+         rydiff = yj(PPICLF_JY) - yi(PPICLF_JY)
+         rzdiff = yj(PPICLF_JZ) - yi(PPICLF_JZ)
+         
+         rdiff = sqrt(rxdiff**2 + rydiff**2 + rzdiff**2)
+         
+         if (rdiff .gt. rthresh) return
+         
+         rm1 = rpropi(PPICLF_R_JRHOP)*rpropi(PPICLF_R_JVOLP)
+         rm2 = rpropj(PPICLF_R_JRHOP)*rpropj(PPICLF_R_JVOLP)
+         
+         rmult = 1./sqrt(1./rm1+1./rm2)
+         eta   = 2.*sqrt(rksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
+         
+         rbot = 1./rdiff
+         rn_12x = rxdiff*rbot
+         rn_12y = rydiff*rbot
+         rn_12z = rzdiff*rbot
+         
+         rdelta12 = rthresh - rdiff
+         
+         rv12_mag = (yj(PPICLF_JVX)-yi(PPICLF_JVX))*rn_12x +
      >           (yj(PPICLF_JVY)-yi(PPICLF_JVY))*rn_12y +
      >           (yj(PPICLF_JVZ)-yi(PPICLF_JVZ))*rn_12z
 
-      rv12_mage = rv12_mag*eta
-      rksp_max = rksp*rdelta12
-      rnmag = -rksp_max - rv12_mage
+         rv12_mage = rv12_mag*eta
+         rksp_max = rksp*rdelta12
+         rnmag = -rksp_max - rv12_mage
+         
+         PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)
+     >                              + rnmag*rn_12x
+         PPICLF_YDOTC(PPICLF_JVY,i) = PPICLF_YDOTC(PPICLF_JVY,i)
+     >                              + rnmag*rn_12y
+         PPICLF_YDOTC(PPICLF_JVZ,i) = PPICLF_YDOTC(PPICLF_JVZ,i)
+     >                              + rnmag*rn_12z
 
-      PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)
-     >                           + rnmag*rn_12x
-      PPICLF_YDOTC(PPICLF_JVY,i) = PPICLF_YDOTC(PPICLF_JVY,i)
-     >                           + rnmag*rn_12y
-      PPICLF_YDOTC(PPICLF_JVZ,i) = PPICLF_YDOTC(PPICLF_JVZ,i)
-     >                           + rnmag*rn_12z
+      elseif (j .eq. 0) then
+
+         rthresh  = 0.5*rpropi(PPICLF_R_JDP)
+         
+         rxdiff = yj(PPICLF_JX) - yi(PPICLF_JX)
+         rydiff = yj(PPICLF_JY) - yi(PPICLF_JY)
+         rzdiff = yj(PPICLF_JZ) - yi(PPICLF_JZ)
+         
+         rdiff = sqrt(rxdiff**2 + rydiff**2 + rzdiff**2)
+         
+         if (rdiff .gt. rthresh) return
+         
+         rm1 = rpropi(PPICLF_R_JRHOP)*rpropi(PPICLF_R_JVOLP)
+         
+         rmult = sqrt(rm1)
+         eta   = 2.*sqrt(rksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
+         
+         rbot = 1./rdiff
+         rn_12x = rxdiff*rbot
+         rn_12y = rydiff*rbot
+         rn_12z = rzdiff*rbot
+         
+         rdelta12 = rthresh - rdiff
+         
+         rv12_mag = -1.0*(yi(PPICLF_JVX)*rn_12x +
+     >                    yi(PPICLF_JVY)*rn_12y +
+     >                    yi(PPICLF_JVZ)*rn_12z)
+
+         rv12_mage = rv12_mag*eta
+         rksp_max = rksp*rdelta12
+         rnmag = -rksp_max - rv12_mage
+         
+         PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)
+     >                              + rnmag*rn_12x
+         PPICLF_YDOTC(PPICLF_JVY,i) = PPICLF_YDOTC(PPICLF_JVY,i)
+     >                              + rnmag*rn_12y
+         PPICLF_YDOTC(PPICLF_JVZ,i) = PPICLF_YDOTC(PPICLF_JVZ,i)
+     >                              + rnmag*rn_12z
+
+      endif
 
       return
       end

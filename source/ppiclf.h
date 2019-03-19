@@ -98,3 +98,8 @@ C>    -User never touches
 #define PPICLF_LRMAX 6
 #endif
 
+C> Max number of walls
+#ifndef PPICLF_LWALL
+#define PPICLF_LWALL 20
+#endif
+

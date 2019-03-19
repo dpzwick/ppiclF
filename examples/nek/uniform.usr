@@ -97,12 +97,15 @@ c-----------------------------------------------------------------------
 
       call ppiclf_comm_InitMPI(nekcomm,nid,np)
 
-         call init_particles(npart,ppiclf_y)
-      call ppiclf_solve_InitParticle(1,3,npart,ppiclf_y) 
+         call PlaceParticle(npart,ppiclf_y)
+      call ppiclf_solve_InitParticle(1,3,0,npart,ppiclf_y) 
 
       call ppiclf_solve_InitGaussianFilter(0.15,1E-2,0)
       call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
       call ppiclf_solve_InitNeighborBin(0.07)
+
+      call ppiclf_solve_InitWall(0.0,1.0,0.0,0.0,0.0,0.0)
+
 
       return
       end
@@ -111,7 +114,7 @@ c-----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
-      subroutine init_particles(npart,y)
+      subroutine PlaceParticle(npart,y)
 #include "PPICLF"
 
       integer   npart
