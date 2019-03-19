@@ -7,11 +7,11 @@
       real    ydot(*)
 
 C interpolate fields
-c     call ppiclf_solve_InitInterp
-c        call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
+      call ppiclf_solve_InitInterp
+         call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
 c        call ppiclf_solve_InterpField(PPICLF_R_JUY  , vy_e    )
 c        call ppiclf_solve_InterpField(PPICLF_R_JUZ  , vz_e    )
-c     call ppiclf_solve_FinalizeInterp
+      call ppiclf_solve_FinalizeInterp
 C interpolate fields
 
 c evaluate ydot

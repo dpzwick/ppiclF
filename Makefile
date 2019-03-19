@@ -19,24 +19,27 @@ GSLIB_IFLAGS = -DPREFIX=gslib_   \
                -DFPREFIX=fgslib_ \
 	       -DGLOBAL_LONG_LONG
 SOURCE_ROOT_GSLIB=$(INSTALL_LOCATION)/3rd_party/gslib
+SOURCE_ROOT_GSLIB_OBJ=$(SOURCE_ROOT_GSLIB)/gslib/src
 GSLIB_IFLAGS+=-I$(SOURCE_ROOT_GSLIB)/include
 
 SRC = $(SOURCE_ROOT_PPICLF)/ppiclf_user.f     \
       $(SOURCE_ROOT_PPICLF)/ppiclf_comm.f     \
-      $(SOURCE_ROOT_PPICLF)/ppiclf_op.f \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_op.f       \
       $(SOURCE_ROOT_PPICLF)/ppiclf_io.f       \
-      $(SOURCE_ROOT_PPICLF)/ppiclf_solve.f
+      $(SOURCE_ROOT_PPICLF)/ppiclf_solve.f    \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_mxm.f      
 OBJ = $(SOURCE_ROOT_PPICLF)/ppiclf_user.o     \
       $(SOURCE_ROOT_PPICLF)/ppiclf_comm.o     \
-      $(SOURCE_ROOT_PPICLF)/ppiclf_op.o \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_op.o       \
       $(SOURCE_ROOT_PPICLF)/ppiclf_io.o       \
-      $(SOURCE_ROOT_PPICLF)/ppiclf_solve.o
+      $(SOURCE_ROOT_PPICLF)/ppiclf_solve.o    \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_mxm.o
 
 # Make commands
 default: makeThird getObjs libObjs 
 
 libObjs: $(OBJ)
-	@ar crv $(SOURCE_ROOT_PPICLF)/libppiclF.a $(OBJ) 
+	@ar crv $(SOURCE_ROOT_PPICLF)/libppiclF.a $(OBJ) $(SOURCE_ROOT_GSLIB_OBJ)/*.o
 	@echo "                       "
 	@echo "***********************"
 	@echo "*** LIBRARY SUCCESS ***"

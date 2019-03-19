@@ -7,11 +7,11 @@
       real    ydot(*)
 
 C interpolate fields
-      call ppiclf_solve_InitInterp
-         call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
+c     call ppiclf_solve_InitInterp
+c        call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
 c        call ppiclf_solve_InterpField(PPICLF_R_JUY  , vy_e    )
 c        call ppiclf_solve_InterpField(PPICLF_R_JUZ  , vz_e    )
-      call ppiclf_solve_FinalizeInterp
+c     call ppiclf_solve_FinalizeInterp
 C interpolate fields
 
 c evaluate ydot
@@ -85,8 +85,8 @@ c
       real yj(*)     ! PPICLF_LRS
       real rpropj(*) ! PPICLF_LRP
 
-      rksp  = 1000
-      erest = 0.9
+      rksp  = 10000.0
+      erest = 0.3
       
       rpi2  =  9.869604401089358
 
