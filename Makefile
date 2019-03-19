@@ -23,12 +23,12 @@ GSLIB_IFLAGS+=-I$(SOURCE_ROOT_GSLIB)/include
 
 SRC = $(SOURCE_ROOT_PPICLF)/ppiclf_user.f     \
       $(SOURCE_ROOT_PPICLF)/ppiclf_comm.f     \
-      $(SOURCE_ROOT_PPICLF)/ppiclf_comm_mpi.f \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_op.f \
       $(SOURCE_ROOT_PPICLF)/ppiclf_io.f       \
       $(SOURCE_ROOT_PPICLF)/ppiclf_solve.f
 OBJ = $(SOURCE_ROOT_PPICLF)/ppiclf_user.o     \
       $(SOURCE_ROOT_PPICLF)/ppiclf_comm.o     \
-      $(SOURCE_ROOT_PPICLF)/ppiclf_comm_mpi.o \
+      $(SOURCE_ROOT_PPICLF)/ppiclf_op.o \
       $(SOURCE_ROOT_PPICLF)/ppiclf_io.o       \
       $(SOURCE_ROOT_PPICLF)/ppiclf_solve.o
 

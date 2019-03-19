@@ -522,7 +522,7 @@ c        call ppiclf_prints('    End InitFindpts$')
 
       if (icalld .eq. 0) then 
          icalld = icalld + 1
-         call ppiclf_solve_OutputDiagGrid
+         call ppiclf_io_OutputDiagGrid
       endif
 
       return

@@ -44,132 +44,11 @@
             call ppiclf_comm_MoveParticle
          call ppiclf_prints('    End MoveParticle$')
 
-            call ppiclf_solve_OutputDiagGen
+            call ppiclf_io_OutputDiagGen
 
       call ppiclf_prints(' End InitParticle$')
 
       PPICLF_LINIT = .true.
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_solve_OutputDiagAll
-#include "PPICLF"
-
-      call ppiclf_solve_OutputDiagGen
-      call ppiclf_solve_OutputDiagGhost
-      if (ppiclf_lsubbin) call ppiclf_solve_OutputDiagSubBin
-      if (ppiclf_overlap) call ppiclf_solve_OutputDiagGrid
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_solve_OutputDiagGen
-#include "PPICLF"
-
-      call ppiclf_prints(' *Begin General Info$')
-         npart_max = ppiclf_iglmax(ppiclf_npart,1)
-         npart_min = ppiclf_iglmin(ppiclf_npart,1)
-         npart_tot = ppiclf_iglsum(ppiclf_npart,1)
-         npart_ide = npart_tot/ppiclf_np
-
-         nbin_total = PPICLF_NDXGP*PPICLF_NDYGP*PPICLF_NDZGP
-
-      call ppiclf_printsi('  -Cycle                  :$',ppiclf_cycle)
-      call ppiclf_printsi('  -Output Freq.           :$',ppiclf_iostep)
-      call ppiclf_printsr('  -Time                   :$',ppiclf_time)
-      call ppiclf_printsr('  -dt                     :$',ppiclf_dt)
-      call ppiclf_printsi('  -Global particles       :$',npart_tot)
-      call ppiclf_printsi('  -Local particles (Max)  :$',npart_max)
-      call ppiclf_printsi('  -Local particles (Min)  :$',npart_min)
-      call ppiclf_printsi('  -Local particles (Ideal):$',npart_ide)
-      call ppiclf_printsi('  -Total ranks            :$',ppiclf_np)
-      call ppiclf_printsi('  -Problem dimensions     :$',ppiclf_ndim)
-      call ppiclf_printsi('  -Integration method     :$',ppiclf_imethod)
-      call ppiclf_printsi('  -Number of bins total   :$',nbin_total)
-      call ppiclf_printsi('  -Number of bins (x)     :$',PPICLF_NDXGP)
-      call ppiclf_printsi('  -Number of bins (y)     :$',PPICLF_NDYGP)
-      if (ppiclf_ndim .gt. 2)
-     >call ppiclf_printsi('  -Number of bins (z)     :$',PPICLF_NDZGP)
-      call ppiclf_printsr('  -Bin xl coordinate      :$',ppiclf_binb(1))
-      call ppiclf_printsr('  -Bin xr coordinate      :$',ppiclf_binb(2))
-      call ppiclf_printsr('  -Bin yl coordinate      :$',ppiclf_binb(3))
-      call ppiclf_printsr('  -Bin yr coordinate      :$',ppiclf_binb(4))
-      if (ppiclf_ndim .gt. 2)
-     >call ppiclf_printsr('  -Bin zl coordinate      :$',ppiclf_binb(5))
-      if (ppiclf_ndim .gt. 2)
-     >call ppiclf_printsr('  -Bin zr coordinate      :$',ppiclf_binb(6))
-
-      call ppiclf_prints('  End General Info$')
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_solve_OutputDiagGrid
-#include "PPICLF"
-
-      call ppiclf_prints(' *Begin Grid Info$')
-
-         nel_max_orig   = ppiclf_iglmax(ppiclf_nee,1)
-         nel_min_orig   = ppiclf_iglmin(ppiclf_nee,1)
-         nel_total_orig = ppiclf_iglsum(ppiclf_nee,1)
-
-         nel_max_map   = ppiclf_iglmax(ppiclf_neltb,1)
-         nel_min_map   = ppiclf_iglmin(ppiclf_neltb,1)
-         nel_total_map = ppiclf_iglsum(ppiclf_neltb,1)
-
-      call ppiclf_printsi('  -Orig. Global cells     :$',nel_total_orig)
-      call ppiclf_printsi('  -Orig. Local cells (Max):$',nel_max_orig)
-      call ppiclf_printsi('  -Orig. Local cells (Min):$',nel_min_orig)
-      call ppiclf_printsi('  -Map Global cells       :$',nel_total_map)
-      call ppiclf_printsi('  -Map Local cells (Max)  :$',nel_max_map)
-      call ppiclf_printsi('  -Map Local cells (Min)  :$',nel_min_map)
-
-      call ppiclf_prints('  End Grid Info$')
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_solve_OutputDiagGhost
-#include "PPICLF"
-
-      call ppiclf_prints(' *Begin Ghost Info$')
-
-         npart_max = ppiclf_iglmax(ppiclf_npart_gp,1)
-         npart_min = ppiclf_iglmin(ppiclf_npart_gp,1)
-         npart_tot = ppiclf_iglsum(ppiclf_npart_gp,1)
-
-      call ppiclf_printsi('  -Global ghosts          :$',npart_tot)
-      call ppiclf_printsi('  -Local ghosts (Max)     :$',npart_max)
-      call ppiclf_printsi('  -Local ghosts (Min)     :$',npart_min)
-
-      call ppiclf_prints('  End Ghost Info$')
-
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_solve_OutputDiagSubBin
-#include "PPICLF"
-
-      call ppiclf_prints(' *Begin SubBin Info$')
-
-      nbin_total = ppiclf_bx*ppiclf_by*ppiclf_bz
-
-      call ppiclf_printsi('  -Number of local bin    :$',nbin_total)
-      call ppiclf_printsi('  -Number of local bin (x):$',PPICLF_BX)
-      call ppiclf_printsi('  -Number of local bin (y):$',PPICLF_BY)
-      if (ppiclf_ndim .gt. 2)
-     >call ppiclf_printsi('  -Number of local bin (z):$',PPICLF_BZ)
-      call ppiclf_printsr('  -Bin width (x)          :$',ppiclf_rdx)
-      call ppiclf_printsr('  -Bin width (y)          :$',ppiclf_rdy)
-      if (ppiclf_ndim .gt. 2)
-     >call ppiclf_printsr('  -Bin width (z)          :$',ppiclf_rdz)
-      call ppiclf_printsr('  -Filter width           :$',ppiclf_filter)
-      call ppiclf_printsr('  -Filter cut-off         :$'
-     >                                                 ,ppiclf_d2chk(2))
-      call ppiclf_printsi('  -SubBins per filter res.:$',ppiclf_ngrids)
-
-      call ppiclf_prints('  End SubBin Info$')
 
       return
       end
@@ -406,7 +285,7 @@
          call ppiclf_comm_MoveParticle
       call ppiclf_prints('    End MoveParticle$')
 
-      call ppiclf_solve_OutputDiagSubBin
+      call ppiclf_io_OutputDiagSubBin
 
       PPICLF_LFILT = .true.
 
@@ -458,7 +337,7 @@ c----------------------------------------------------------------------
       if (icalld .eq. 0) then
          icalld = icalld + 1
 
-         call ppiclf_solve_OutputDiagAll
+         call ppiclf_io_OutputDiagAll
 
          call ppiclf_io_WriteParticleVTU('',0)
 
@@ -480,7 +359,7 @@ c----------------------------------------------------------------------
       ! output files
       if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0) then
 
-         call ppiclf_solve_OutputDiagAll
+         call ppiclf_io_OutputDiagAll
 
          call ppiclf_io_WriteParticleVTU('',0)
 
