@@ -8,8 +8,6 @@ A parallel particle-in-cell library in Fortran.
            ---  =  ydot, 
            d t
            
-           $ \sum_{\forall i}{x_i^{2}} $
-           
   where y and ydot are vectors that are entirely
   user defined.
        
