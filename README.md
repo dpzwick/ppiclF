@@ -2,24 +2,24 @@
 A parallel particle-in-cell library in Fortran.
 
 ## Capabilities
-     * Integration for the system:
+* Integration for the system:
            
            d y
            ---  =  ydot, 
            d t
            
-       where y and ydot are vectors that are entirely
-       user defined.
+  where y and ydot are vectors that are entirely
+  user defined.
        
-     * Open MPI parallelization allows millions of equations
-       to be solved.
+* Open MPI parallelization allows millions of equations
+  to be solved.
        
-     * Load balances equations based on spatial position of
-       particles.
+* Load balances equations based on spatial position of
+  particles.
        
-     * Allows simple user input of external overlapping mesh
-       for interactions between particles and external mesh,
-       including interpolation and projection.
+* Allows simple user input of external overlapping mesh
+  for interactions between particles and external mesh,
+  including interpolation and projection.
        
-     * Includes optional fast binned parallel nearest neighbor
-       search between particles within a user defined distance.
+* Includes optional fast binned parallel nearest neighbor
+  search between particles within a user defined distance.
