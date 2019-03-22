@@ -94,6 +94,8 @@
       ppiclf_overlap    = .false.
       ppiclf_linit      = .false.
       ppiclf_lfilt      = .false.
+      ppiclf_lfiltgauss = .false.
+      ppiclf_lfiltbox   = .false.
       ppiclf_lintp      = .false.
       ppiclf_lproj      = .false.
       ppiclf_lsubbin    = .false.
@@ -101,18 +103,20 @@
       if (PPICLF_INTERP .eq. 1)  ppiclf_lintp = .true.
       if (PPICLF_PROJECT .eq. 1) ppiclf_lproj = .true.
 
-      ppiclf_xdrange(1,1) = -1E8
-      ppiclf_xdrange(2,1) =  1E8
-      ppiclf_xdrange(1,2) = -1E8
-      ppiclf_xdrange(2,2) =  1E8
-      ppiclf_xdrange(1,3) = -1E8
-      ppiclf_xdrange(2,3) =  1E8
+      ppiclf_xdrange(1,1) = -1E10
+      ppiclf_xdrange(2,1) =  1E10
+      ppiclf_xdrange(1,2) = -1E10
+      ppiclf_xdrange(2,2) =  1E10
+      ppiclf_xdrange(1,3) = -1E10
+      ppiclf_xdrange(2,3) =  1E10
 
       ppiclf_d2chk(1) = 0
       ppiclf_d2chk(2) = 0
       ppiclf_d2chk(3) = 0
 
       ppiclf_nwall = 0
+
+      PPICLF_INT_ICNT = -1
 
       return
       end
@@ -310,6 +314,59 @@
       return
       end
 !-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitPeriodicX(xl,xr)
+#include "PPICLF"
+
+      real xl
+      real xr
+
+      if (xl .ge. xr)
+     >call ppiclf_exittr('PeriodicX must have xl < xr$',xl,0)
+
+      ppiclf_iperiodic(1) = 0
+
+      ppiclf_xdrange(1,1) = xl
+      ppiclf_xdrange(2,1) = xr
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitPeriodicY(yl,yr)
+#include "PPICLF"
+
+      real yl
+      real yr
+
+      if (yl .ge. yr)
+     >call ppiclf_exittr('PeriodicY must have yl < yr$',yl,0)
+
+      ppiclf_iperiodic(2) = 0
+
+      ppiclf_xdrange(1,2) = yl
+      ppiclf_xdrange(2,2) = yr
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitPeriodicZ(zl,zr)
+#include "PPICLF"
+
+      real zl
+      real zr
+
+      if (zl .ge. zr)
+     >call ppiclf_exittr('PeriodicZ must have zl < zr$',zl,0)
+      if (ppiclf_ndim .lt. 3)
+     >call ppiclf_exittr('Cannot do PeriodicZ if not 3D$',zl,0)
+
+      ppiclf_iperiodic(3) = 0
+
+      ppiclf_xdrange(1,3) = zl
+      ppiclf_xdrange(2,3) = zr
+
+      return
+      end
+!-----------------------------------------------------------------------
       subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
 #include "PPICLF"
 
@@ -323,6 +380,8 @@
      >call ppiclf_exittr('InitParticle must be before InitFilter$',0.,0)
       if (PPICLF_OVERLAP)
      >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.,0)
+      if (PPICLF_LFILT)
+     >call ppiclf_exittr('InitFilter can only be called once$',0.,0)
 
       ppiclf_filter = filt
       ppiclf_ngrids = ngrid
@@ -334,7 +393,37 @@
       PPICLF_LSUBBIN = .true.
       if (ppiclf_ngrids .eq. 0) PPICLF_LSUBBIN = .false.
 
-      PPICLF_LFILT = .true.
+      PPICLF_LFILT      = .true.
+      PPICLF_LFILTGAUSS = .true.
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitBoxFilter(filt,ngrid)
+#include "PPICLF"
+
+      real    filt
+      integer ngrid
+
+      if (.not.PPICLF_LCOMM)
+     >call ppiclf_exittr('InitMPI must be before InitFilter$',0.,0)
+      if (.not.PPICLF_LINIT)
+     >call ppiclf_exittr('InitParticle must be before InitFilter$',0.,0)
+      if (PPICLF_OVERLAP)
+     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.,0)
+      if (PPICLF_LFILT)
+     >call ppiclf_exittr('InitFilter can only be called once$',0.,0)
+
+      ppiclf_filter = filt
+      ppiclf_ngrids = ngrid
+
+      ppiclf_d2chk(2)  = filt/2.0
+
+      PPICLF_LSUBBIN = .true.
+      if (ppiclf_ngrids .eq. 0) PPICLF_LSUBBIN = .false.
+
+      PPICLF_LFILT    = .true.
+      PPICLF_LFILTBOX = .true.
 
       return
       end
@@ -482,10 +571,8 @@ c----------------------------------------------------------------------
       subroutine ppiclf_solve_InitInterp
 #include "PPICLF"
 
-      ! also throw error if overlap is not set
-
-      INTEGER PPICLF_INT_ICNT, PPICLF_INT_MAP(PPICLF_LRP_INT)
-      COMMON /PPICLF_INTERP_I/ PPICLF_INT_ICNT, PPICLF_INT_MAP
+      if (.not.ppiclf_overlap)
+     >call ppiclf_exittr('Cannot interpolate unless overlap grid$',0.,0)
 
       PPICLF_INT_ICNT = 0
 
@@ -543,8 +630,8 @@ c     ndum    = ppiclf_neltb*n
 
       real infld(*)
 
-      INTEGER PPICLF_INT_ICNT, PPICLF_INT_MAP(PPICLF_LRP_INT)
-      COMMON /PPICLF_INTERP_I/ PPICLF_INT_ICNT, PPICLF_INT_MAP
+      if (ppiclf_int_icnt .eq. -1)
+     >call ppiclf_exittr('Call InitInterp before InterpField$',0.,0)
 
       PPICLF_INT_ICNT = PPICLF_INT_ICNT + 1
 
@@ -572,9 +659,6 @@ c     ndum    = ppiclf_neltb*n
 !-----------------------------------------------------------------------
       subroutine ppiclf_solve_FinalizeInterp
 #include "PPICLF"
-
-      INTEGER PPICLF_INT_ICNT, PPICLF_INT_MAP(PPICLF_LRP_INT)
-      COMMON /PPICLF_INTERP_I/ PPICLF_INT_ICNT, PPICLF_INT_MAP
 
       REAL FLD(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
 
@@ -765,14 +849,23 @@ c----------------------------------------------------------------------
       ppiclf_jygp  = 2
       ppiclf_jzgp  = 3
 
-      ! real particles
-      do ip=1,ppiclf_npart
+      rdum = 0.0
+      if (ppiclf_lfiltgauss) then
          rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
          if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
-         rbexpi   = 1./(-2.*rsig**2)
+         rdum   = 1./(-2.*rsig**2)
+      endif
 
-         rproj(1 ,ip) = rbexpi
+      if (ppiclf_lfiltbox) then
+         multfci = 1.0/ppiclf_filter**2
+         if (ppiclf_ndim .gt. 2) multfci = multfci/ppiclf_filter
+      endif
+
+      ! real particles
+      do ip=1,ppiclf_npart
+
+         rproj(1 ,ip) = rdum
          rproj(2 ,ip) = ppiclf_cp_map(ppiclf_jxgp,ip)
          rproj(3 ,ip) = ppiclf_cp_map(ppiclf_jygp,ip)
          rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
@@ -792,12 +885,8 @@ c----------------------------------------------------------------------
 
       ! ghost particles
       do ip=1,ppiclf_npart_gp
-         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
-         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
-         rbexpi   = 1./(-2.*rsig**2)
 
-         rproj(1 ,ip+ppiclf_npart) = rbexpi
+         rproj(1 ,ip+ppiclf_npart) = rdum
          rproj(2 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jxgp,ip)
          rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
          rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
@@ -854,7 +943,9 @@ c----------------------------------------------------------------------
 
             if (rdist2 .gt. d2chk2_sq) cycle
 
-            rexp = exp(rdist2*rproj(1,ip))
+            rexp = 1.0
+            if (ppiclf_lfiltgauss)
+     >         rexp = exp(rdist2*rproj(1,ip))
             
             do jj=1,PPICLF_LRP_PRO
                j1 = jj+4
@@ -939,14 +1030,23 @@ c----------------------------------------------------------------------
       ppiclf_jygp  = 2
       ppiclf_jzgp  = 3
 
-      ! real particles
-      do ip=1,ppiclf_npart
+      rdum = 0.0
+      if (ppiclf_lfiltgauss) then
          rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
          if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
-         rbexpi   = 1./(-2.*rsig**2)
+         rdum   = 1./(-2.*rsig**2)
+      endif
 
-         rproj(1 ,ip) = rbexpi
+      if (ppiclf_lfiltbox) then
+         multfci = 1.0/ppiclf_filter**2
+         if (ppiclf_ndim .gt. 2) multfci = multfci/ppiclf_filter
+      endif
+
+      ! real particles
+      do ip=1,ppiclf_npart
+
+         rproj(1 ,ip) = rdum
          rproj(2 ,ip) = ppiclf_cp_map(ppiclf_jxgp,ip)
          rproj(3 ,ip) = ppiclf_cp_map(ppiclf_jygp,ip)
          rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
@@ -968,12 +1068,8 @@ c----------------------------------------------------------------------
 
       ! ghost particles
       do ip=1,ppiclf_npart_gp
-         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
-         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
-         rbexpi   = 1./(-2.*rsig**2)
 
-         rproj(1 ,ip+ppiclf_npart) = rbexpi
+         rproj(1 ,ip+ppiclf_npart) = rdum
          rproj(2 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jxgp,ip)
          rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
          rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
@@ -995,12 +1091,20 @@ c----------------------------------------------------------------------
 
       ndum = ppiclf_npart+ppiclf_npart_gp
 
-      idum = floor(ppiclf_filter/2.0/ppiclf_rdx
+      if (ppiclf_lfiltgauss) then
+         idum = floor(ppiclf_filter/2.0/ppiclf_rdx
      >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
-      jdum = floor(ppiclf_filter/2.0/ppiclf_rdy
+         jdum = floor(ppiclf_filter/2.0/ppiclf_rdy
      >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
-      kdum = floor(ppiclf_filter/2.0/ppiclf_rdz
+         kdum = floor(ppiclf_filter/2.0/ppiclf_rdz
      >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
+      endif
+
+      if (ppiclf_lfiltbox) then
+         idum = ngrids/2+1
+         jdum = ngrids/2+1
+         kdum = ngrids/2+1
+      endif
 
       do ip=1,ndum
          iip = iproj(1,ip)
@@ -1024,8 +1128,10 @@ c----------------------------------------------------------------------
 
             if (rdist2 .gt. d2chk2_sq) cycle
 
-            rexp = exp(rdist2*rproj(1,ip))
-            
+            rexp = 1.0
+            if (ppiclf_lfiltgauss)
+     >         rexp = exp(rdist2*rproj(1,ip))
+
             do jj=1,PPICLF_LRP_PRO
                j1 = jj+4
                ppiclf_grid_fld(i,j,k,jj) = 

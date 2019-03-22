@@ -9,8 +9,6 @@
 C interpolate fields
       call ppiclf_solve_InitInterp
          call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
-c        call ppiclf_solve_InterpField(PPICLF_R_JUY  , vy_e    )
-c        call ppiclf_solve_InterpField(PPICLF_R_JUZ  , vz_e    )
       call ppiclf_solve_FinalizeInterp
 C interpolate fields
 

@@ -144,27 +144,25 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
 
 
-      ! comment for now.....
-c     ppiclf_binb(1) = max(ppiclf_binb(1),ppiclf_xdrange(1,1))
-c     ppiclf_binb(2) = min(ppiclf_binb(2),ppiclf_xdrange(2,1))
-c     ppiclf_binb(3) = max(ppiclf_binb(3),ppiclf_xdrange(1,2))
-c     ppiclf_binb(4) = min(ppiclf_binb(4),ppiclf_xdrange(2,2))
-c     if(ppiclf_ndim .gt. 2) ppiclf_binb(5) = 
-c    >                           max(ppiclf_binb(5),ppiclf_xdrange(1,3))
-c     if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = 
-c    >                           min(ppiclf_binb(6),ppiclf_xdrange(2,3))
-c     if (iperiodicx .eq. 0) then
-c        ppiclf_binb(1) = ppiclf_xdrange(1,1)
-c        ppiclf_binb(2) = ppiclf_xdrange(2,1)
-c     endif
-c     if (iperiodicy .eq. 0) then
-c        ppiclf_binb(3) = ppiclf_xdrange(1,2)
-c        ppiclf_binb(4) = ppiclf_xdrange(2,2)
-c     endif
-c     if (iperiodicz .eq. 0 .and. ppiclf_ndim .gt. 2) then
-c        ppiclf_binb(5) = ppiclf_xdrange(1,3)
-c        ppiclf_binb(6) = ppiclf_xdrange(2,3)
-c     endif
+      if (ppiclf_xdrange(2,1) .lt. ppiclf_binb(2) .or.
+     >    ppiclf_xdrange(1,1) .gt. ppiclf_binb(1)) then
+         ppiclf_binb(1) = ppiclf_xdrange(1,1)
+         ppiclf_binb(2) = ppiclf_xdrange(2,1)
+      endif
+
+      if (ppiclf_xdrange(2,2) .lt. ppiclf_binb(4) .or.
+     >    ppiclf_xdrange(1,2) .gt. ppiclf_binb(3)) then
+         ppiclf_binb(3) = ppiclf_xdrange(1,2)
+         ppiclf_binb(4) = ppiclf_xdrange(2,2)
+      endif
+
+      if (ppiclf_ndim .gt. 2) then
+      if (ppiclf_xdrange(2,3) .lt. ppiclf_binb(6) .or.
+     >    ppiclf_xdrange(1,3) .gt. ppiclf_binb(5)) then
+         ppiclf_binb(5) = ppiclf_xdrange(1,3)
+         ppiclf_binb(6) = ppiclf_xdrange(2,3)
+      endif
+      endif
 
       ifac(1) = 1
       ifac(2) = 1
@@ -354,9 +352,12 @@ c     current box coordinates
          jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
          kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
          if (ppiclf_ndim.lt.3) kk = 0
-         !if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-         !if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-         !if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+          if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
+          if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
+          if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+          if (ii .eq. -1) ii = 0
+          if (jj .eq. -1) jj = 0
+          if (kk .eq. -1) kk = 0
          ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
          nrank = ndum
 
@@ -452,9 +453,12 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
          jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
          kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
          if (ppiclf_ndim.eq.2) kk = 0
-         !if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-         !if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-         !if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+          if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
+          if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
+          if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+          if (ii .eq. -1) ii = 0
+          if (jj .eq. -1) jj = 0
+          if (kk .eq. -1) kk = 0
          ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
 
          ppiclf_modgp(i,j,k,ie,1) = ii
