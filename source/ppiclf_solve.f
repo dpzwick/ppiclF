@@ -28,26 +28,30 @@
             call ppiclf_solve_InitParticleTag
             call ppiclf_solve_SetParticleTag
          call ppiclf_prints('    End ParticleTag$')
-         
-         call ppiclf_prints('   *Begin RemoveParticle$')
-            call ppiclf_solve_RemoveParticle
-         call ppiclf_prints('    End RemoveParticle$')
-         
+
          call ppiclf_prints('   *Begin CreateBin$')
             call ppiclf_comm_CreateBin
          call ppiclf_prints('    End CreateBin$')
-         
+
          call ppiclf_prints('   *Begin FindParticle$')
             call ppiclf_comm_FindParticle
          call ppiclf_prints('    End FindParticle$')
-         
+
          call ppiclf_prints('   *Begin MoveParticle$')
             call ppiclf_comm_MoveParticle
          call ppiclf_prints('    End MoveParticle$')
 
-            call ppiclf_io_OutputDiagGen
+         call ppiclf_prints('   *Begin WriteParticleVTU$')
+            call ppiclf_io_WriteParticleVTU('')
+         call ppiclf_prints('    End WriteParticleVTU$')
 
+         call ppiclf_prints('   *Begin WriteBinVTU$')
+            call ppiclf_io_WriteBinVTU('')
+         call ppiclf_prints('    End WriteBinVTU$')
+         
       call ppiclf_prints(' End InitParticle$')
+
+            call ppiclf_io_OutputDiagGen
 
       PPICLF_LINIT = .true.
 
@@ -127,26 +131,6 @@
       ppiclf_lsubsubbin = .true.
 
       ppiclf_d2chk(3) = rwidth
-
-      call ppiclf_prints('   *Redo CreateBin$')
-         call ppiclf_comm_CreateBin
-      call ppiclf_prints('    End CreateBin$')
-
-      call ppiclf_prints('   *Begin CreateSubBin$')
-         if (ppiclf_lsubbin) call ppiclf_comm_CreateSubBin
-      call ppiclf_prints('    End CreateSubBin$')
-
-      call ppiclf_prints('   *Redo FindParticle$')
-         call ppiclf_comm_FindParticle
-      call ppiclf_prints('    End FindParticle$')
-
-      call ppiclf_prints('   *Redo MoveParticle$')
-         call ppiclf_comm_MoveParticle
-      call ppiclf_prints('    End MoveParticle$')
-
-      call ppiclf_prints('   *Redo SetNeighborBin$')
-         call ppiclf_solve_SetNeighborBin
-      call ppiclf_prints('    End SetNeighborBin$')
 
       return
       end
@@ -350,24 +334,6 @@
       PPICLF_LSUBBIN = .true.
       if (ppiclf_ngrids .eq. 0) PPICLF_LSUBBIN = .false.
 
-      call ppiclf_prints('   *Redo CreateBin$')
-         call ppiclf_comm_CreateBin
-      call ppiclf_prints('    End CreateBin$')
-
-      call ppiclf_prints('   *Begin CreateSubBin$')
-         if (ppiclf_lsubbin) call ppiclf_comm_CreateSubBin
-      call ppiclf_prints('    End CreateSubBin$')
-
-      call ppiclf_prints('   *Redo FindParticle$')
-         call ppiclf_comm_FindParticle
-      call ppiclf_prints('    End FindParticle$')
-
-      call ppiclf_prints('   *Redo MoveParticle$')
-         call ppiclf_comm_MoveParticle
-      call ppiclf_prints('    End MoveParticle$')
-
-      call ppiclf_io_OutputDiagSubBin
-
       PPICLF_LFILT = .true.
 
       return
@@ -410,23 +376,6 @@ c----------------------------------------------------------------------
       real    y(*)
       real    ydot(*)
 
-      integer icalld
-      save    icalld
-      data    icalld /0/
-
-      ! write initial condition (with projection)
-      if (icalld .eq. 0) then
-         icalld = icalld + 1
-
-         call ppiclf_io_OutputDiagAll
-
-         call ppiclf_io_WriteParticleVTU('')
-
-         if (ppiclf_lsubbin)
-     >      call ppiclf_io_WriteSubBinVTU('')
-      endif
-
-
       ppiclf_cycle  = istep
       ppiclf_iostep = iostep
       ppiclf_dt     = dt
@@ -436,16 +385,19 @@ c----------------------------------------------------------------------
       if (ppiclf_imethod .eq. 1) 
      >   call ppiclf_solve_IntegrateRK3(time,y,ydot)
 
-
       ! output files
       if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0) then
 
-         call ppiclf_io_OutputDiagAll
-
-         call ppiclf_io_WriteParticleVTU('')
+         ! already wrote initial conditions
+         if (ppiclf_cycle .ne. 0) then
+            call ppiclf_io_WriteParticleVTU('')
+            call ppiclf_io_WriteBinVTU('')
+         endif
 
          if (ppiclf_lsubbin)
      >      call ppiclf_io_WriteSubBinVTU('')
+
+         call ppiclf_io_OutputDiagAll
       endif
 
       return
@@ -504,17 +456,19 @@ c----------------------------------------------------------------------
 
       call ppiclf_solve_RemoveParticle
       call ppiclf_comm_CreateBin
-      if (ppiclf_overlap) call ppiclf_comm_MapOverlapMesh
       call ppiclf_comm_FindParticle
       call ppiclf_comm_MoveParticle
+      if (ppiclf_overlap) call ppiclf_comm_MapOverlapMesh
 
       if (ppiclf_lsubsubbin .or. ppiclf_lproj) then
          call ppiclf_comm_CreateGhost
          call ppiclf_comm_MoveGhost
       endif
 
-      if (ppiclf_lproj) call ppiclf_solve_ProjectParticleGrid
-      if (ppiclf_lsubsubbin) call ppiclf_solve_SetNeighborBin
+      if (ppiclf_lproj .and. ppiclf_overlap) 
+     >   call ppiclf_solve_ProjectParticleGrid
+      if (ppiclf_lsubsubbin) 
+     >   call ppiclf_solve_SetNeighborBin
 
       do i=1,ppiclf_npart
       do j=1,PPICLF_LRP
@@ -624,18 +578,21 @@ c     ndum    = ppiclf_neltb*n
 
       REAL FLD(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
 
+      integer nkey(2)
+
       ! send it all
       nl   = 0
       nii  = PPICLF_LRMAX
       njj  = 6
       nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       nrr  = nxyz*PPICLF_LRP_INT
-      nkey = 1
+      nkey(1) = 2
+      nkey(2) = 1
       call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltbbb
      >      ,PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,ppiclf_int_fld
      >      ,nrr,njj)
       call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltbbb
-     >       ,ppiclf_er_mapc,nii,partl,nl,ppiclf_int_fld,nrr,nkey,1)
+     >       ,ppiclf_er_mapc,nii,partl,nl,ppiclf_int_fld,nrr,nkey,2)
 
       ! find which cell particle is in locally
       ix = 1
@@ -675,17 +632,6 @@ c     ndum    = ppiclf_neltb*n
 
       ! free since mapping can change on next call
       call fgslib_findpts_free(PPICLF_FP_HNDL)
-
-      return
-      end
-c----------------------------------------------------------------------
-      subroutine ppiclf_solve_ParallelProjection
-#include "PPICLF"
-
-c     call ppiclf_comm_CreateGhost
-c     call ppiclf_comm_MoveGhost
-
-      if (ppiclf_lproj) call ppiclf_solve_ProjectParticleGrid
 
       return
       end
@@ -798,6 +744,8 @@ c----------------------------------------------------------------------
       integer ppiclf_jxgp,ppiclf_jygp,ppiclf_jzgp
 
       logical partl
+
+      integer nkey(2)
 
       real pi
 
@@ -933,8 +881,12 @@ c----------------------------------------------------------------------
       nii = PPICLF_LRMAX
       njj = 6
       nrr = nxyz*PPICLF_LRP_PRO
+      nkey(1) = 2
+      nkey(2) = 1
       call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,neltbc,
      >   PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,ppiclf_pro_fldb,nrr,njj)
+      call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,neltbc
+     >       ,ppiclf_er_mapc,nii,partl,nl,ppiclf_pro_fldb,nrr,nkey,2)
 
       ! add the fields from the bins to ptw array
       nlxyzep = nxyz*PPICLF_LEE*PPICLF_LRP_PRO
@@ -999,11 +951,13 @@ c----------------------------------------------------------------------
          rproj(3 ,ip) = ppiclf_cp_map(ppiclf_jygp,ip)
          rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
 
-
-         do j=5,PPICLF_LRP_GP+1
-            rproj(j,ip) = ppiclf_cp_map(j-1,ip)*multfci
+         idum = PPICLF_LRS+PPICLF_LRP
+         ic = 4
+         do j=idum+1,idum+PPICLF_LRP_GP
+            ic = ic + 1
+            rproj(ic,ip) = ppiclf_cp_map(j,ip)*multfci
          enddo
-                    
+
          iproj(1,ip) = 
      >       floor( (rproj(2,ip) - ppiclf_binx(1,1))/ppiclf_rdx)
          iproj(2,ip) = 
@@ -1024,8 +978,11 @@ c----------------------------------------------------------------------
          rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
          rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
 
-         do j=5,PPICLF_LRP_GP+1
-            rproj(j,ip+ppiclf_npart) = ppiclf_rprop_gp(j-1,ip)*multfci
+         idum = PPICLF_LRS+PPICLF_LRP
+         ic = 4
+         do j=idum+1,idum+PPICLF_LRP_GP
+            ic = ic + 1
+            rproj(ic,ip+ppiclf_npart) = ppiclf_rprop_gp(j,ip)*multfci
          enddo
                     
          iproj(1,ip+ppiclf_npart) = 
@@ -1060,7 +1017,6 @@ c----------------------------------------------------------------------
          do k=kl,kr
          do j=jl,jr
          do i=il,ir
-    
             rdist2  = (ppiclf_grid_x(i,j,k) - rproj(2,ip))**2 +
      >                (ppiclf_grid_y(i,j,k) - rproj(3,ip))**2
             if(ppiclf_ndim .gt. 2) rdist2 = rdist2 +

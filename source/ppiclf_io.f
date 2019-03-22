@@ -23,21 +23,17 @@
 
       call ppiclf_printsi(' *Begin WriteSubBinVTU$',ppiclf_cycle)
 
-      call ppiclf_prints('  -Begin CreateSubBin$')
+      call ppiclf_prints(' *Begin InitSolve$')
+         call ppiclf_solve_InitSolve
+      call ppiclf_prints('  End InitSolve$')
+
+      call ppiclf_prints(' *Begin CreateSubBin$')
          call ppiclf_comm_CreateSubBin
-      call ppiclf_prints('   End CreateSubBin$')
+      call ppiclf_prints('  End CreateSubBin$')
 
-      call ppiclf_prints('  -Begin CreateGhost$')
-         call ppiclf_comm_CreateGhost
-      call ppiclf_prints('   End CreateGhost$')
-
-      call ppiclf_prints('  -Begin MoveGhost$')
-         call ppiclf_comm_MoveGhost
-      call ppiclf_prints('   End MoveGhost$')
-
-      call ppiclf_prints('  -Begin ProjectParticleSubBin$')
+      call ppiclf_prints(' *Begin ProjectParticleSubBin$')
          call ppiclf_solve_ProjectParticleSubBin
-      call ppiclf_prints('   End ProjectParticleSubBin$')
+      call ppiclf_prints('  End ProjectParticleSubBin$')
 
       icalld1 = icalld1+1
 
@@ -154,6 +150,10 @@ c     goto 1511
          call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
          iint = iint + 1*isize*nvtx_total + isize
       enddo
+c     call ppiclf_io_WriteDataArrayVTU(vtu,"PPR",1,iint)
+c     iint = iint + 1*isize*nvtx_total + isize
+c     call ppiclf_io_WriteDataArrayVTU(vtu,"NID",1,iint)
+c     iint = iint + 1*isize*nvtx_total + isize
       write(vtu,'(A)',advance='yes') '   </PointData> '
       write(vtu,'(A)',advance='yes') '   <CellData>'
       write(vtu,'(A)',advance='yes') '   </CellData> '
@@ -430,6 +430,7 @@ c1511 continue
       call ppiclf_byte_close_mpi(pth,ierr)
 
 
+      ! projected fields
       do ie=1,PPICLF_LRP_PRO
 
       if_pos = 1*isize*nvtx_total
@@ -465,7 +466,74 @@ c1511 continue
       call ppiclf_byte_close_mpi(pth,ierr)
 
       enddo
-            
+
+c     ! particles per rank
+c     if_pos = 1*isize*nvtx_total
+
+c     ! integer write
+c     if (ppiclf_nid .eq. 0) then
+c       open(unit=vtu,file=vtufile,access='stream',form="unformatted"
+c    >      ,position='append')
+c       write(vtu) if_pos
+c       close(vtu)
+c     endif
+
+c     call mpi_barrier(ppiclf_comm,ierr)
+
+c     call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+
+c     do k=1,ppiclf_bz
+c     do j=1,ppiclf_by
+c     do i=1,ppiclf_bx
+c          stride_lenv = ppiclf_grid_i(i,j,k)
+c          idisp_pos   = ivtu_size + isize*(3*nvtx_total ! position fld
+c    >                   + (PPICLF_LRP_PRO)*nvtx_total ! prev fields
+c    >                   + 1*stride_lenv    ! this fld
+c    >                   + 1 + PPICLF_LRP_PRO + 1)          ! ints
+c          icount_dum  = icount_pos(i,j,k)/3 ! either zero or 1
+c          rpoint(1)   = real(ppiclf_npart)
+c          call ppiclf_byte_set_view(idisp_pos,pth)
+c          call ppiclf_byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
+c     enddo
+c     enddo
+c     enddo
+
+c     call ppiclf_byte_close_mpi(pth,ierr)
+
+c     ! nid
+c     if_pos = 1*isize*nvtx_total
+
+c     ! integer write
+c     if (ppiclf_nid .eq. 0) then
+c       open(unit=vtu,file=vtufile,access='stream',form="unformatted"
+c    >      ,position='append')
+c       write(vtu) if_pos
+c       close(vtu)
+c     endif
+
+c     call mpi_barrier(ppiclf_comm,ierr)
+
+c     call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+
+c     do k=1,ppiclf_bz
+c     do j=1,ppiclf_by
+c     do i=1,ppiclf_bx
+c          stride_lenv = ppiclf_grid_i(i,j,k)
+c          idisp_pos   = ivtu_size + isize*(3*nvtx_total ! position fld
+c    >                   + (PPICLF_LRP_PRO)*nvtx_total ! prev fields
+c    >                   + 1*nvtx_total                ! prev fields
+c    >                   + 1*stride_lenv    ! this fld
+c    >                   + 1 + PPICLF_LRP_PRO + 2)          ! ints
+c          icount_dum  = icount_pos(i,j,k)/3 ! either zero or 1
+c          rpoint(1)   = real(ppiclf_nid)
+c          call ppiclf_byte_set_view(idisp_pos,pth)
+c          call ppiclf_byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
+c     enddo
+c     enddo
+c     enddo
+
+c     call ppiclf_byte_close_mpi(pth,ierr)
+
 
       ! still need to add 2d
 
@@ -1291,6 +1359,7 @@ c        endif
       subroutine ppiclf_io_OutputDiagAll
 #include "PPICLF"
 
+      call ppiclf_prints('*********** PPICLF OUTPUT *****************$')
       call ppiclf_io_OutputDiagGen
       call ppiclf_io_OutputDiagGhost
       if (ppiclf_lsubbin) call ppiclf_io_OutputDiagSubBin

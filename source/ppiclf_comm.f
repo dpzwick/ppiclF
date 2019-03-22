@@ -108,6 +108,8 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       iperiodicz = ppiclf_iperiodic(3)
       ndim       = ppiclf_ndim
 
+      ppiclf_d2chk(1) = max(ppiclf_d2chk(2),ppiclf_d2chk(3))
+
       ! compute binb
       xmin = 1E10
       ymin = 1E10
@@ -170,7 +172,6 @@ c     endif
       icount(1) = 0
       icount(2) = 0
       icount(3) = 0
-      ppiclf_d2chk(1) = max(ppiclf_d2chk(2),ppiclf_d2chk(3))
       d2new(1) = ppiclf_d2chk(1)
       d2new(2) = ppiclf_d2chk(1)
       d2new(3) = ppiclf_d2chk(1)
@@ -234,14 +235,6 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       if (ppiclf_ndim .gt. 2) 
      >ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
 
-      return
-      end
-!-----------------------------------------------------------------------
-      subroutine ppiclf_comm_CreateSubBin
-#include "PPICLF"
-
-      if (.not. ppiclf_lsubbin) return
-
       ppiclf_nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
 
 c     current box coordinates
@@ -256,11 +249,26 @@ c     current box coordinates
          ppiclf_biny(2,1) = ppiclf_binb(3) + (jdum+1)*ppiclf_rdygp
          ppiclf_binz(1,1) = 0.0
          ppiclf_binz(2,1) = 0.0
-         if (ppiclf_ndim .gt. 3) then
+         if (ppiclf_ndim .gt. 2) then
             ppiclf_binz(1,1) = ppiclf_binb(5) + kdum    *ppiclf_rdzgp
             ppiclf_binz(2,1) = ppiclf_binb(5) + (kdum+1)*ppiclf_rdzgp
          endif
-    
+      endif
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_comm_CreateSubBin
+#include "PPICLF"
+
+      ppiclf_nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
+
+c     current box coordinates
+      if (ppiclf_nid .le. ppiclf_nbin-1) then
+         idum = modulo(ppiclf_nid,ppiclf_ndxgp)
+         jdum = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
+         kdum = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
+         if (ppiclf_ndim .lt. 3) kdum = 0
          ! interior grid of each bin
          ! +1 for making mesh smaller and +1 since these are vertice counts
          ppiclf_bx = floor(ppiclf_rdxgp/ppiclf_filter) + 1 + 1
@@ -274,14 +282,12 @@ c     current box coordinates
          if (ppiclf_ndim .gt. 2) 
      >      ppiclf_bz = ppiclf_bz*ppiclf_ngrids
 
-         if ((ppiclf_bx .gt. PPICLF_BX1) .or. 
-     >       (ppiclf_by .gt. PPICLF_BY1) .or.
-     >       (ppiclf_bz .gt. PPICLF_BZ1)) then
-               if (ppiclf_nid .eq. 0) write(6, *) 
-     >          'INCREASE GRID ALLOCATION PPICLF_B*1'
-     >         , ppiclf_bx,ppiclf_by,ppiclf_bz
-               return
-         endif
+         if (ppiclf_bx .gt. PPICLF_BX1)
+     >      call ppiclf_exittr('Increase PPICLF_BX1$',0.,ppiclf_bx)
+         if (ppiclf_by .gt. PPICLF_BY1)
+     >      call ppiclf_exittr('Increase PPICLF_BY1$',0.,ppiclf_by)
+         if (ppiclf_bz .gt. PPICLF_BZ1)
+     >      call ppiclf_exittr('Increase PPICLF_BZ1$',0.,ppiclf_bz)
 
          ppiclf_rdx = ppiclf_rdxgp/(ppiclf_bx-1)
          ppiclf_rdy = ppiclf_rdygp/(ppiclf_by-1)
@@ -298,10 +304,6 @@ c     current box coordinates
             ppiclf_grid_x(i,j,k) = ppiclf_binx(1,1) + (i-1)*ppiclf_rdx
             ppiclf_grid_y(i,j,k) = ppiclf_biny(1,1) + (j-1)*ppiclf_rdy
             ppiclf_grid_z(i,j,k) = ppiclf_binz(1,1) + (k-1)*ppiclf_rdz
-
-            ! indicies global, note new mapping/other choices are possible
-c           ppiclf_grid_i(i,j,k) = ppiclf_nid*ppiclf_bx*ppiclf_by*ppiclf_bz +
-c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1)
 
             itmp = idum*(ppiclf_bx-1) + (i-1)
             jtmp = jdum*(ppiclf_by-1) + (j-1)
@@ -325,6 +327,8 @@ c    >                        (i-1) + ppiclf_bx*(j-1) + ppiclf_bx*ppiclf_by*(k-1
       integer icalld
       save    icalld
       data    icalld /0/
+
+      integer nkey(2)
 
       ! see which bins are in which elements
       ppiclf_neltb = 0
@@ -378,9 +382,7 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
 
          ppiclf_neltb = ppiclf_neltb + 1
          if(ppiclf_neltb .gt. PPICLF_LEE) then
-           write(6,*) 'increase PPICLF_LEE', ppiclf_nid, ppiclf_neltb
-           return
-           !call exitt
+           call ppiclf_exittr('Increase PPICLF_LEE$',0.,ppiclf_neltb)
          endif
 
          ppiclf_er_map(1,ppiclf_neltb) = ie
@@ -429,11 +431,12 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       njj  = 6
       nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       nrr  = nxyz*3
-      nkey = 1
+      nkey(1) = 2
+      nkey(2) = 1
       call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltb
      >       ,PPICLF_LEE,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,njj)
       call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltb
-     >       ,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,nkey,1)
+     >       ,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,nkey,2)
 
 
       do ie=1,ppiclf_neltb
@@ -568,7 +571,6 @@ c        call ppiclf_prints('    End InitFindpts$')
       enddo
 
       call ppiclf_comm_MapOverlapMesh
-      if (ppiclf_lfilt) call ppiclf_solve_ParallelProjection
 
       ppiclf_overlap = .true.
 
@@ -631,8 +633,12 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       enddo
 
       j0 = 4
-      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_npart 
-     >      ,PPICLF_LPART,ppiclf_iprop ,PPICLF_LIP,partl,0,rwork,lrf,j0)
+      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl
+     >                                  ,ppiclf_npart,PPICLF_LPART
+     >                                  ,ppiclf_iprop,PPICLF_LIP
+     >                                  ,partl,0
+     >                                  ,rwork,lrf
+     >                                  ,j0)
 
       if (ppiclf_npart .gt. PPICLF_LPART .or. ppiclf_npart .lt. 0)
      >   call ppiclf_exittr('Increase LPART$',0.0,ppiclf_npart)

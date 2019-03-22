@@ -36,6 +36,11 @@ C>    -Ex: (2,2,2,local_cells) for quad grid in 3D
 #define PPICLF_LEZ 6
 #define PPICLF_LEE 125
 
+C> Max size of local SubBin grid
+#define PPICLF_BX1 50
+#define PPICLF_BY1 50
+#define PPICLF_BZ1 50
+
 C> Number of fields being interpolated
 #define PPICLF_LRP_INT 1
 
