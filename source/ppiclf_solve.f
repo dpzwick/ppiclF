@@ -147,6 +147,7 @@
      >                             ppiclf_d2chk(3))
          ppiclf_nb_r(2,i) = floor((ppiclf_cp_map(2,i)-ppiclf_binb(3))/
      >                             ppiclf_d2chk(3))
+         ppiclf_nb_r(3,i) = 0
          if (ppiclf_ndim .eq. 3)
      >   ppiclf_nb_r(3,i) = floor((ppiclf_cp_map(3,i)-ppiclf_binb(5))/
      >                             ppiclf_d2chk(3))
@@ -157,6 +158,7 @@
      >                             ppiclf_d2chk(3))
          ppiclf_nb_g(2,i) = floor((ppiclf_rprop_gp(2,i)-ppiclf_binb(3))/
      >                             ppiclf_d2chk(3))
+         ppiclf_nb_g(3,i) = 0
          if (ppiclf_ndim .eq. 3)
      >   ppiclf_nb_g(3,i) = floor((ppiclf_rprop_gp(3,i)-ppiclf_binb(5))/
      >                             ppiclf_d2chk(3))
@@ -198,9 +200,12 @@
          if (xdist2 .gt. dist2) cycle
          ydist2 = (ppiclf_cp_map(2,i)-ppiclf_cp_map(2,j))**2
          if (ydist2 .gt. dist2) cycle
+         dist_total = xdist2 + ydist2
+         if (ppiclf_ndim .eq. 3) then
          zdist2 = (ppiclf_cp_map(3,i)-ppiclf_cp_map(3,j))**2
          if (zdist2 .gt. dist2) cycle
-         dist_total = xdist2+ydist2+zdist2
+         dist_total = dist_total+zdist2
+         endif
          if (dist_total .gt. dist2) cycle
 
          call ppiclf_user_EvalNearestNeighbor(i,j,ppiclf_cp_map(1,i)
@@ -211,8 +216,6 @@
       enddo
 
       do j=1,ppiclf_npart_gp
-         if (j .eq. i) cycle
-
          j_ii = ppiclf_nb_g(1,j)
          j_jj = ppiclf_nb_g(2,j)
          j_kk = ppiclf_nb_g(3,j)
@@ -227,9 +230,12 @@
          if (xdist2 .gt. dist2) cycle
          ydist2 = (ppiclf_cp_map(2,i)-ppiclf_rprop_gp(2,j))**2
          if (ydist2 .gt. dist2) cycle
+         dist_total = xdist2 + ydist2
+         if (ppiclf_ndim .eq. 3) then
          zdist2 = (ppiclf_cp_map(3,i)-ppiclf_rprop_gp(3,j))**2
          if (zdist2 .gt. dist2) cycle
-         dist_total = xdist2+ydist2+zdist2
+         dist_total = dist_total+zdist2
+         endif
          if (dist_total .gt. dist2) cycle
 
          jp = -1*j
@@ -259,7 +265,8 @@
 
          ydum(1) = ppiclf_cp_map(1,i) - rdist*rnx
          ydum(2) = ppiclf_cp_map(2,i) - rdist*rny
-         ydum(3) = ppiclf_cp_map(3,i) - rdist*rnz
+         if (ppiclf_ndim .eq. 3) 
+     >   ydum(3) = ppiclf_cp_map(3,i) - rdist*rnz
 
          j_ii = floor((ydum(1)-ppiclf_binb(1))/ppiclf_d2chk(3))
          j_jj = floor((ydum(2)-ppiclf_binb(3))/ppiclf_d2chk(3))
@@ -559,8 +566,8 @@ c----------------------------------------------------------------------
       if (ppiclf_lsubsubbin) 
      >   call ppiclf_solve_SetNeighborBin
 
-      do i=1,ppiclf_npart
-      do j=1,PPICLF_LRP
+      do i=1,PPICLF_LPART
+      do j=1,PPICLF_LRS
          ppiclf_ydotc(j,i) = 0.0
       enddo
       enddo
@@ -681,7 +688,9 @@ c     ndum    = ppiclf_neltb*n
       ! find which cell particle is in locally
       ix = 1
       iy = 2
-      iz = 3
+      iz = 1
+      if (ppiclf_ndim .eq. 3)
+     >iz = 3
 
       call fgslib_findpts(PPICLF_FP_HNDL           !   call fgslib_findpts( ihndl,
      >        , ppiclf_iprop (1 ,1),PPICLF_LIP        !   $             rcode,1,
@@ -734,7 +743,6 @@ c----------------------------------------------------------------------
       ppiclf_rk3coef(1,3) = 1.0/3.0
       ppiclf_rk3coef(2,3) = 2.0/3.0 
       ppiclf_rk3coef(3,3) = dt*2.0/3.0 
-
 
       return
       end
@@ -827,11 +835,14 @@ c----------------------------------------------------------------------
 
       integer ppiclf_jxgp,ppiclf_jygp,ppiclf_jzgp
 
-      logical partl
+      logical partl, if3d
 
       integer nkey(2)
 
       real pi
+
+      if3d = .false.
+      if (ppiclf_ndim .eq. 3) if3d = .true.
 
       PI=4.D0*DATAN(1.D0)
 
@@ -847,19 +858,20 @@ c----------------------------------------------------------------------
       ! real particles
       ppiclf_jxgp  = 1
       ppiclf_jygp  = 2
-      ppiclf_jzgp  = 3
+      ppiclf_jzgp  = 1
+      if (if3d) ppiclf_jzgp  = 3
 
       rdum = 0.0
       if (ppiclf_lfiltgauss) then
          rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
+         if (if3d) multfci = multfci**(1.5d+0)
          rdum   = 1./(-2.*rsig**2)
       endif
 
       if (ppiclf_lfiltbox) then
          multfci = 1.0/ppiclf_filter**2
-         if (ppiclf_ndim .gt. 2) multfci = multfci/ppiclf_filter
+         if (if3d) multfci = multfci/ppiclf_filter
       endif
 
       ! real particles
@@ -868,7 +880,8 @@ c----------------------------------------------------------------------
          rproj(1 ,ip) = rdum
          rproj(2 ,ip) = ppiclf_cp_map(ppiclf_jxgp,ip)
          rproj(3 ,ip) = ppiclf_cp_map(ppiclf_jygp,ip)
-         rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
+         if (if3d) 
+     >   rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
 
          idum = PPICLF_LRS+PPICLF_LRP
          ic = 4
@@ -879,7 +892,8 @@ c----------------------------------------------------------------------
                     
          iproj(1,ip)  = ppiclf_iprop(8,ip)
          iproj(2,ip)  = ppiclf_iprop(9,ip)
-         iproj(3,ip)  = ppiclf_iprop(10,ip)
+         if (if3d)
+     >   iproj(3,ip)  = ppiclf_iprop(10,ip)
          iproj(4,ip)  = ppiclf_iprop(11,ip)
       enddo
 
@@ -889,7 +903,8 @@ c----------------------------------------------------------------------
          rproj(1 ,ip+ppiclf_npart) = rdum
          rproj(2 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jxgp,ip)
          rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
-         rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
+         if (if3d) 
+     >   rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
 
          idum = PPICLF_LRS+PPICLF_LRP
          ic = 4
@@ -900,7 +915,8 @@ c----------------------------------------------------------------------
                     
          iproj(1,ip+ppiclf_npart)  = ppiclf_iprop_gp(2,ip)
          iproj(2,ip+ppiclf_npart)  = ppiclf_iprop_gp(3,ip)
-         iproj(3,ip+ppiclf_npart)  = ppiclf_iprop_gp(4,ip)
+         if (if3d)
+     >   iproj(3,ip+ppiclf_npart)  = ppiclf_iprop_gp(4,ip)
          iproj(4,ip+ppiclf_npart)  = ppiclf_iprop_gp(5,ip)
       enddo
 
@@ -909,15 +925,18 @@ c----------------------------------------------------------------------
       do ip=1,ndum
          iip      = iproj(1,ip)
          jjp      = iproj(2,ip)
-         kkp      = iproj(3,ip)
+         if (if3d)
+     >   kkp      = iproj(3,ip)
          ndumdum  = iproj(4,ip)
 
          ilow  = iip-1
          ihigh = iip+1
          jlow  = jjp-1
          jhigh = jjp+1
-         klow  = kkp-1
-         khigh = kkp+1
+         if (if3d) then
+            klow  = kkp-1
+            khigh = kkp+1
+         endif
 
          do ie=1,ppiclf_neltb
 
@@ -928,8 +947,10 @@ c----------------------------------------------------------------------
                if (ppiclf_el_map(4,ie) .lt. ilow)  cycle
                if (ppiclf_el_map(5,ie) .gt. jhigh) cycle
                if (ppiclf_el_map(6,ie) .lt. jlow)  cycle
+               if (if3d) then
                if (ppiclf_el_map(7,ie) .gt. khigh) cycle
                if (ppiclf_el_map(8,ie) .lt. klow)  cycle
+               endif
 
          do k=1,PPICLF_LEZ
          do j=1,PPICLF_LEY
@@ -938,7 +959,7 @@ c----------------------------------------------------------------------
 
             rdist2  = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))**2 +
      >                (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))**2
-            if(ppiclf_ndim .gt. 2) rdist2 = rdist2 +
+            if(if3d) rdist2 = rdist2 +
      >                (ppiclf_xm1b(i,j,k,3,ie) - rproj(4,ip))**2
 
             if (rdist2 .gt. d2chk2_sq) cycle
@@ -1012,7 +1033,12 @@ c----------------------------------------------------------------------
 
       integer ppiclf_jxgp,ppiclf_jygp,ppiclf_jzgp
 
+      logical if3d
+
       real pi
+
+      if3d = .false.
+      if (ppiclf_ndim .eq. 3) if3d = .true.
 
       PI=4.D0*DATAN(1.D0)
 
@@ -1028,19 +1054,21 @@ c----------------------------------------------------------------------
       ! real particles
       ppiclf_jxgp  = 1
       ppiclf_jygp  = 2
-      ppiclf_jzgp  = 3
+      ppiclf_jzgp  = 1
+      if (if3d)
+     >ppiclf_jzgp  = 3
 
       rdum = 0.0
       if (ppiclf_lfiltgauss) then
          rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
          multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (ppiclf_ndim .gt. 2) multfci = multfci**(1.5d+0)
+         if (if3d) multfci = multfci**(1.5d+0)
          rdum   = 1./(-2.*rsig**2)
       endif
 
       if (ppiclf_lfiltbox) then
          multfci = 1.0/ppiclf_filter**2
-         if (ppiclf_ndim .gt. 2) multfci = multfci/ppiclf_filter
+         if (if3d) multfci = multfci/ppiclf_filter
       endif
 
       ! real particles
@@ -1049,7 +1077,8 @@ c----------------------------------------------------------------------
          rproj(1 ,ip) = rdum
          rproj(2 ,ip) = ppiclf_cp_map(ppiclf_jxgp,ip)
          rproj(3 ,ip) = ppiclf_cp_map(ppiclf_jygp,ip)
-         rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
+         if (if3d)
+     >   rproj(4 ,ip) = ppiclf_cp_map(ppiclf_jzgp,ip)
 
          idum = PPICLF_LRS+PPICLF_LRP
          ic = 4
@@ -1062,7 +1091,8 @@ c----------------------------------------------------------------------
      >       floor( (rproj(2,ip) - ppiclf_binx(1,1))/ppiclf_rdx)
          iproj(2,ip) = 
      >       floor( (rproj(3,ip) - ppiclf_biny(1,1))/ppiclf_rdy)
-         iproj(3,ip) = 
+         if (if3d)
+     >   iproj(3,ip) = 
      >       floor( (rproj(4,ip) - ppiclf_binz(1,1))/ppiclf_rdz)
       enddo
 
@@ -1072,7 +1102,8 @@ c----------------------------------------------------------------------
          rproj(1 ,ip+ppiclf_npart) = rdum
          rproj(2 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jxgp,ip)
          rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
-         rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
+         if (if3d)
+     >   rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
 
          idum = PPICLF_LRS+PPICLF_LRP
          ic = 4
@@ -1085,7 +1116,8 @@ c----------------------------------------------------------------------
      >     floor((rproj(2,ip+ppiclf_npart)-ppiclf_binx(1,1))/ppiclf_rdx)
          iproj(2,ip+ppiclf_npart) = 
      >     floor((rproj(3,ip+ppiclf_npart)-ppiclf_biny(1,1))/ppiclf_rdy)
-         iproj(3,ip+ppiclf_npart) = 
+         if (if3d)
+     >   iproj(3,ip+ppiclf_npart) = 
      >     floor((rproj(4,ip+ppiclf_npart)-ppiclf_binz(1,1))/ppiclf_rdz)
       enddo
 
@@ -1096,34 +1128,41 @@ c----------------------------------------------------------------------
      >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
          jdum = floor(ppiclf_filter/2.0/ppiclf_rdy
      >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
-         kdum = floor(ppiclf_filter/2.0/ppiclf_rdz
+         if (if3d)
+     >   kdum = floor(ppiclf_filter/2.0/ppiclf_rdz
      >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
       endif
 
       if (ppiclf_lfiltbox) then
          idum = ngrids/2+1
          jdum = ngrids/2+1
-         kdum = ngrids/2+1
+         if (if3d)
+     >   kdum = ngrids/2+1
       endif
 
       do ip=1,ndum
          iip = iproj(1,ip)
          jjp = iproj(2,ip)
-         kkp = iproj(3,ip)
+         if (if3d)
+     >   kkp = iproj(3,ip)
 
          il  = max(1     ,iip-idum)
          ir  = min(ppiclf_bx,iip+idum)
          jl  = max(1     ,jjp-jdum)
          jr  = min(ppiclf_by,jjp+jdum)
+         kl  = 1
+         kr  = 1
+         if (if3d) then
          kl  = max(1     ,kkp-kdum)
          kr  = min(ppiclf_bz,kkp+kdum)
+         endif
 
          do k=kl,kr
          do j=jl,jr
          do i=il,ir
             rdist2  = (ppiclf_grid_x(i,j,k) - rproj(2,ip))**2 +
      >                (ppiclf_grid_y(i,j,k) - rproj(3,ip))**2
-            if(ppiclf_ndim .gt. 2) rdist2 = rdist2 +
+            if(if3d) rdist2 = rdist2 +
      >                (ppiclf_grid_z(i,j,k) - rproj(4,ip))**2
 
             if (rdist2 .gt. d2chk2_sq) cycle

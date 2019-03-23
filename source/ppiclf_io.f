@@ -40,21 +40,17 @@
       nnp   = ppiclf_np
       nxx   = PPICLF_NPART
 
-      if (ppiclf_ndim .gt. 2) then
-         ncll_total = ppiclf_ndxgp*(ppiclf_bx-1)
-     >               *ppiclf_ndygp*(ppiclf_by-1)
-     >               *ppiclf_ndzgp*(ppiclf_bz-1)
-         nvtx_total = (ppiclf_ndxgp*(ppiclf_bx-1)+1)
-     >               *(ppiclf_ndygp*(ppiclf_by-1)+1)
-     >               *(ppiclf_ndzgp*(ppiclf_bz-1)+1)
-      else
-
-        ! 2d here ....
-      endif
+      ncll_total = ppiclf_ndxgp*(ppiclf_bx-1)
+     >            *ppiclf_ndygp*(ppiclf_by-1)
+      if (ppiclf_ndim.eq.3) ncll_total = ncll_total
+     >            *ppiclf_ndzgp*(ppiclf_bz-1)
+      nvtx_total = (ppiclf_ndxgp*(ppiclf_bx-1)+1)
+     >            *(ppiclf_ndygp*(ppiclf_by-1)+1)
+      if (ppiclf_ndim.eq.3) nvtx_total = nvtx_total
+     >            *(ppiclf_ndzgp*(ppiclf_bz-1)+1)
 
       ppiclf_ndxgpp1 = ppiclf_ndxgp + 1
       ppiclf_ndygpp1 = ppiclf_ndygp + 1
-      ppiclf_ndzgpp1 = ppiclf_ndzgp + 1
       ppiclf_ndxygpp1 = ppiclf_ndxgpp1*ppiclf_ndygpp1
 
 
@@ -78,7 +74,9 @@
       ! get which bin this processor holds
       ibin = modulo(ppiclf_nid,ppiclf_ndxgp)
       jbin = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
-      kbin = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
+      kbin = 0
+      if (ppiclf_ndim .eq. 3)
+     >kbin = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
 
 ! ----------------------------------------------------
 ! WRITE EACH INDIVIDUAL COMPONENT OF A BINARY VTU FILE
@@ -137,8 +135,8 @@ c     goto 1511
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3   ,iint)
-      iint = iint + 3   *isize*nvtx_total + isize
+      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3,iint)
+      iint = iint + 3*isize*nvtx_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
 ! ----
@@ -169,55 +167,24 @@ c     iint = iint + 1*isize*nvtx_total + isize
       ! write connectivity here
       ndumx = ppiclf_ndxgp*(ppiclf_bx-1) + 1
       ndumy = ppiclf_ndygp*(ppiclf_by-1) + 1
-      ndumz = ppiclf_ndzgp*(ppiclf_bz-1) + 1
-      do ie=0,ppiclf_np-1
+      ndum = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
+      do ie=0,ndum-1
          i = modulo(ie,ppiclf_ndxgp)
          j = modulo(ie/ppiclf_ndxgp,ppiclf_ndygp)
          k = ie/(ppiclf_ndxgp*ppiclf_ndygp)
 
+      kmax = 1
+      if (ppiclf_ndim .eq. 3) kmax = ppiclf_bz-1
 
-c        il = i-1
-c        ir = i+1
-c        jl = j-1
-c        jr = j+1
-c        kl = k-1
-c        kr = k+1
-c        nmult = ppiclf_ndxgp*ppiclf_ndygp
-c        nid1  = il + ppiclf_ndxgp*jl + nmult*kl
-c        nid2  = i  + ppiclf_ndxgp*jl + nmult*kl
-c        nid3  = ir + ppiclf_ndxgp*jl + nmult*kl
-c        nid4  = il + ppiclf_ndxgp*j  + nmult*kl
-c        nid5  = i  + ppiclf_ndxgp*j  + nmult*kl
-c        nid6  = ir + ppiclf_ndxgp*j  + nmult*kl
-c        nid7  = il + ppiclf_ndxgp*jr + nmult*kl
-c        nid8  = i  + ppiclf_ndxgp*jr + nmult*kl
-c        nid9  = ir + ppiclf_ndxgp*jr + nmult*kl
-c        nid10 = il + ppiclf_ndxgp*jl + nmult*k 
-c        nid11 = i  + ppiclf_ndxgp*jl + nmult*k 
-c        nid12 = ir + ppiclf_ndxgp*jl + nmult*k 
-c        nid13 = il + ppiclf_ndxgp*j  + nmult*k 
-c        nid14 = i  + ppiclf_ndxgp*j  + nmult*k 
-c        nid15 = ir + ppiclf_ndxgp*j  + nmult*k 
-c        nid16 = il + ppiclf_ndxgp*jr + nmult*k 
-c        nid17 = i  + ppiclf_ndxgp*jr + nmult*k 
-c        nid18 = ir + ppiclf_ndxgp*jr + nmult*k 
-c        nid19 = il + ppiclf_ndxgp*jl + nmult*kr
-c        nid20 = i  + ppiclf_ndxgp*jl + nmult*kr
-c        nid21 = ir + ppiclf_ndxgp*jl + nmult*kr
-c        nid22 = il + ppiclf_ndxgp*j  + nmult*kr
-c        nid23 = i  + ppiclf_ndxgp*j  + nmult*kr
-c        nid24 = ir + ppiclf_ndxgp*j  + nmult*kr
-c        nid25 = il + ppiclf_ndxgp*jr + nmult*kr
-c        nid26 = i  + ppiclf_ndxgp*jr + nmult*kr
-c        nid27 = ir + ppiclf_ndxgp*jr + nmult*kr
-
-      do kk=1,ppiclf_bz-1
+      do kk=1,kmax
       do jj=1,ppiclf_by-1
       do ii=1,ppiclf_bx-1
 
          itmp = i*(ppiclf_bx-1) + (ii-1)
          jtmp = j*(ppiclf_by-1) + (jj-1)
-         ktmp = k*(ppiclf_bz-1) + (kk-1)
+         ktmp = 0
+         if (ppiclf_ndim .eq. 3)
+     >   ktmp = k*(ppiclf_bz-1) + (kk-1)
 
          kl = ktmp
          kr = ktmp+1
@@ -228,22 +195,35 @@ c        nid27 = ir + ppiclf_ndxgp*jr + nmult*kr
 
 c        ndum = itmp + ndumx*jtmp + ndumx*ndumy*ktmp
 
-         npa = il + ndumx*jl + ndumx*ndumy*kl
-         npb = ir + ndumx*jl + ndumx*ndumy*kl
-         npc = il + ndumx*jr + ndumx*ndumy*kl
-         npd = ir + ndumx*jr + ndumx*ndumy*kl
-         npe = il + ndumx*jl + ndumx*ndumy*kr
-         npf = ir + ndumx*jl + ndumx*ndumy*kr
-         npg = il + ndumx*jr + ndumx*ndumy*kr
-         nph = ir + ndumx*jr + ndumx*ndumy*kr
-         write(vtu,'(I0,A)',advance='no')  npa, ' '
-         write(vtu,'(I0,A)',advance='no')  npb, ' '
-         write(vtu,'(I0,A)',advance='no')  npc, ' '
-         write(vtu,'(I0,A)',advance='no')  npd, ' '
-         write(vtu,'(I0,A)',advance='no')  npe, ' '
-         write(vtu,'(I0,A)',advance='no')  npf, ' '
-         write(vtu,'(I0,A)',advance='no')  npg, ' '
-         write(vtu,'(I0)'  ,advance='yes') nph
+         if (ppiclf_ndim .eq. 3) then
+            npa = il + ndumx*jl + ndumx*ndumy*kl
+            npb = ir + ndumx*jl + ndumx*ndumy*kl
+            npc = il + ndumx*jr + ndumx*ndumy*kl
+            npd = ir + ndumx*jr + ndumx*ndumy*kl
+            npe = il + ndumx*jl + ndumx*ndumy*kr
+            npf = ir + ndumx*jl + ndumx*ndumy*kr
+            npg = il + ndumx*jr + ndumx*ndumy*kr
+            nph = ir + ndumx*jr + ndumx*ndumy*kr
+
+            write(vtu,'(I0,A)',advance='no')  npa, ' '
+            write(vtu,'(I0,A)',advance='no')  npb, ' '
+            write(vtu,'(I0,A)',advance='no')  npc, ' '
+            write(vtu,'(I0,A)',advance='no')  npd, ' '
+            write(vtu,'(I0,A)',advance='no')  npe, ' '
+            write(vtu,'(I0,A)',advance='no')  npf, ' '
+            write(vtu,'(I0,A)',advance='no')  npg, ' '
+            write(vtu,'(I0)'  ,advance='yes') nph
+         else
+            npa = il + ndumx*jl + ndumx*ndumy*kl
+            npb = ir + ndumx*jl + ndumx*ndumy*kl
+            npc = il + ndumx*jr + ndumx*ndumy*kl
+            npd = ir + ndumx*jr + ndumx*ndumy*kl
+
+            write(vtu,'(I0,A)',advance='no')  npa, ' '
+            write(vtu,'(I0,A)',advance='no')  npb, ' '
+            write(vtu,'(I0,A)',advance='no')  npc, ' '
+            write(vtu,'(I0)'  ,advance='yes') npd
+         endif
       enddo
       enddo
       enddo
@@ -254,9 +234,11 @@ c        ndum = itmp + ndumx*jtmp + ndumx*ndumy*ktmp
       write(vtu,'(A)',advance='no') 'type="Int32" '
       write(vtu,'(A)',advance='no') 'Name="offsets" '
       write(vtu,'(A)',advance='yes') 'format="ascii"> '
+      ioff_dum = 4
+      if (ppiclf_ndim .eq. 3) ioff_dum = 8
       ! write offsetts here
       do i=1,ncll_total
-         write(vtu,'(I0)',advance='yes') 8*i
+         write(vtu,'(I0)',advance='yes') ioff_dum*i
       enddo
       write(vtu,'(A)',advance='yes')  '    </DataArray>'
 
@@ -264,9 +246,11 @@ c        ndum = itmp + ndumx*jtmp + ndumx*ndumy*ktmp
       write(vtu,'(A)',advance='no') 'type="UInt8" '
       write(vtu,'(A)',advance='no') 'Name="types" '
       write(vtu,'(A)',advance='yes') 'format="ascii"> '
+      itype = 8
+      if (ppiclf_ndim .eq. 3) itype = 11
       ! write types here
       do i=1,ncll_total
-         write(vtu,'(I0)',advance='yes') 11
+         write(vtu,'(I0)',advance='yes') itype
       enddo
       write(vtu,'(A)',advance='yes')  '    </DataArray>'
 
@@ -317,6 +301,7 @@ c1511 continue
       enddo
       enddo
       if (ppiclf_nid .le. ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (ppiclf_ndim .eq. 3) then
          do k=1,ppiclf_bz
          do j=1,ppiclf_by
          do i=1,ppiclf_bx
@@ -409,17 +394,58 @@ c1511 continue
          enddo
          enddo
          enddo
+         ! 2D
+         else
+         do j=1,ppiclf_by
+         do i=1,ppiclf_bx
+            if (i .ne. ppiclf_bx .and.
+     >          j .ne. ppiclf_by) then
+                  icount_pos(i,j,1) = 3
+            endif
+
+            if (i .eq. ppiclf_bx) then
+            if (j .ne. ppiclf_by) then
+            if (ibin .eq. ppiclf_ndxgp-1) then
+               icount_pos(i,j,1) = 3
+            endif
+            endif
+            endif
+
+            if (j .eq. ppiclf_by) then
+            if (i .ne. ppiclf_bx) then
+            if (jbin .eq. ppiclf_ndygp-1) then
+               icount_pos(i,j,1) = 3
+            endif
+            endif
+            endif
+
+            if (i .eq. ppiclf_bx) then
+            if (j .eq. ppiclf_by) then
+            if (ibin .eq. ppiclf_ndxgp-1) then
+            if (jbin .eq. ppiclf_ndygp-1) then
+               icount_pos(i,j,1) = 3
+            endif
+            endif
+            endif
+            endif
+         enddo
+         enddo
+
+         endif
+
       endif
 
       do k=1,ppiclf_bz
       do j=1,ppiclf_by
       do i=1,ppiclf_bx
          stride_lenv = ppiclf_grid_i(i,j,k)
-         idisp_pos   = ivtu_size + isize*(3   *stride_lenv + 1)
+         idisp_pos   = ivtu_size + isize*(3*stride_lenv + 1)
          icount_dum  = icount_pos(i,j,k)
          rpoint(1)   = ppiclf_grid_x(i,j,k)
          rpoint(2)   = ppiclf_grid_y(i,j,k)
-         rpoint(3)   = ppiclf_grid_z(i,j,k)
+         rpoint(3)   = 0.0
+         if (ppiclf_ndim .eq. 3)
+     >   rpoint(3)   = ppiclf_grid_z(i,j,k)
          call ppiclf_byte_set_view(idisp_pos,pth)
          call ppiclf_byte_write_mpi(rpoint,icount_dum,iorank,pth,ierr)
 
@@ -590,7 +616,6 @@ c     call ppiclf_byte_close_mpi(pth,ierr)
 
       ppiclf_ndxgpp1 = ppiclf_ndxgp + 1
       ppiclf_ndygpp1 = ppiclf_ndygp + 1
-      ppiclf_ndzgpp1 = ppiclf_ndzgp + 1
       ppiclf_ndxygpp1 = ppiclf_ndxgpp1*ppiclf_ndygpp1
 
 
@@ -614,23 +639,31 @@ c     call ppiclf_byte_close_mpi(pth,ierr)
       ! get which bin this processor holds
       ibin = modulo(ppiclf_nid,ppiclf_ndxgp)
       jbin = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
-      kbin = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
+      kbin = 0
+      if (ppiclf_ndim .eq. 3)
+     >kbin = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
 
       il = ibin
       ir = ibin+1
       jl = jbin
       jr = jbin+1
       kl = kbin
-      kr = kbin+1
+      kr = kbin
+      if (ppiclf_ndim .eq. 3) then
+         kl = kbin
+         kr = kbin+1
+      endif
 
       nbinpa = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
       nbinpb = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
       nbinpc = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
       nbinpd = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
-      nbinpe = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
-      nbinpf = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
-      nbinpg = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
-      nbinph = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
+      if (ppiclf_ndim .eq. 3) then
+         nbinpe = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+         nbinpf = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+         nbinpg = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
+         nbinph = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
+      endif
 
       stride_lenv(1) = 0
       stride_lenv(2) = 0
@@ -647,10 +680,12 @@ c     call ppiclf_byte_close_mpi(pth,ierr)
          stride_lenv(2) = nbinpb
          stride_lenv(3) = nbinpc
          stride_lenv(4) = nbinpd
-         stride_lenv(5) = nbinpe
-         stride_lenv(6) = nbinpf
-         stride_lenv(7) = nbinpg
-         stride_lenv(8) = nbinph
+         if (ppiclf_ndim .eq. 3) then
+            stride_lenv(5) = nbinpe
+            stride_lenv(6) = nbinpf
+            stride_lenv(7) = nbinpg
+            stride_lenv(8) = nbinph
+         endif
          
          stride_lenc    = ppiclf_nid
       endif
@@ -712,8 +747,8 @@ c     goto 1511
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3   ,iint)
-      iint = iint + 3   *isize*nvtx_total + isize
+      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3,iint)
+      iint = iint + 3*isize*nvtx_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
 ! ----
@@ -738,33 +773,51 @@ c     goto 1511
       do ii=0,ncll_total-1
          i = modulo(ii,ppiclf_ndxgp)
          j = modulo(ii/ppiclf_ndxgp,ppiclf_ndygp)
-         k = ii/(ppiclf_ndxgp*ppiclf_ndygp)
+         k = 0
+         if (ppiclf_ndim .eq. 3)
+     >   k = ii/(ppiclf_ndxgp*ppiclf_ndygp)
           
 c     do K=0,ppiclf_ndzgp-1
          kl = K
-         kr = K+1
+         kr = K
+         if (ppiclf_ndim .eq. 3) then
+            kl = K
+            kr = K+1
+         endif
 c     do J=0,ppiclf_ndygp-1
          jl = J
          jr = J+1
 c     do I=0,ppiclf_ndxgp-1
          il = I
          ir = I+1
-         npa = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
-         npb = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
-         npc = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
-         npd = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
-         npe = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
-         npf = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
-         npg = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
-         nph = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
-         write(vtu,'(I0,A)',advance='no')  npa, ' '
-         write(vtu,'(I0,A)',advance='no')  npb, ' '
-         write(vtu,'(I0,A)',advance='no')  npc, ' '
-         write(vtu,'(I0,A)',advance='no')  npd, ' '
-         write(vtu,'(I0,A)',advance='no')  npe, ' '
-         write(vtu,'(I0,A)',advance='no')  npf, ' '
-         write(vtu,'(I0,A)',advance='no')  npg, ' '
-         write(vtu,'(I0)'  ,advance='yes') nph
+
+         if (ppiclf_ndim .eq. 3) then
+            npa = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+            npb = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+            npc = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+            npd = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+            npe = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+            npf = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kr
+            npg = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
+            nph = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kr
+            write(vtu,'(I0,A)',advance='no')  npa, ' '
+            write(vtu,'(I0,A)',advance='no')  npb, ' '
+            write(vtu,'(I0,A)',advance='no')  npc, ' '
+            write(vtu,'(I0,A)',advance='no')  npd, ' '
+            write(vtu,'(I0,A)',advance='no')  npe, ' '
+            write(vtu,'(I0,A)',advance='no')  npf, ' '
+            write(vtu,'(I0,A)',advance='no')  npg, ' '
+            write(vtu,'(I0)'  ,advance='yes') nph
+         else
+            npa = il + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+            npb = ir + ppiclf_ndxgpp1*jl + ppiclf_ndxygpp1*kl
+            npc = il + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+            npd = ir + ppiclf_ndxgpp1*jr + ppiclf_ndxygpp1*kl
+            write(vtu,'(I0,A)',advance='no')  npa, ' '
+            write(vtu,'(I0,A)',advance='no')  npb, ' '
+            write(vtu,'(I0,A)',advance='no')  npc, ' '
+            write(vtu,'(I0)'  ,advance='yes') npd
+         endif
 c     enddo
 c     enddo
       enddo
@@ -775,8 +828,10 @@ c     enddo
       write(vtu,'(A)',advance='no') 'Name="offsets" '
       write(vtu,'(A)',advance='yes') 'format="ascii"> '
       ! write offsetts here
+      ioff_dum = 4
+      if (ppiclf_ndim .eq. 3) ioff_dum = 8
       do i=1,ncll_total
-         write(vtu,'(I0)',advance='yes') 8*i
+         write(vtu,'(I0)',advance='yes') ioff_dum*i
       enddo
       write(vtu,'(A)',advance='yes')  '    </DataArray>'
 
@@ -784,9 +839,11 @@ c     enddo
       write(vtu,'(A)',advance='no') 'type="UInt8" '
       write(vtu,'(A)',advance='no') 'Name="types" '
       write(vtu,'(A)',advance='yes') 'format="ascii"> '
+      itype = 8
+      if (ppiclf_ndim .eq. 3) itype = 11
       ! write types here
       do i=1,ncll_total
-         write(vtu,'(I0)',advance='yes') 11
+         write(vtu,'(I0)',advance='yes') itype
       enddo
       write(vtu,'(A)',advance='yes')  '    </DataArray>'
 
@@ -837,10 +894,12 @@ c1511 continue
      >    ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          icount_pos = 3
       endif
-      idisp_pos  = ivtu_size + isize*(3   *stride_lenv(1) + 1)
+      idisp_pos  = ivtu_size + isize*(3*stride_lenv(1) + 1)
       rpoint(1)  = ppiclf_binx(1,1)
       rpoint(2)  = ppiclf_biny(1,1)
-      rpoint(3)  = ppiclf_binz(1,1)
+      rpoint(3)  = 0.0
+      if (ppiclf_ndim .eq. 3)
+     >rpoint(3)  = ppiclf_binz(1,1)
       call ppiclf_byte_set_view(idisp_pos,pth)
       call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
 
@@ -966,6 +1025,53 @@ c1511 continue
       ! 2d
       else
 
+         ! point B
+         icount_pos = 0
+         idisp_pos  = ivtu_size + isize*(3*stride_lenv(2) + 1)
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (ibin .eq. ppiclf_ndxgp-1) then
+            icount_pos = 3
+            rpoint(1)  = ppiclf_binx(2,1)
+            rpoint(2)  = ppiclf_biny(1,1)
+            rpoint(3)  = 0.0
+         endif
+         endif
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         
+         ! point C
+         icount_pos = 0
+         idisp_pos  = ivtu_size + isize*(3*stride_lenv(3) + 1)
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (jbin .eq. ppiclf_ndygp-1) then
+            icount_pos = 3
+            rpoint(1)  = ppiclf_binx(1,1)
+            rpoint(2)  = ppiclf_biny(2,1)
+            rpoint(3)  = 0.0
+         endif
+         endif
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+         
+         ! point D
+         icount_pos = 0
+         idisp_pos  = ivtu_size + isize*(3*stride_lenv(4) + 1)
+         if (ppiclf_nid .le. 
+     >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
+         if (ibin .eq. ppiclf_ndxgp-1) then
+         if (jbin .eq. ppiclf_ndygp-1) then
+            icount_pos = 3
+            rpoint(1)  = ppiclf_binx(2,1)
+            rpoint(2)  = ppiclf_biny(2,1)
+            rpoint(3)  = 0.0
+         endif
+         endif
+         endif
+         call ppiclf_byte_set_view(idisp_pos,pth)
+         call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
+
       endif
 
       call ppiclf_byte_close_mpi(pth,ierr)
@@ -989,7 +1095,7 @@ c1511 continue
 
       !
       ! cell values
-      idisp_cll = ivtu_size + isize*(3  *(nvtx_total) 
+      idisp_cll = ivtu_size + isize*(3*(nvtx_total) 
      >     + 1*stride_lenc + 2)
       icount_cll = 0
       if (ppiclf_nid .le. ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
@@ -1049,7 +1155,9 @@ c1511 continue
 
       jx    = 1
       jy    = 2
-      jz    = 3
+      jz    = 1
+      if (ppiclf_ndim .eq. 3)
+     >jz    = 3
 
       if_sz = len(filein1)
       if (if_sz .lt. 3) then
@@ -1065,7 +1173,7 @@ c1511 continue
       isize = 4
 
       iadd = 0
-      if_pos = 3      *isize*npt_total
+      if_pos = 3         *isize*npt_total
       if_sln = PPICLF_LRS*isize*npt_total
       if_lrp = PPICLF_LRP*isize*npt_total
       if_lip = 3      *isize*npt_total
@@ -1080,13 +1188,13 @@ c1511 continue
          rout_pos(ic_pos) = ppiclf_y(jx,i)
          ic_pos = ic_pos + 1
          rout_pos(ic_pos) = ppiclf_y(jy,i)
-c        if (if3d) then
+         if (ppiclf_ndim .eq. 3) then
             ic_pos = ic_pos + 1
             rout_pos(ic_pos) = ppiclf_y(jz,i)
-c        else
-c           ic_pos = ic_pos + 1
-c           rout_pos(ic_pos) = 0.0
-c        endif
+         else
+            ic_pos = ic_pos + 1
+            rout_pos(ic_pos) = 0.0
+         endif
 
          do j=1,PPICLF_LRS
             ic_sln = ic_sln + 1
@@ -1183,8 +1291,8 @@ c        endif
 ! -----------
       iint = 0
       write(vtu,'(A)',advance='yes') '   <Points>'
-      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3   ,iint)
-      iint = iint + 3   *isize*npt_total + isize
+      call ppiclf_io_WriteDataArrayVTU(vtu,"Position",3,iint)
+      iint = iint + 3*isize*npt_total + isize
       write(vtu,'(A)',advance='yes') '   </Points>'
 
 ! ----
@@ -1242,15 +1350,18 @@ c        endif
 
       ! byte-displacements
       idisp_pos = ivtu_size + isize*(3*stride_len + 1)
-      idisp_sln = ivtu_size + isize*(3*npt_total + PPICLF_LRS*stride_len
+      idisp_sln = ivtu_size + isize*(3*npt_total 
+     >                      + PPICLF_LRS*stride_len
      >                      + 2)
-      idisp_lrp = ivtu_size + isize*(3*npt_total  + PPICLF_LRS*npt_total
+      idisp_lrp = ivtu_size + isize*(3*npt_total  
+     >                      + PPICLF_LRS*npt_total
      >                      + PPICLF_LRP*stride_len + 3)
-      idisp_lip = ivtu_size + isize*(3*npt_total  + PPICLF_LRS*npt_total
+      idisp_lip = ivtu_size + isize*(3*npt_total  
+     >                      + PPICLF_LRS*npt_total
      >                      + PPICLF_LRP*npt_total + 3*stride_len + 4 )
 
       ! how much to write
-      icount_pos = 3      *nxx
+      icount_pos = 3*nxx
       icount_sln = PPICLF_LRS*nxx
       icount_lrp = PPICLF_LRP*nxx
       icount_lip = 3      *nxx

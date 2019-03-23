@@ -101,7 +101,9 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
 
       ix = 1
       iy = 2
-      iz = 3
+      iz = 1
+      if (ppiclf_ndim.eq. 3)
+     >iz = 3
 
       iperiodicx = ppiclf_iperiodic(1)
       iperiodicy = ppiclf_iperiodic(2)
@@ -128,10 +130,12 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
          if (rduml .lt. ymin) ymin = rduml
          if (rdumr .gt. ymax) ymax = rdumr
 
-         rduml = ppiclf_y(iz,i) - ppiclf_d2chk(1)
-         rdumr = ppiclf_y(iz,i) + ppiclf_d2chk(1)
-         if (rduml .lt. zmin) zmin = rduml
-         if (rdumr .gt. zmax) zmax = rdumr
+         if (ppiclf_ndim .eq. 3) then
+            rduml = ppiclf_y(iz,i) - ppiclf_d2chk(1)
+            rdumr = ppiclf_y(iz,i) + ppiclf_d2chk(1)
+            if (rduml .lt. zmin) zmin = rduml
+            if (rdumr .gt. zmax) zmax = rdumr
+         endif
       enddo
 
       ppiclf_binb(1) = ppiclf_glmin(xmin,1)
@@ -517,13 +521,12 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       if (icalld .eq. 0) then 
 
          call ppiclf_prints('   *Begin mpi_comm_split$')
-          icolor = ppiclf_nid
-          call mpi_comm_split(ppiclf_comm,icolor,0,ppiclf_comm_nid,ierr)
+            call mpi_comm_split(ppiclf_comm
+     >                         ,ppiclf_nid
+     >                         ,0
+     >                         ,ppiclf_comm_nid
+     >                         ,ierr)
          call ppiclf_prints('    End mpi_comm_split$')
-
-c        call ppiclf_prints('   *Begin InitFindpts$')
-c           call ppiclf_comm_InitFindpts
-c        call ppiclf_prints('    End InitFindpts$')
       endif
 
 
@@ -586,7 +589,9 @@ c-----------------------------------------------------------------------
 
       ix = 1
       iy = 2
-      iz = 3
+      iz = 1
+      if (ppiclf_ndim.eq.3)
+     >iz = 3
 
       do i=1,ppiclf_npart
          ! check if particles are greater or less than binb bounds....
