@@ -15,18 +15,35 @@ c main code below
       call ppiclf_solve_InitParticle(1,2,0,npart,ppiclf_y) 
       call ppiclf_solve_InitNeighborBin(0.07)
 
-      call ppiclf_solve_InitWall(0.0,1.0,0.0,0.0,0.0,0.0)
-      call ppiclf_solve_InitWall(0.0,-1.0,0.0,0.0,1.0,0.0)
-c     call ppiclf_solve_InitWall(1.0,0.0,0.0,0.0,0.0,0.0)
-c     call ppiclf_solve_InitWall(-1.0,0.0,0.0,1.0,0.0,0.0)
-      call ppiclf_solve_InitPeriodicX(0.0,1.0)
+c     call ppiclf_solve_InitWall( (/0.0,1.0/),
+c    >                            (/0.0,0.0/),
+c    >                            (/0.9,0.0/),
+c    >                            (/0.0,0.0/), ! last 2 don't matter
+c    >                            (/0.0,0.0/)) ! last 2 don't matter
+c     call ppiclf_solve_InitWall( (/0.0,-1.0/),
+c    >                            (/0.0,1.0/),
+c    >                            (/0.1,1.0/),
+c    >                            (/0.0,0.0/), ! last 2 don't matter
+c    >                            (/0.0,0.0/)) ! last 2 don't matter
+c     call ppiclf_solve_InitWall( (/1.0,0.0/),
+c    >                            (/0.0,0.0/),
+c    >                            (/0.0,1.0/),
+c    >                            (/0.0,0.0/), ! last 2 don't matter
+c    >                            (/0.0,0.0/)) ! last 2 don't matter
+c     call ppiclf_solve_InitWall( (/-1.0,0.0/),
+c    >                            (/1.0,0.0/),
+c    >                            (/1.0,1.0/),
+c    >                            (/0.0,0.0/), ! last 2 don't matter
+c    >                            (/0.0,0.0/)) ! last 2 don't matter
 
-      call ppiclf_solve_InitGaussianFilter(0.1,1E-2,3)
+      call ppiclf_io_ReadWallVTK("myout.vtk")
+
+      call ppiclf_exittr("EXIT HERE",0.0,0)
 
       ! time loop
-      iostep = 100
+      iostep = 50
       nstep  = 10000
-      dt     = 1E-3
+      dt     = 8E-4
       do istep=1,nstep
          time = (istep-1)*dt
 

@@ -173,6 +173,7 @@
       integer i
 
       real ydum(PPICLF_LRS), rpropdum(PPICLF_LRP)
+      real A(3),B(3),C(3),D(3),AB(3),AC(3)
 
       i_iim = ppiclf_nb_r(1,i) - 1
       i_iip = ppiclf_nb_r(1,i) + 1
@@ -246,37 +247,125 @@
 
       enddo
 
+c     do j=1,ppiclf_nwall
+
+c        rnx = ppiclf_wall(1,j)
+c        rny = ppiclf_wall(2,j)
+c        rnz = 0.0
+c        if (ppiclf_ndim .eq. 3) rnz = ppiclf_wall(3,j)
+c        rpx = ppiclf_wall(4,j)
+c        rpy = ppiclf_wall(5,j)
+c        rpz = 0.0
+c        if (ppiclf_ndim .eq. 3) rpz = ppiclf_wall(6,j)
+
+c        rd    = -(rnx*rpx + rny*rpy + rnz*rpz)
+
+c        rdist = abs(rnx*ppiclf_cp_map(1,i)+rny*ppiclf_cp_map(2,i)
+c    >              +rnz*ppiclf_cp_map(3,i)+rd)
+c        rdist = rdist/sqrt(rnx**2 + rny**2 + rnz**2)
+
+c        ydum(1) = ppiclf_cp_map(1,i) - rdist*rnx
+c        ydum(2) = ppiclf_cp_map(2,i) - rdist*rny
+c        if (ppiclf_ndim .eq. 3) 
+c    >   ydum(3) = ppiclf_cp_map(3,i) - rdist*rnz
+
+c        j_ii = floor((ydum(1)-ppiclf_binb(1))/ppiclf_d2chk(3))
+c        j_jj = floor((ydum(2)-ppiclf_binb(3))/ppiclf_d2chk(3))
+c        j_kk = floor((ydum(3)-ppiclf_binb(5))/ppiclf_d2chk(3))
+
+c        if (j_ii .gt. i_iip .or. j_ii .lt. i_iim) cycle
+c        if (j_jj .gt. i_jjp .or. j_jj .lt. i_jjm) cycle
+c        if (ppiclf_ndim .eq. 3) then
+c        if (j_kk .gt. i_kkp .or. j_kk .lt. i_kkm) cycle
+c        endif
+
+c        jp = 0
+c        call ppiclf_user_EvalNearestNeighbor(i,jp,ppiclf_cp_map(1,i)
+c    >                                 ,ppiclf_cp_map(1+PPICLF_LRS,i)
+c    >                                 ,ydum
+c    >                                 ,rpropdum)
+
+c     enddo
+
+      istride = ppiclf_ndim
+
       do j=1,ppiclf_nwall
 
          rnx = ppiclf_wall(1,j)
          rny = ppiclf_wall(2,j)
          rnz = 0.0
          if (ppiclf_ndim .eq. 3) rnz = ppiclf_wall(3,j)
-         rpx = ppiclf_wall(4,j)
-         rpy = ppiclf_wall(5,j)
-         rpz = 0.0
-         if (ppiclf_ndim .eq. 3) rpz = ppiclf_wall(6,j)
 
-         rd    = -(rnx*rpx + rny*rpy + rnz*rpz)
+         a_sum = 0.0
+         kmax = 2
+         if (ppiclf_ndim .eq. 3) kmax = 4
+         do k=1,kmax ! quad
+            kp = k+1
+            if (kp .gt. kmax) kp = kp-kmax ! cycle
+            
+            kk   = istride + istride*(k-1)
+            kkp  = istride + istride*(kp-1)
+            rpx1 = ppiclf_wall(kk+1,j)
+            rpy1 = ppiclf_wall(kk+2,j)
+            rpz1 = 0.0
+            rpx2 = ppiclf_wall(kkp+1,j)
+            rpy2 = ppiclf_wall(kkp+2,j)
+            rpz2 = 0.0
 
-         rdist = abs(rnx*ppiclf_cp_map(1,i)+rny*ppiclf_cp_map(2,i)
-     >              +rnz*ppiclf_cp_map(3,i)+rd)
-         rdist = rdist/sqrt(rnx**2 + rny**2 + rnz**2)
+            if (ppiclf_ndim .eq. 3) then
+               rpz1 = ppiclf_wall(kk+3,j)
+               rpz2 = ppiclf_wall(kkp+3,j)
+            endif
 
-         ydum(1) = ppiclf_cp_map(1,i) - rdist*rnx
-         ydum(2) = ppiclf_cp_map(2,i) - rdist*rny
-         if (ppiclf_ndim .eq. 3) 
-     >   ydum(3) = ppiclf_cp_map(3,i) - rdist*rnz
+            rd   = -(rnx*rpx1 + rny*rpy1 + rnz*rpz1)
 
-         j_ii = floor((ydum(1)-ppiclf_binb(1))/ppiclf_d2chk(3))
-         j_jj = floor((ydum(2)-ppiclf_binb(3))/ppiclf_d2chk(3))
-         j_kk = floor((ydum(3)-ppiclf_binb(5))/ppiclf_d2chk(3))
+            rdist = abs(rnx*ppiclf_cp_map(1,i)+rny*ppiclf_cp_map(2,i)
+     >                 +rnz*ppiclf_cp_map(3,i)+rd)
+            rdist = rdist/sqrt(rnx**2 + rny**2 + rnz**2)
 
-         if (j_ii .gt. i_iip .or. j_ii .lt. i_iim) cycle
-         if (j_jj .gt. i_jjp .or. j_jj .lt. i_jjm) cycle
-         if (ppiclf_ndim .eq. 3) then
-         if (j_kk .gt. i_kkp .or. j_kk .lt. i_kkm) cycle
-         endif
+            ydum(1) = ppiclf_cp_map(1,i) - rdist*rnx
+            ydum(2) = ppiclf_cp_map(2,i) - rdist*rny
+            ydum(3) = 0.0
+
+            A(1) = ydum(1)
+            A(2) = ydum(2)
+            A(3) = 0.0
+
+            B(1) = rpx1
+            B(2) = rpy1
+            B(3) = 0.0
+
+            C(1) = rpx2
+            C(2) = rpy2
+            C(3) = 0.0
+
+            AB(1) = B(1) - A(1)
+            AB(2) = B(2) - A(2)
+            AB(3) = 0.0
+
+            AC(1) = C(1) - A(1)
+            AC(2) = C(2) - A(2)
+            AC(3) = 0.0
+
+            if (ppiclf_ndim .eq. 3) then
+               ydum(3) = ppiclf_cp_map(3,i) - rdist*rnz
+               A(3) = ydum(3)
+               B(3) = rpz1
+               C(3) = rpz2
+               AB(3) = B(3) - A(3)
+               AC(3) = C(3) - A(3)
+            endif
+
+            AB_DOT_AC = AB(1)*AC(1) + AB(2)*AC(2) + AB(3)*AC(3)
+            AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
+            AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
+            theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
+            tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+            a_sum = a_sum + tri_area
+         enddo
+
+         idum = ppiclf_ndim*(1+kmax)+1
+         if (a_sum .gt. ppiclf_wall(idum,j)) cycle
 
          jp = 0
          call ppiclf_user_EvalNearestNeighbor(i,jp,ppiclf_cp_map(1,i)
@@ -289,15 +378,15 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitWall(x,y,z,xp,yp,zp)
+      subroutine ppiclf_solve_InitWall(xn,xp1,xp2,xp3,xp4)
 #include "PPICLF"
 
-      real x
-      real y
-      real z
-      real xp
-      real yp
-      real zp
+      real xn(*)
+      real xp1(*)
+      real xp2(*)
+      real xp3(*)
+      real xp4(*)
+      real A(3),B(3),C(3),D(3),AB(3),AC(3)
 
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitWall$',0.,0)
@@ -311,12 +400,95 @@
      >call ppiclf_exittr('Increase LWALL in user file$'
      >                  ,0.,ppiclf_nwall)
 
-      ppiclf_wall(1,ppiclf_nwall) = x
-      ppiclf_wall(2,ppiclf_nwall) = y
-      ppiclf_wall(3,ppiclf_nwall) = z
-      ppiclf_wall(4,ppiclf_nwall) = xp
-      ppiclf_wall(5,ppiclf_nwall) = yp
-      ppiclf_wall(6,ppiclf_nwall) = zp
+      istride = ppiclf_ndim
+      a_sum = 0.0
+      kmax = 2
+      if (ppiclf_ndim .eq. 3) kmax = 4
+
+      if (ppiclf_ndim .eq. 3) then
+         ppiclf_wall(1,ppiclf_nwall) = xn(1)
+         ppiclf_wall(2,ppiclf_nwall) = xn(2)
+         ppiclf_wall(3,ppiclf_nwall) = xn(3)
+         ppiclf_wall(4,ppiclf_nwall) = xp1(1)
+         ppiclf_wall(5,ppiclf_nwall) = xp1(2)
+         ppiclf_wall(6,ppiclf_nwall) = xp1(3)
+         ppiclf_wall(7,ppiclf_nwall) = xp2(1)
+         ppiclf_wall(8,ppiclf_nwall) = xp2(2)
+         ppiclf_wall(9,ppiclf_nwall) = xp2(3)
+         ppiclf_wall(10,ppiclf_nwall) = xp3(1)
+         ppiclf_wall(11,ppiclf_nwall) = xp3(2)
+         ppiclf_wall(12,ppiclf_nwall) = xp3(3)
+         ppiclf_wall(13,ppiclf_nwall) = xp4(1)
+         ppiclf_wall(14,ppiclf_nwall) = xp4(2)
+         ppiclf_wall(15,ppiclf_nwall) = xp4(3)
+
+         ! compoute area:
+         A(1) = (xp1(1) + xp2(1) + xp3(1) + xp4(1))/4.0
+         A(2) = (xp1(2) + xp2(2) + xp3(2) + xp4(2))/4.0
+         A(3) = (xp1(3) + xp2(3) + xp3(3) + xp4(3))/4.0
+      elseif (ppiclf_ndim .eq. 2) then
+         ppiclf_wall(1,ppiclf_nwall) = xn(1)
+         ppiclf_wall(2,ppiclf_nwall) = xn(2)
+         ppiclf_wall(3,ppiclf_nwall) = xp1(1)
+         ppiclf_wall(4,ppiclf_nwall) = xp1(2)
+         ppiclf_wall(5,ppiclf_nwall) = xp2(1)
+         ppiclf_wall(6,ppiclf_nwall) = xp2(2)
+
+         ! compoute area:
+         A(1) = (xp1(1) + xp2(1))/2.0
+         A(2) = (xp1(2) + xp2(2))/2.0
+         A(3) = 0.0
+      endif
+
+      do k=1,kmax ! quad
+         kp = k+1
+         if (kp .gt. kmax) kp = kp-kmax ! cycle
+         
+         kk   = istride + istride*(k-1)
+         kkp  = istride + istride*(kp-1)
+         rpx1 = ppiclf_wall(kk+1,ppiclf_nwall)
+         rpy1 = ppiclf_wall(kk+2,ppiclf_nwall)
+         rpz1 = 0.0
+         rpx2 = ppiclf_wall(kkp+1,ppiclf_nwall)
+         rpy2 = ppiclf_wall(kkp+2,ppiclf_nwall)
+         rpz2 = 0.0
+
+         B(1) = rpx1
+         B(2) = rpy1
+         B(3) = 0.0
+        
+         C(1) = rpx2
+         C(2) = rpy2
+         C(3) = 0.0
+        
+         AB(1) = B(1) - A(1)
+         AB(2) = B(2) - A(2)
+         AB(3) = 0.0
+        
+         AC(1) = C(1) - A(1)
+         AC(2) = C(2) - A(2)
+         AC(3) = 0.0
+
+         if (ppiclf_ndim .eq. 3) then
+             rpz1 = ppiclf_wall(kk+3,ppiclf_nwall)
+             rpz2 = ppiclf_wall(kkp+3,ppiclf_nwall)
+             B(3) = rpz1
+             C(3) = rpz2
+             AB(3) = B(3) - A(3)
+             AC(3) = C(3) - A(3)
+         endif
+        
+         AB_DOT_AC = AB(1)*AC(1) + AB(2)*AC(2) + AB(3)*AC(3)
+         AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
+         AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
+         theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
+         tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+         a_sum = a_sum + tri_area
+      enddo
+      
+      idum = ppiclf_ndim*(1+kmax)+1
+      ppiclf_wall(idum,ppiclf_nwall) = a_sum
+
 
       return
       end

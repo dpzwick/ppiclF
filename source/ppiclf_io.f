@@ -1,4 +1,71 @@
 !-----------------------------------------------------------------------
+      subroutine ppiclf_io_ReadWallVTK(filein1)
+#include "PPICLF"
+      include 'mpif.h'
+
+      real points(3,2*PPICLF_LWALL)
+
+      character (len = *)  filein1
+
+      integer fid
+
+      real xx(5)
+      character*1000 text,text1
+      character*10 word
+
+      !! THROW ERRORS
+
+      if (ppiclf_nid .eq. 0) then
+
+      fid = 432
+
+      open (unit=fid,file=filein1,action="read")
+      
+      nmax = 10000
+      do i=1,nmax
+         read (fid,"(A)",iostat=ierr) text
+         if (ierr /= 0) then
+            read (fid,*)
+            cycle
+         endif
+         read (text,*) word
+         if (word == "POINTS") then
+            backspace (fid)
+            read (fid,*,iostat=ierr) text,npoints,text1
+
+            do j=1,npoints
+               read(fid,*) points(1,j),points(2,j),points(3,j)
+            enddo
+
+            read (fid,*,iostat=ierr) text,nwalls,ndata
+
+            do j=1,nwalls
+               if (ppiclf_ndim .eq. 2) then
+                  read(fid,*) inum, i1,i2
+    
+                   ! place in wall array, get normals
+               elseif (ppiclf_ndim .eq. 3) then
+                  read(fid,*) inum, i1,i2,i3,i4
+
+                   ! place in wall array, get normals
+               endif
+            enddo
+             
+            exit
+         endif
+      enddo
+
+      close(fid)
+
+      endif
+
+      ! BCAST!!
+
+      call mpi_barrier(ppiclf_comm,ierr)
+
+      return
+      end
+!-----------------------------------------------------------------------
       subroutine ppiclf_io_WriteSubBinVTU(filein1)
 #include "PPICLF"
       include 'mpif.h'

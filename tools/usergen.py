@@ -38,6 +38,7 @@ for i in range(lrp):
 yes = {'yes','y', 'ye', ''}
 no = {'no','n'}
 
+lrp_int = 0
 lrp_pro = 0
 lex = 2
 ley = 2
@@ -53,7 +54,6 @@ if choiceo in yes:
       lez = int(raw_input("Number of overlap points in z [" + str(lez) + "]: ") or lez)
    lee = int(raw_input("Max number of overlap cells per rank [" + str(lee) + "]: ") or lee)
 
-   lrp_int = 0
    lrp_int = int(raw_input("Number of interpolated fields [" + str(lrp_int) + "]: ") or lrp_int)
    lrp_int = max(lrp_int,0)
 
