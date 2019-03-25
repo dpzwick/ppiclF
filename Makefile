@@ -66,6 +66,8 @@ makeThird: $(SOURCE_ROOT_GSLIB)/install
 
 clean:
 	@rm -r $(SOURCE_ROOT_PPICLF)/*.o         \
+	       $(INSTALL_LOCATION)/tools/*.f     \
+	       $(INSTALL_LOCATION)/tools/*.h     \
 	       $(SOURCE_ROOT_PPICLF)/libppiclF.a \
 	       $(SOURCE_ROOT_GSLIB)/gslib        \
 	       $(SOURCE_ROOT_GSLIB)/lib          \
