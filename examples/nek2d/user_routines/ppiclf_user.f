@@ -6,6 +6,12 @@
       real    y(*)
       real    ydot(*)
 
+C interpolate fields
+      call ppiclf_solve_InitInterp
+         call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
+      call ppiclf_solve_FinalizeInterp
+C interpolate fields
+
 c evaluate ydot
       do i=1,ppiclf_npart
          ! striding solution y vector

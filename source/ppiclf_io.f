@@ -1134,6 +1134,7 @@ c1511 continue
       character (len = *)  filein1
       character*3 filein
       character*12 vtufile
+      character*6  prostr
 
       integer icalld1
       save    icalld1
@@ -1173,10 +1174,10 @@ c1511 continue
       isize = 4
 
       iadd = 0
-      if_pos = 3         *isize*npt_total
-      if_sln = PPICLF_LRS*isize*npt_total
-      if_lrp = PPICLF_LRP*isize*npt_total
-      if_lip = 3      *isize*npt_total
+      if_pos = 3*isize*npt_total
+      if_sln = 1*isize*npt_total
+      if_lrp = 1*isize*npt_total
+      if_lip = 1*isize*npt_total
 
       ic_pos = iadd
       ic_sln = iadd
@@ -1195,24 +1196,24 @@ c1511 continue
             ic_pos = ic_pos + 1
             rout_pos(ic_pos) = 0.0
          endif
-
-         do j=1,PPICLF_LRS
-            ic_sln = ic_sln + 1
-            rout_sln(ic_sln) = ppiclf_y(j,i)
-         enddo
-
-         do j=1,PPICLF_LRP
-            ic_lrp = ic_lrp + 1
-            rout_lrp(ic_lrp) = ppiclf_rprop(j,i)
-         enddo
-
+      enddo
+      do j=1,PPICLF_LRS
+      do i=1,nxx
+         ic_sln = ic_sln + 1
+         rout_sln(ic_sln) = ppiclf_y(j,i)
+      enddo
+      enddo
+      do j=1,PPICLF_LRP
+      do i=1,nxx
+         ic_lrp = ic_lrp + 1
+         rout_lrp(ic_lrp) = ppiclf_rprop(j,i)
+      enddo
+      enddo
+      do j=5,7
+      do i=1,nxx
          ic_lip = ic_lip + 1
-         rout_lip(ic_lip) = ppiclf_iprop(5,i)
-         ic_lip = ic_lip + 1
-         rout_lip(ic_lip) = ppiclf_iprop(6,i)
-         ic_lip = ic_lip + 1
-         rout_lip(ic_lip) = ppiclf_iprop(7,i)
-
+         rout_lip(ic_lip) = ppiclf_iprop(j,i)
+      enddo
       enddo
 
 ! --------------------------------------------------
@@ -1300,15 +1301,34 @@ c1511 continue
 ! ----
       write(vtu,'(A)',advance='yes') '   <PointData>'
 
-      call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-y',PPICLF_LRS,iint)
-      iint = iint + PPICLF_LRS*isize*npt_total + isize
 
-      call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-rprop',PPICLF_LRP
-     >                                ,iint)
-      iint = iint + PPICLF_LRP*isize*npt_total + isize
+      do ie=1,PPICLF_LRS
+         write(prostr,'(A1,I2.2,A3)') "y",ie,"   "
+         call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
+         iint = iint + 1*isize*npt_total + isize
+      enddo
 
-      call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-iprop',3,iint)
-      iint = iint + 3*isize*npt_total + isize
+      do ie=1,PPICLF_LRP
+         write(prostr,'(A4,I2.2)') "rprop",ie
+         call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
+         iint = iint + 1*isize*npt_total + isize
+      enddo
+
+      do ie=1,3
+         write(prostr,'(A3,I2.2,A1)') "tag",ie," "
+         call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
+         iint = iint + 1*isize*npt_total + isize
+      enddo
+
+c     call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-y',PPICLF_LRS,iint)
+c     iint = iint + PPICLF_LRS*isize*npt_total + isize
+
+c     call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-rprop',PPICLF_LRP
+c    >                                ,iint)
+c     iint = iint + PPICLF_LRP*isize*npt_total + isize
+
+c     call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-iprop',3,iint)
+c     iint = iint + 3*isize*npt_total + isize
 
       write(vtu,'(A)',advance='yes') '   </PointData> '
 
@@ -1350,21 +1370,12 @@ c1511 continue
 
       ! byte-displacements
       idisp_pos = ivtu_size + isize*(3*stride_len + 1)
-      idisp_sln = ivtu_size + isize*(3*npt_total 
-     >                      + PPICLF_LRS*stride_len
-     >                      + 2)
-      idisp_lrp = ivtu_size + isize*(3*npt_total  
-     >                      + PPICLF_LRS*npt_total
-     >                      + PPICLF_LRP*stride_len + 3)
-      idisp_lip = ivtu_size + isize*(3*npt_total  
-     >                      + PPICLF_LRS*npt_total
-     >                      + PPICLF_LRP*npt_total + 3*stride_len + 4 )
 
       ! how much to write
       icount_pos = 3*nxx
-      icount_sln = PPICLF_LRS*nxx
-      icount_lrp = PPICLF_LRP*nxx
-      icount_lip = 3      *nxx
+      icount_sln = 1*nxx
+      icount_lrp = 1*nxx
+      icount_lip = 1*nxx
 
       iorank = -1
 
@@ -1386,51 +1397,85 @@ c1511 continue
 
       call mpi_barrier(ppiclf_comm,ierr)
 
-      ! integer write
-      if (ppiclf_nid .eq. 0) then
-        open(unit=vtu,file=vtufile,access='stream',form="unformatted"
-     >      ,position='append')
-        write(vtu) if_sln
-        close(vtu)
-      endif
+      do i=1,PPICLF_LRS
+         idisp_sln = ivtu_size + isize*(3*npt_total 
+     >                         + (i-1)*npt_total
+     >                         + (1)*stride_len
+     >                         + 1 + i)
 
-      call mpi_barrier(ppiclf_comm,ierr)
+         ! integer write
+         if (ppiclf_nid .eq. 0) then
+           open(unit=vtu,file=vtufile,access='stream',form="unformatted"
+     >         ,position='append')
+           write(vtu) if_sln
+           close(vtu)
+         endif
+   
+         call mpi_barrier(ppiclf_comm,ierr)
 
-      ! write
-      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
-      call ppiclf_byte_set_view(idisp_sln,pth)
-      call ppiclf_byte_write_mpi(rout_sln,icount_sln,iorank,pth,ierr)
-      call ppiclf_byte_close_mpi(pth,ierr)
+         j = (i-1)*ppiclf_npart + 1
+   
+         ! write
+         call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+         call ppiclf_byte_set_view(idisp_sln,pth)
+         call ppiclf_byte_write_mpi(rout_sln(j),icount_sln,iorank,pth
+     >                             ,ierr)
+         call ppiclf_byte_close_mpi(pth,ierr)
+      enddo
 
-      ! integer write
-      if (ppiclf_nid .eq. 0) then
-        open(unit=vtu,file=vtufile,access='stream',form="unformatted"
-     >      ,position='append')
-        write(vtu) if_lrp
-        close(vtu)
-      endif
+      do i=1,PPICLF_LRP
+         idisp_lrp = ivtu_size + isize*(3*npt_total  
+     >                         + PPICLF_LRS*npt_total
+     >                         + (i-1)*npt_total
+     >                         + (1)*stride_len
+     >                         + 1 + PPICLF_LRS + i)
 
-      call mpi_barrier(ppiclf_comm,ierr)
+         ! integer write
+         if (ppiclf_nid .eq. 0) then
+           open(unit=vtu,file=vtufile,access='stream',form="unformatted"
+     >         ,position='append')
+           write(vtu) if_lrp
+           close(vtu)
+         endif
+   
+         call mpi_barrier(ppiclf_comm,ierr)
 
-      ! write
-      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
-      call ppiclf_byte_set_view(idisp_lrp,pth)
-      call ppiclf_byte_write_mpi(rout_lrp,icount_lrp,iorank,pth,ierr)
-      call ppiclf_byte_close_mpi(pth,ierr)
+         j = (i-1)*ppiclf_npart + 1
+   
+         ! write
+         call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+         call ppiclf_byte_set_view(idisp_lrp,pth)
+         call ppiclf_byte_write_mpi(rout_lrp(j),icount_lrp,iorank,pth
+     >                             ,ierr)
+         call ppiclf_byte_close_mpi(pth,ierr)
+      enddo
 
-      ! integer write
-      if (ppiclf_nid .eq. 0) then
-        open(unit=vtu,file=vtufile,access='stream',form="unformatted"
-     >      ,position='append')
-        write(vtu) if_lip
-        close(vtu)
-      endif
+      do i=1,3
+         idisp_lip = ivtu_size + isize*(3*npt_total  
+     >                         + PPICLF_LRS*npt_total
+     >                         + PPICLF_LRP*npt_total
+     >                         + (i-1)*npt_total
+     >                         + (1)*stride_len
+     >                         + 1 + PPICLF_LRS + PPICLF_LRP + i)
+         ! integer write
+         if (ppiclf_nid .eq. 0) then
+           open(unit=vtu,file=vtufile,access='stream',form="unformatted"
+     >         ,position='append')
+           write(vtu) if_lip
+           close(vtu)
+         endif
 
-      ! write
-      call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
-      call ppiclf_byte_set_view(idisp_lip,pth)
-      call ppiclf_byte_write_mpi(rout_lip,icount_lip,iorank,pth,ierr)
-      call ppiclf_byte_close_mpi(pth,ierr)
+         call mpi_barrier(ppiclf_comm,ierr)
+
+         j = (i-1)*ppiclf_npart + 1
+   
+         ! write
+         call ppiclf_byte_open_mpi(vtufile,pth,.false.,ierr)
+         call ppiclf_byte_set_view(idisp_lip,pth)
+         call ppiclf_byte_write_mpi(rout_lip(j),icount_lip,iorank,pth
+     >                             ,ierr)
+         call ppiclf_byte_close_mpi(pth,ierr)
+      enddo
 
       if (ppiclf_nid .eq. 0) then
       vtu=867+ppiclf_nid

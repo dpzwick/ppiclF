@@ -580,6 +580,9 @@ c----------------------------------------------------------------------
 
       if (.not.ppiclf_overlap)
      >call ppiclf_exittr('Cannot interpolate unless overlap grid$',0.,0)
+      if (PPICLF_INTERP .eq. 0)
+     >call ppiclf_exittr(
+     >     'No specified interpolated fields, set PPICLF_LRP_INT$',0.,0)
 
       PPICLF_INT_ICNT = 0
 

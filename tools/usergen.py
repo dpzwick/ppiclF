@@ -8,8 +8,8 @@ lpart = int(raw_input("Max number of particles per rank [" + str(lpart) + "]: ")
 ndim = 1
 ndim = int(raw_input("Problem dimensions [" + str(ndim) + "]: ") or ndim)
 
-lrs = 1
-lrs = int(raw_input("Number of equations solved for each particle [" + str(lrs) + "]: ") or lrs)
+lrs = ndim
+lrs = int(raw_input("Number of equations solved for each particle (>= ndim) [" + str(lrs) + "]: ") or lrs)
 
 lrs_name = []
 for i in range(lrs):

@@ -520,6 +520,8 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
 
       if (icalld .eq. 0) then 
 
+         icalld = icalld + 1
+
          call ppiclf_prints('   *Begin mpi_comm_split$')
             call mpi_comm_split(ppiclf_comm
      >                         ,ppiclf_nid
@@ -527,11 +529,7 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
      >                         ,ppiclf_comm_nid
      >                         ,ierr)
          call ppiclf_prints('    End mpi_comm_split$')
-      endif
 
-
-      if (icalld .eq. 0) then 
-         icalld = icalld + 1
          call ppiclf_io_OutputDiagGrid
       endif
 

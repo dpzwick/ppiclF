@@ -23,19 +23,23 @@ C>    -User never touches
 #define PPICLF_LPART_GP 26*PPICLF_LPART
 
 C> Number of fields being interpolated
-#ifdef PPICLF_LRP_INT
+#ifndef PPICLF_INTERP
 #define PPICLF_INTERP 1
-#else
-#define PPICLF_LRP_INT 1
+#endif
+#ifndef PPICLF_LRP_INT
+#undef PPICLF_INTERP
 #define PPICLF_INTERP 0
+#define PPICLF_LRP_INT 1
 #endif
 
 C> Number of fields being projected
-#ifdef PPICLF_LRP_PRO
+#ifndef PPICLF_PROJECT
 #define PPICLF_PROJECT 1
-#else
-#define PPICLF_LRP_PRO 1
+#endif
+#ifndef PPICLF_LRP_PRO
+#undef PPICLF_PROJECT
 #define PPICLF_PROJECT 0
+#define PPICLF_LRP_PRO 1
 #endif
 
 C> Max number of real ghost particle properties
