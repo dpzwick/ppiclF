@@ -64,8 +64,8 @@ c
       real yj(*)     ! PPICLF_LRS
       real rpropj(*) ! PPICLF_LRP
 
-      rksp  = 10000.0
-      erest = 0.3
+      rksp  = 1000000.0
+      erest = 0.1
       
       rpi2  =  9.869604401089358
 

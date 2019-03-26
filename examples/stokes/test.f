@@ -15,35 +15,39 @@ c main code below
       call ppiclf_solve_InitParticle(1,3,0,npart,ppiclf_y) 
       call ppiclf_solve_InitNeighborBin(0.07)
 
-      call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
-     >                            (/0.93,0.0,0.0/),
-     >                            (/0.93,0.0,1.0/),
-     >                            (/0.0,0.0,1.0/))
-      call ppiclf_solve_InitWall( (/0.0,1.0,0.0/),
-     >                            (/1.0,1.0,0.0/),
-     >                            (/1.0,1.0,1.0/),
-     >                            (/0.0,1.0,1.0/))
-      call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
-     >                            (/0.0,1.0,0.0/),
-     >                            (/0.0,1.0,1.0/),
-     >                            (/0.0,0.0,1.0/))
-      call ppiclf_solve_InitWall( (/1.0,0.0,0.0/),
-     >                            (/1.0,1.0,0.0/),
-     >                            (/1.0,1.0,1.0/),
-     >                            (/1.0,0.0,1.0/))
-      call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
-     >                            (/1.0,0.0,0.0/),
-     >                            (/1.0,1.0,0.0/),
-     >                            (/0.0,1.0,0.0/))
-      call ppiclf_solve_InitWall( (/0.0,0.0,1.0/),
-     >                            (/1.0,0.0,1.0/),
-     >                            (/1.0,1.0,1.0/),
-     >                            (/0.0,1.0,1.0/))
+c     call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
+c    >                            (/0.93,0.0,0.0/),
+c    >                            (/0.93,0.0,1.0/),
+c    >                            (/0.0,0.0,1.0/))
+c     call ppiclf_solve_InitWall( (/0.0,1.0,0.0/),
+c    >                            (/1.0,1.0,0.0/),
+c    >                            (/1.0,1.0,1.0/),
+c    >                            (/0.0,1.0,1.0/))
+c     call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
+c    >                            (/0.0,1.0,0.0/),
+c    >                            (/0.0,1.0,1.0/),
+c    >                            (/0.0,0.0,1.0/))
+c     call ppiclf_solve_InitWall( (/1.0,0.0,0.0/),
+c    >                            (/1.0,1.0,0.0/),
+c    >                            (/1.0,1.0,1.0/),
+c    >                            (/1.0,0.0,1.0/))
+c     call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
+c    >                            (/1.0,0.0,0.0/),
+c    >                            (/1.0,1.0,0.0/),
+c    >                            (/0.0,1.0,0.0/))
+c     call ppiclf_solve_InitWall( (/0.0,0.0,1.0/),
+c    >                            (/1.0,0.0,1.0/),
+c    >                            (/1.0,1.0,1.0/),
+c    >                            (/0.0,1.0,1.0/))
+
+      call ppiclf_io_ReadWallVTK("ppiclf_mesh3d.vtk")
+      call ppiclf_solve_InitPeriodicZ(0.0,1.0)
+
 
       ! time loop
-      iostep = 50
+      iostep = 25
       nstep  = 10000
-      dt     = 1E-4
+      dt     = 2E-4
       do istep=1,nstep
          time = (istep-1)*dt
          call ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
@@ -63,7 +67,7 @@ c main code below
       real      ran2
       external  ran2
 
-      npart   = 300       ! particles/rank to distribute
+      npart   = 30       ! particles/rank to distribute
       dp      = 0.07   ! particle diameter
       rhop    = 3307.327 ! particle density
       rdum    = ran2(-1-ppiclf_nid) ! initialize random number generator
@@ -73,7 +77,7 @@ c main code below
          ! set initial conditions for solution
          j = PPICLF_LRS*(i-1)
          y(PPICLF_JX +j) = 0.1 + 0.8*ran2(2)
-         y(PPICLF_JY +j) = 0.1 + 0.8*ran2(2)
+         y(PPICLF_JY +j) = 0.75 + 0.2*ran2(2)
          y(PPICLF_JZ +j) = 0.1 + 0.8*ran2(2)
          y(PPICLF_JVX+j) = 0.0
          y(PPICLF_JVY+j) = 0.0

@@ -295,8 +295,8 @@ c     enddo
          rny  = ppiclf_wall_n(2,j)
          rnz  = 0.0
          area = ppiclf_wall_n(3,j)
-         rpx1 = ppiclf_cp_map(1,j)
-         rpy1 = ppiclf_cp_map(2,j)
+         rpx1 = ppiclf_cp_map(1,i)
+         rpy1 = ppiclf_cp_map(2,i)
          rpz1 = 0.0
          rpx2 = ppiclf_wall_c(1,j)
          rpy2 = ppiclf_wall_c(2,j)
@@ -307,13 +307,13 @@ c     enddo
          if (ppiclf_ndim .eq. 3) then
             rnz  = ppiclf_wall_n(3,j)
             area = ppiclf_wall_n(4,j)
-            rpz1 = ppiclf_cp_map(3,j)
+            rpz1 = ppiclf_cp_map(3,i)
             rpz2 = ppiclf_wall_c(3,j)
             rpz2 = rpz2 - rpz1
          endif
     
          rflip = rnx*rpx2 + rny*rpy2 + rnz*rpz2
-         if (rflip .gt. 0) then
+         if (rflip .gt. 0.0) then
             rnx = -1.*rnx
             rny = -1.*rny
             rnz = -1.*rnz
@@ -378,13 +378,16 @@ c     enddo
                C(3) = rpz2
                AB(3) = B(3) - A(3)
                AC(3) = C(3) - A(3)
-            endif
 
-            AB_DOT_AC = AB(1)*AC(1) + AB(2)*AC(2) + AB(3)*AC(3)
-            AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
-            AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
-            theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
-            tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+               AB_DOT_AC = AB(1)*AC(1) + AB(2)*AC(2) + AB(3)*AC(3)
+               AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
+               AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
+               theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
+               tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+            elseif (ppiclf_ndim .eq. 2) then
+               AB_MAG = sqrt(AB(1)**2 + AB(2)**2)
+               tri_area = AB_MAG
+            endif
             a_sum = a_sum + tri_area
          enddo
 
@@ -492,19 +495,20 @@ c     enddo
              C(3) = rpz2
              AB(3) = B(3) - A(3)
              AC(3) = C(3) - A(3)
-         endif
         
-         AB_DOT_AC = AB(1)*AC(1) + AB(2)*AC(2) + AB(3)*AC(3)
-         AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
-         AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
-         theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
-         tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+             AB_DOT_AC = AB(1)*AC(1) + AB(2)*AC(2) + AB(3)*AC(3)
+             AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
+             AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
+             theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
+             tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+         elseif (ppiclf_ndim .eq. 2) then
+             AB_MAG = sqrt(AB(1)**2 + AB(2)**2)
+             tri_area = AB_MAG
+         endif
          a_sum = a_sum + tri_area
       enddo
       
       ppiclf_wall_n(ppiclf_ndim+1,ppiclf_nwall) = a_sum
-
-      write(6,*) AB_MAG, AC_MAG
 
       ! wall normal:
 
@@ -517,8 +521,15 @@ c     enddo
          rise = rise/rmag
          run  = run/rmag
          
-         ppiclf_wall_n(1,ppiclf_nwall) = -rise
-         ppiclf_wall_n(2,ppiclf_nwall) = run
+         ppiclf_wall_n(1,ppiclf_nwall) = rise
+         ppiclf_wall_n(2,ppiclf_nwall) = -run
+
+         write(6,*) ppiclf_wall_c(1,ppiclf_nwall),
+     >              ppiclf_wall_c(2,ppiclf_nwall),
+     >              ppiclf_wall_c(3,ppiclf_nwall),
+     >              ppiclf_wall_c(4,ppiclf_nwall),
+     >              ppiclf_wall_n(1,ppiclf_nwall),
+     >              ppiclf_wall_n(2,ppiclf_nwall)
       elseif (ppiclf_ndim .eq. 3) then
 
          k  = 1

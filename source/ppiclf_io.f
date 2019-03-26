@@ -3,7 +3,7 @@
 #include "PPICLF"
       include 'mpif.h'
 
-      real points(3,2*PPICLF_LWALL)
+      real points(3,4*PPICLF_LWALL)
 
       character (len = *)  filein1
 
@@ -23,54 +23,45 @@
       
       nmax = 10000
       do i=1,nmax
-         read (fid,"(A)",iostat=ierr) text
-         if (ierr /= 0) then
-            read (fid,*)
-            cycle
-         endif
-         read (text,*) word
-         if (word == "POINTS") then
-            backspace (fid)
-            read (fid,*,iostat=ierr) text,npoints,text1
+         read (fid,*,iostat=ierr) text,npoints
 
-            do j=1,npoints
-               read(fid,*) points(1,j),points(2,j),points(3,j)
-            enddo
+         do j=1,npoints
+            read(fid,*) points(1,j),points(2,j),points(3,j)
+         enddo
 
-            read (fid,*,iostat=ierr) text,nwalls,ndata
+         read (fid,*,iostat=ierr) text,nwalls
 
-            do j=1,nwalls
-               if (ppiclf_ndim .eq. 2) then
-                  read(fid,*) inum, i1,i2
+         do j=1,nwalls
+            if (ppiclf_ndim .eq. 2) then
+               read(fid,*) i1,i2
     
-                  i1 = i1 + 1
-                  i2 = i2 + 1
+               i1 = i1 + 1
+               i2 = i2 + 1
 
-                  call ppiclf_solve_InitWall( 
-     >                    (/points(1,i1),points(2,i1)/),
-     >                    (/points(1,i2),points(2,i2)/),
-     >                    (/points(1,i1),points(2,i1)/),  ! dummy 2d
-     >                    (/points(1,i2),points(2,i2)/) ) ! dummy 2d
+               call ppiclf_solve_InitWall( 
+     >                 (/points(1,i1),points(2,i1)/),
+     >                 (/points(1,i2),points(2,i2)/),
+     >                 (/points(1,i1),points(2,i1)/),  ! dummy 2d
+     >                 (/points(1,i2),points(2,i2)/) ) ! dummy 2d
     
-               elseif (ppiclf_ndim .eq. 3) then
-                  read(fid,*) inum, i1,i2,i3,i4
+            elseif (ppiclf_ndim .eq. 3) then
+               read(fid,*) i1,i2,i3,i4
 
-                  i1 = i1 + 1
-                  i2 = i2 + 1
-                  i3 = i3 + 1
-                  i4 = i4 + 1
+               i1 = i1 + 1
+               i2 = i2 + 1
+               i3 = i3 + 1
+               i4 = i4 + 1
     
-                  call ppiclf_solve_InitWall( 
-     >                    (/points(1,i1),points(2,i1),points(3,i1)/),
-     >                    (/points(1,i2),points(2,i2),points(3,i2)/),
-     >                    (/points(1,i3),points(2,i3),points(3,i3)/),  
-     >                    (/points(1,i4),points(2,i4),points(3,i4)/) ) 
+               call ppiclf_solve_InitWall( 
+     >                 (/points(1,i1),points(2,i1),points(3,i1)/),
+     >                 (/points(1,i2),points(2,i2),points(3,i2)/),
+     >                 (/points(1,i3),points(2,i3),points(3,i3)/),  
+     >                 (/points(1,i4),points(2,i4),points(3,i4)/) ) 
 
-               endif
-            enddo
-             
-            exit
-         endif
+            endif
+         enddo
+            
+         exit
       enddo
 
       close(fid)

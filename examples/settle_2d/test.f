@@ -35,9 +35,9 @@ c    >                            (/0.0,0.0/)) ! last 2 don't matter
       call ppiclf_io_ReadWallVTK("test2.vtk")
 
       ! time loop
-      iostep = 50
+      iostep = 20
       nstep  = 10000
-      dt     = 8E-4
+      dt     = 1E-4
       do istep=1,nstep
          time = (istep-1)*dt
 
@@ -58,8 +58,9 @@ c    >                            (/0.0,0.0/)) ! last 2 don't matter
       real      ran2
       external  ran2
 
-      npart   = 20       ! particles/rank to distribute
-      dp      = 0.07   ! particle diameter
+      npart   = 100       ! particles/rank to distribute
+      dp_min  = 0.02   ! particle diameter max
+      dp_max  = 0.07   ! particle diameter max
       rhop    = 3307.327 ! particle density
       rdum    = ran2(-1-ppiclf_nid) ! initialize random number generator
       PI      = 4.D0*DATAN(1.D0)
@@ -74,7 +75,7 @@ c    >                            (/0.0,0.0/)) ! last 2 don't matter
       
          ! set some initial particle properties
          ppiclf_rprop(PPICLF_R_JRHOP,i) = rhop
-         ppiclf_rprop(PPICLF_R_JDP  ,i) = dp
+         ppiclf_rprop(PPICLF_R_JDP  ,i) = dp_min+(dp_max-dp_min)*ran2(2)
          ppiclf_rprop(PPICLF_R_JVOLP,i) = pi/6.0
      >                                  *ppiclf_rprop(PPICLF_R_JDP,i)**3
       enddo
