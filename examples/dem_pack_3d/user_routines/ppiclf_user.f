@@ -6,32 +6,14 @@
       real    y(*)
       real    ydot(*)
 
-C interpolate fields
-c     call ppiclf_solve_InitInterp
-c        call ppiclf_solve_InterpField(PPICLF_R_JPHIP,ppiclf_pro_fld)
-c        call ppiclf_solve_InterpField(PPICLF_R_JUY  , vy_e    )
-c        call ppiclf_solve_InterpField(PPICLF_R_JUZ  , vz_e    )
-c     call ppiclf_solve_FinalizeInterp
-C interpolate fields
-
 c evaluate ydot
       do i=1,ppiclf_npart
          ! striding solution y vector
          j = PPICLF_LRS*(i-1)
 
-         ! fluid viscosity
-         rmu   = 1.8E-5
-
          ! particle mass
          rmass = ppiclf_rprop(PPICLF_R_JVOLP,i)
      >          *ppiclf_rprop(PPICLF_R_JRHOP,i)
-
-         ! Stokes drag force
-         rdum  = 18.0*rmu/ppiclf_rprop(PPICLF_R_JDP,i)**2
-         rdum  = rdum*ppiclf_rprop(PPICLF_R_JVOLP,i)
-         fqsx  = rdum*(ppiclf_rprop(PPICLF_R_JUX,i) - y(PPICLF_JVX+j))
-         fqsy  = rdum*(ppiclf_rprop(PPICLF_R_JUY,i) - y(PPICLF_JVY+j))
-         fqsz  = rdum*(ppiclf_rprop(PPICLF_R_JUZ,i) - y(PPICLF_JVZ+j))
 
          ! Gravity
          fbx  = 0.0
@@ -48,9 +30,9 @@ c evaluate ydot
          ydot(PPICLF_JX +j) = y(PPICLF_JVX +j)
          ydot(PPICLF_JY +j) = y(PPICLF_JVY +j)
          ydot(PPICLF_JZ +j) = y(PPICLF_JVZ +j)
-         ydot(PPICLF_JVX+j) = (fqsx+fbx+fcx)/rmass
-         ydot(PPICLF_JVY+j) = (fqsy+fby+fcy)/rmass
-         ydot(PPICLF_JVZ+j) = (fqsz+fbz+fcz)/rmass
+         ydot(PPICLF_JVX+j) = (fbx+fcx)/rmass
+         ydot(PPICLF_JVY+j) = (fby+fcy)/rmass
+         ydot(PPICLF_JVZ+j) = (fbz+fcz)/rmass
       enddo 
 c evaluate ydot
 
@@ -66,8 +48,6 @@ c
       real ydot(*)
       real ydotc(*)
       real rprop(*)
-
-      map(PPICLF_P_JPHIP) = rprop(PPICLF_R_JVOLP)   ! particle volume
 
       return
       end
@@ -85,11 +65,14 @@ c
       real yj(*)     ! PPICLF_LRS
       real rpropj(*) ! PPICLF_LRP
 
-      rksp  = 10000.0
-      erest = 0.3
+      ! For user implemented collision model
+      real ksp,erest
+      common /external_user_collsion/ ksp,erest
+      ! For user implemented collision model
       
       rpi2  =  9.869604401089358
 
+      ! other particles
       if (j .ne. 0) then
          rthresh  = 0.5*(rpropi(PPICLF_R_JDP) + rpropj(PPICLF_R_JDP))
          
@@ -105,7 +88,7 @@ c
          rm2 = rpropj(PPICLF_R_JRHOP)*rpropj(PPICLF_R_JVOLP)
          
          rmult = 1./sqrt(1./rm1+1./rm2)
-         eta   = 2.*sqrt(rksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
+         eta   = 2.*sqrt(ksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
          
          rbot = 1./rdiff
          rn_12x = rxdiff*rbot
@@ -119,8 +102,8 @@ c
      >           (yj(PPICLF_JVZ)-yi(PPICLF_JVZ))*rn_12z
 
          rv12_mage = rv12_mag*eta
-         rksp_max = rksp*rdelta12
-         rnmag = -rksp_max - rv12_mage
+         rksp_max  = ksp*rdelta12
+         rnmag     = -rksp_max - rv12_mage
          
          PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)
      >                              + rnmag*rn_12x
@@ -129,6 +112,7 @@ c
          PPICLF_YDOTC(PPICLF_JVZ,i) = PPICLF_YDOTC(PPICLF_JVZ,i)
      >                              + rnmag*rn_12z
 
+      ! boundaries
       elseif (j .eq. 0) then
 
          rthresh  = 0.5*rpropi(PPICLF_R_JDP)
@@ -144,7 +128,7 @@ c
          rm1 = rpropi(PPICLF_R_JRHOP)*rpropi(PPICLF_R_JVOLP)
          
          rmult = sqrt(rm1)
-         eta   = 2.*sqrt(rksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
+         eta   = 2.*sqrt(ksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
          
          rbot = 1./rdiff
          rn_12x = rxdiff*rbot
@@ -158,8 +142,8 @@ c
      >                    yi(PPICLF_JVZ)*rn_12z)
 
          rv12_mage = rv12_mag*eta
-         rksp_max = rksp*rdelta12
-         rnmag = -rksp_max - rv12_mage
+         rksp_max  = ksp*rdelta12
+         rnmag     = -rksp_max - rv12_mage
          
          PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)
      >                              + rnmag*rn_12x

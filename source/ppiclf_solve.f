@@ -65,7 +65,7 @@
       integer  iendian
       integer  npart
 
-      if (imethod .le. 0 .or. imethod .ge. 2)
+      if (imethod .le. 0 .or. imethod .ge. 3)
      >   call ppiclf_exittr('Invalid integration method$',0.0,imethod)
       if (ndim .le. 1 .or. ndim .ge. 4)
      >   call ppiclf_exittr('Invalid problem dimension$',0.0,ndim)
@@ -554,12 +554,6 @@ c     enddo
          ppiclf_wall_n(1,ppiclf_nwall) = rise
          ppiclf_wall_n(2,ppiclf_nwall) = -run
 
-         write(6,*) ppiclf_wall_c(1,ppiclf_nwall),
-     >              ppiclf_wall_c(2,ppiclf_nwall),
-     >              ppiclf_wall_c(3,ppiclf_nwall),
-     >              ppiclf_wall_c(4,ppiclf_nwall),
-     >              ppiclf_wall_n(1,ppiclf_nwall),
-     >              ppiclf_wall_n(2,ppiclf_nwall)
       elseif (ppiclf_ndim .eq. 3) then
 
          k  = 1
@@ -767,6 +761,8 @@ c----------------------------------------------------------------------
       ! integerate in time
       if (ppiclf_imethod .eq. 1) 
      >   call ppiclf_solve_IntegrateRK3(time,y,ydot)
+      if (ppiclf_imethod .eq. 2) 
+     >   call ppiclf_solve_IntegrateFwdEuler(time,y,ydot)
 
       ! output files
       if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0) then
@@ -809,13 +805,37 @@ c----------------------------------------------------------------------
          ! evaluate ydot
          call ppiclf_solve_SetYdot(time_,y,ydot)
 
-         ndum = PPICLF_NPART*PPICLF_LRS
          ! rk3 integrate
          do i=1,ndum
             y(i) =  ppiclf_rk3coef(1,istage)*ppiclf_y1 (i)
      >            + ppiclf_rk3coef(2,istage)*y      (i)
      >            + ppiclf_rk3coef(3,istage)*ydot   (i)
          enddo
+      enddo
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine ppiclf_solve_IntegrateFwdEuler(time_,y,ydot)
+#include "PPICLF"
+
+      real time_
+      real y(*)
+      real ydot(*)
+
+      ndum = PPICLF_NPART*PPICLF_LRS
+
+      ! save stage 1 solution
+      do i=1,ndum
+         ppiclf_y1(i) = y(i)
+      enddo
+
+      ! evaluate ydot
+      call ppiclf_solve_SetYdot(time_,y,ydot)
+
+      ! rk3 integrate
+      do i=1,ndum
+         y(i) = y(i) + ppiclf_dt*ydot(i) 
       enddo
 
       return
