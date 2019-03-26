@@ -178,47 +178,58 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       d2new(2) = ppiclf_d2chk(1)
       d2new(3) = ppiclf_d2chk(1)
 
-      ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
-      ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
-      ppiclf_ndzgp = 1
-      if (ppiclf_ndim .gt. 2) ppiclf_ndzgp = 
-     >                floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
 
+      ! first check if suggested direction 
+      j = -1
+      nmax = 1E8
+      if (ppiclf_nbin_dir(1) .eq. 1) j = 0
+      if (ppiclf_nbin_dir(2) .eq. 1) j = 1
+      if (ppiclf_nbin_dir(3) .eq. 1) j = 2
 
-      ! dz comment 3/9/2019
-c     if (ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp .gt. ppiclf_np .or. 
-c    >    ppiclf_filter .lt. 0.0) then
-         nmax = 1000
-         d2chk_save = ppiclf_d2chk(1)
-         
+      if (j .ge. 0) then
          do i=1,nmax
-         do j=0,ndim-1
-            ifac(j+1) = 1 + i
+            ifac(j+1) = ifac(j+1) + 1
             d2new(j+1) = (ppiclf_binb(2+2*j) - ppiclf_binb(1+2*j))/
      >                    ifac(j+1)
             nbb = ifac(1)*ifac(2)*ifac(3)
-
+           
             if( nbb .gt. ppiclf_np ) then
-            ! dz comment 3/9/2019
-c           if( ppiclf_lfilt .or.
-c    >          ppiclf_filter .lt. 0.0 .and.d2new(j+1).lt.d2chk_save)
-c    >          then
-               icount(j+1) = icount(j+1) + 1
-               ifac(j+1) = ifac(j+1) - icount(j+1)
+               icount(j+1) = 1
+               ifac(j+1) = ifac(j+1) - 1
                d2new(j+1) = (ppiclf_binb(2+2*j) -ppiclf_binb(1+2*j))/
      >                       ifac(j+1)
-c           endif
             endif
-         enddo
-            if (icount(1) .gt. 0) then
-            if (icount(2) .gt. 0) then
-            if (icount(3) .gt. 0 .or. ndim .lt. 3) then
+            if (icount(j+1) .gt. 0) then
                exit
             endif
-            endif
+         enddo
+      endif
+
+
+      ! then do every direction
+      do i=1,nmax
+         do j=0,ndim-1
+            ifac(j+1) = ifac(j+1) + 1
+            d2new(j+1) = (ppiclf_binb(2+2*j) - ppiclf_binb(1+2*j))/
+     >                    ifac(j+1)
+            nbb = ifac(1)*ifac(2)*ifac(3)
+         
+            if( nbb .gt. ppiclf_np ) then
+c              icount(j+1) = icount(j+1) + 1
+               icount(j+1) = 1
+               ifac(j+1) = ifac(j+1) - 1
+               d2new(j+1) = (ppiclf_binb(2+2*j) -ppiclf_binb(1+2*j))/
+     >                       ifac(j+1)
             endif
          enddo
-c     endif
+         if (icount(1) .gt. 0) then
+         if (icount(2) .gt. 0) then
+         if (icount(3) .gt. 0 .or. ndim .lt. 3) then
+            exit
+         endif
+         endif
+         endif
+      enddo
 
 ! -------------------------------------------------------
 c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES

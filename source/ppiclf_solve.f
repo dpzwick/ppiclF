@@ -114,6 +114,10 @@
       ppiclf_d2chk(2) = 0
       ppiclf_d2chk(3) = 0
 
+      ppiclf_nbin_dir(1) = 0
+      ppiclf_nbin_dir(2) = 0
+      ppiclf_nbin_dir(3) = 0
+
       ppiclf_nwall = 0
 
       PPICLF_INT_ICNT = -1
@@ -135,6 +139,32 @@
       ppiclf_lsubsubbin = .true.
 
       ppiclf_d2chk(3) = rwidth
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitSuggestedDir(str)
+#include "PPICLF"
+
+      character*1 str
+
+      if (.not.PPICLF_LCOMM)
+     >call ppiclf_exittr('InitMPI must be before InitSuggestedDir$'
+     >                   ,0.,0)
+      if (.not.PPICLF_LINIT)
+     >call ppiclf_exittr('InitParticle must be before InitSuggestedDir$'
+     >                  ,0.,0)
+
+      if (str == 'x' .or. str == 'X') then 
+         ppiclf_nbin_dir(1) = 1
+      elseif (str == 'y' .or. str == 'Y') then 
+        ppiclf_nbin_dir(2) = 1
+      elseif (str == 'z' .or. str == 'Z') then 
+        if (ppiclf_ndim .lt. 3)
+     >  call ppiclf_exittr('Dim must be 3 to use InitSuggestedDir on z$'
+     >                   ,0.,ppiclf_ndim)
+        ppiclf_nbin_dir(3) = 1
+      endif
 
       return
       end

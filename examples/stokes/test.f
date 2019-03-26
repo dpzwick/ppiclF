@@ -42,6 +42,8 @@ c    >                            (/0.0,1.0,1.0/))
 
       call ppiclf_io_ReadWallVTK("ppiclf_mesh3d.vtk")
       call ppiclf_solve_InitPeriodicZ(0.0,1.0)
+      call ppiclf_solve_InitSuggestedDir('z')
+      call ppiclf_solve_InitGaussianFilter(0.1,0.01,2)
 
 
       ! time loop
