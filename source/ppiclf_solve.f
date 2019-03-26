@@ -291,10 +291,34 @@ c     enddo
 
       do j=1,ppiclf_nwall
 
-         rnx = ppiclf_wall(1,j)
-         rny = ppiclf_wall(2,j)
-         rnz = 0.0
-         if (ppiclf_ndim .eq. 3) rnz = ppiclf_wall(3,j)
+         rnx  = ppiclf_wall_n(1,j)
+         rny  = ppiclf_wall_n(2,j)
+         rnz  = 0.0
+         area = ppiclf_wall_n(3,j)
+         rpx1 = ppiclf_cp_map(1,j)
+         rpy1 = ppiclf_cp_map(2,j)
+         rpz1 = 0.0
+         rpx2 = ppiclf_wall_c(1,j)
+         rpy2 = ppiclf_wall_c(2,j)
+         rpz2 = 0.0
+         rpx2 = rpx2 - rpx1
+         rpy2 = rpy2 - rpy1
+
+         if (ppiclf_ndim .eq. 3) then
+            rnz  = ppiclf_wall_n(3,j)
+            area = ppiclf_wall_n(4,j)
+            rpz1 = ppiclf_cp_map(3,j)
+            rpz2 = ppiclf_wall_c(3,j)
+            rpz2 = rpz2 - rpz1
+         endif
+    
+         rflip = rnx*rpx2 + rny*rpy2 + rnz*rpz2
+         if (rflip .gt. 0) then
+            rnx = -1.*rnx
+            rny = -1.*rny
+            rnz = -1.*rnz
+         endif
+         
 
          a_sum = 0.0
          kmax = 2
@@ -303,18 +327,18 @@ c     enddo
             kp = k+1
             if (kp .gt. kmax) kp = kp-kmax ! cycle
             
-            kk   = istride + istride*(k-1)
-            kkp  = istride + istride*(kp-1)
-            rpx1 = ppiclf_wall(kk+1,j)
-            rpy1 = ppiclf_wall(kk+2,j)
+            kk   = istride*(k-1)
+            kkp  = istride*(kp-1)
+            rpx1 = ppiclf_wall_c(kk+1,j)
+            rpy1 = ppiclf_wall_c(kk+2,j)
             rpz1 = 0.0
-            rpx2 = ppiclf_wall(kkp+1,j)
-            rpy2 = ppiclf_wall(kkp+2,j)
+            rpx2 = ppiclf_wall_c(kkp+1,j)
+            rpy2 = ppiclf_wall_c(kkp+2,j)
             rpz2 = 0.0
 
             if (ppiclf_ndim .eq. 3) then
-               rpz1 = ppiclf_wall(kk+3,j)
-               rpz2 = ppiclf_wall(kkp+3,j)
+               rpz1 = ppiclf_wall_c(kk+3,j)
+               rpz2 = ppiclf_wall_c(kkp+3,j)
             endif
 
             rd   = -(rnx*rpx1 + rny*rpy1 + rnz*rpz1)
@@ -364,8 +388,7 @@ c     enddo
             a_sum = a_sum + tri_area
          enddo
 
-         idum = ppiclf_ndim*(1+kmax)+1
-         if (a_sum .gt. ppiclf_wall(idum,j)) cycle
+         if (a_sum .gt. area) cycle
 
          jp = 0
          call ppiclf_user_EvalNearestNeighbor(i,jp,ppiclf_cp_map(1,i)
@@ -378,10 +401,9 @@ c     enddo
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitWall(xn,xp1,xp2,xp3,xp4)
+      subroutine ppiclf_solve_InitWall(xp1,xp2,xp3,xp4)
 #include "PPICLF"
 
-      real xn(*)
       real xp1(*)
       real xp2(*)
       real xp3(*)
@@ -406,51 +428,45 @@ c     enddo
       if (ppiclf_ndim .eq. 3) kmax = 4
 
       if (ppiclf_ndim .eq. 3) then
-         ppiclf_wall(1,ppiclf_nwall) = xn(1)
-         ppiclf_wall(2,ppiclf_nwall) = xn(2)
-         ppiclf_wall(3,ppiclf_nwall) = xn(3)
-         ppiclf_wall(4,ppiclf_nwall) = xp1(1)
-         ppiclf_wall(5,ppiclf_nwall) = xp1(2)
-         ppiclf_wall(6,ppiclf_nwall) = xp1(3)
-         ppiclf_wall(7,ppiclf_nwall) = xp2(1)
-         ppiclf_wall(8,ppiclf_nwall) = xp2(2)
-         ppiclf_wall(9,ppiclf_nwall) = xp2(3)
-         ppiclf_wall(10,ppiclf_nwall) = xp3(1)
-         ppiclf_wall(11,ppiclf_nwall) = xp3(2)
-         ppiclf_wall(12,ppiclf_nwall) = xp3(3)
-         ppiclf_wall(13,ppiclf_nwall) = xp4(1)
-         ppiclf_wall(14,ppiclf_nwall) = xp4(2)
-         ppiclf_wall(15,ppiclf_nwall) = xp4(3)
+         ppiclf_wall_c(1,ppiclf_nwall) = xp1(1)
+         ppiclf_wall_c(2,ppiclf_nwall) = xp1(2)
+         ppiclf_wall_c(3,ppiclf_nwall) = xp1(3)
+         ppiclf_wall_c(4,ppiclf_nwall) = xp2(1)
+         ppiclf_wall_c(5,ppiclf_nwall) = xp2(2)
+         ppiclf_wall_c(6,ppiclf_nwall) = xp2(3)
+         ppiclf_wall_c(7,ppiclf_nwall) = xp3(1)
+         ppiclf_wall_c(8,ppiclf_nwall) = xp3(2)
+         ppiclf_wall_c(9,ppiclf_nwall) = xp3(3)
+         ppiclf_wall_c(10,ppiclf_nwall) = xp4(1)
+         ppiclf_wall_c(11,ppiclf_nwall) = xp4(2)
+         ppiclf_wall_c(12,ppiclf_nwall) = xp4(3)
 
-         ! compoute area:
          A(1) = (xp1(1) + xp2(1) + xp3(1) + xp4(1))/4.0
          A(2) = (xp1(2) + xp2(2) + xp3(2) + xp4(2))/4.0
          A(3) = (xp1(3) + xp2(3) + xp3(3) + xp4(3))/4.0
       elseif (ppiclf_ndim .eq. 2) then
-         ppiclf_wall(1,ppiclf_nwall) = xn(1)
-         ppiclf_wall(2,ppiclf_nwall) = xn(2)
-         ppiclf_wall(3,ppiclf_nwall) = xp1(1)
-         ppiclf_wall(4,ppiclf_nwall) = xp1(2)
-         ppiclf_wall(5,ppiclf_nwall) = xp2(1)
-         ppiclf_wall(6,ppiclf_nwall) = xp2(2)
+         ppiclf_wall_c(1,ppiclf_nwall) = xp1(1)
+         ppiclf_wall_c(2,ppiclf_nwall) = xp1(2)
+         ppiclf_wall_c(3,ppiclf_nwall) = xp2(1)
+         ppiclf_wall_c(4,ppiclf_nwall) = xp2(2)
 
-         ! compoute area:
          A(1) = (xp1(1) + xp2(1))/2.0
          A(2) = (xp1(2) + xp2(2))/2.0
          A(3) = 0.0
       endif
 
+      ! compoute area:
       do k=1,kmax ! quad
          kp = k+1
          if (kp .gt. kmax) kp = kp-kmax ! cycle
          
-         kk   = istride + istride*(k-1)
-         kkp  = istride + istride*(kp-1)
-         rpx1 = ppiclf_wall(kk+1,ppiclf_nwall)
-         rpy1 = ppiclf_wall(kk+2,ppiclf_nwall)
+         kk   = istride*(k-1)
+         kkp  = istride*(kp-1)
+         rpx1 = ppiclf_wall_c(kk+1,ppiclf_nwall)
+         rpy1 = ppiclf_wall_c(kk+2,ppiclf_nwall)
          rpz1 = 0.0
-         rpx2 = ppiclf_wall(kkp+1,ppiclf_nwall)
-         rpy2 = ppiclf_wall(kkp+2,ppiclf_nwall)
+         rpx2 = ppiclf_wall_c(kkp+1,ppiclf_nwall)
+         rpy2 = ppiclf_wall_c(kkp+2,ppiclf_nwall)
          rpz2 = 0.0
 
          B(1) = rpx1
@@ -459,7 +475,7 @@ c     enddo
         
          C(1) = rpx2
          C(2) = rpy2
-         C(3) = 0.0
+         C(3) = 0.
         
          AB(1) = B(1) - A(1)
          AB(2) = B(2) - A(2)
@@ -470,8 +486,8 @@ c     enddo
          AC(3) = 0.0
 
          if (ppiclf_ndim .eq. 3) then
-             rpz1 = ppiclf_wall(kk+3,ppiclf_nwall)
-             rpz2 = ppiclf_wall(kkp+3,ppiclf_nwall)
+             rpz1 = ppiclf_wall_c(kk+3,ppiclf_nwall)
+             rpz2 = ppiclf_wall_c(kkp+3,ppiclf_nwall)
              B(3) = rpz1
              C(3) = rpz2
              AB(3) = B(3) - A(3)
@@ -486,9 +502,67 @@ c     enddo
          a_sum = a_sum + tri_area
       enddo
       
-      idum = ppiclf_ndim*(1+kmax)+1
-      ppiclf_wall(idum,ppiclf_nwall) = a_sum
+      ppiclf_wall_n(ppiclf_ndim+1,ppiclf_nwall) = a_sum
 
+      write(6,*) AB_MAG, AC_MAG
+
+      ! wall normal:
+
+      if (ppiclf_ndim .eq. 2) then
+
+         rise = xp2(2) - xp1(2)
+         run  = xp2(1) - xp1(1)
+
+         rmag = sqrt(rise**2 + run**2)
+         rise = rise/rmag
+         run  = run/rmag
+         
+         ppiclf_wall_n(1,ppiclf_nwall) = -rise
+         ppiclf_wall_n(2,ppiclf_nwall) = run
+      elseif (ppiclf_ndim .eq. 3) then
+
+         k  = 1
+         kk = istride*(k-1)
+         rpx1 = ppiclf_wall_c(kk+1,ppiclf_nwall)
+         rpy1 = ppiclf_wall_c(kk+2,ppiclf_nwall)
+         rpz1 = ppiclf_wall_c(kk+3,ppiclf_nwall)
+         
+         k  = 2
+         kk = istride*(k-1)
+         rpx2 = ppiclf_wall_c(kk+1,ppiclf_nwall)
+         rpy2 = ppiclf_wall_c(kk+2,ppiclf_nwall)
+         rpz2 = ppiclf_wall_c(kk+3,ppiclf_nwall)
+         
+         k  = 3
+         kk = istride*(k-1)
+         rpx3 = ppiclf_wall_c(kk+1,ppiclf_nwall)
+         rpy3 = ppiclf_wall_c(kk+2,ppiclf_nwall)
+         rpz3 = ppiclf_wall_c(kk+3,ppiclf_nwall)
+    
+         A(1) = rpx2 - rpx1
+         A(2) = rpy2 - rpy1
+         A(3) = rpz2 - rpz1
+
+         B(1) = rpx3 - rpx2
+         B(2) = rpy3 - rpy2
+         B(3) = rpz3 - rpz2
+
+         ppiclf_wall_n(1,ppiclf_nwall) = A(2)*B(3) - A(3)*B(2)
+         ppiclf_wall_n(2,ppiclf_nwall) = A(3)*B(1) - A(1)*B(3)
+         ppiclf_wall_n(3,ppiclf_nwall) = A(1)*B(2) - A(2)*B(1)
+
+         rmag = sqrt(ppiclf_wall_n(1,ppiclf_nwall)**2 +
+     >               ppiclf_wall_n(2,ppiclf_nwall)**2 +
+     >               ppiclf_wall_n(3,ppiclf_nwall)**2)
+
+         ppiclf_wall_n(1,ppiclf_nwall) = ppiclf_wall_n(1,ppiclf_nwall)
+     >                                  /rmag
+         ppiclf_wall_n(2,ppiclf_nwall) = ppiclf_wall_n(2,ppiclf_nwall)
+     >                                  /rmag
+         ppiclf_wall_n(3,ppiclf_nwall) = ppiclf_wall_n(3,ppiclf_nwall)
+     >                                  /rmag
+
+      endif
 
       return
       end

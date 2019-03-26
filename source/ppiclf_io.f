@@ -43,11 +43,29 @@
                if (ppiclf_ndim .eq. 2) then
                   read(fid,*) inum, i1,i2
     
-                   ! place in wall array, get normals
+                  i1 = i1 + 1
+                  i2 = i2 + 1
+
+                  call ppiclf_solve_InitWall( 
+     >                    (/points(1,i1),points(2,i1)/),
+     >                    (/points(1,i2),points(2,i2)/),
+     >                    (/points(1,i1),points(2,i1)/),  ! dummy 2d
+     >                    (/points(1,i2),points(2,i2)/) ) ! dummy 2d
+    
                elseif (ppiclf_ndim .eq. 3) then
                   read(fid,*) inum, i1,i2,i3,i4
 
-                   ! place in wall array, get normals
+                  i1 = i1 + 1
+                  i2 = i2 + 1
+                  i3 = i3 + 1
+                  i4 = i4 + 1
+    
+                  call ppiclf_solve_InitWall( 
+     >                    (/points(1,i1),points(2,i1),points(3,i1)/),
+     >                    (/points(1,i2),points(2,i2),points(3,i2)/),
+     >                    (/points(1,i3),points(2,i3),points(3,i3)/),  
+     >                    (/points(1,i4),points(2,i4),points(3,i4)/) ) 
+
                endif
             enddo
              
@@ -59,7 +77,11 @@
 
       endif
 
-      ! BCAST!!
+      isize  = 4
+      irsize = 8
+      call ppiclf_bcast(ppiclf_nwall, isize)
+      call ppiclf_bcast(ppiclf_wall_c,12*ppiclf_nwall*irsize)
+      call ppiclf_bcast(ppiclf_wall_n,4*ppiclf_nwall*irsize)
 
       call mpi_barrier(ppiclf_comm,ierr)
 
@@ -1370,7 +1392,7 @@ c1511 continue
 
 
       do ie=1,PPICLF_LRS
-         write(prostr,'(A1,I2.2,A3)') "y",ie,"   "
+         write(prostr,'(A1,I2.2)') "y",ie
          call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
          iint = iint + 1*isize*npt_total + isize
       enddo
@@ -1382,7 +1404,7 @@ c1511 continue
       enddo
 
       do ie=1,3
-         write(prostr,'(A3,I2.2,A1)') "tag",ie," "
+         write(prostr,'(A3,I2.2)') "tag",ie
          call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
          iint = iint + 1*isize*npt_total + isize
       enddo

@@ -15,33 +15,27 @@ c main code below
       call ppiclf_solve_InitParticle(1,3,0,npart,ppiclf_y) 
       call ppiclf_solve_InitNeighborBin(0.07)
 
-      call ppiclf_solve_InitWall( (/0.0,1.0,0.0/),
-     >                            (/0.0,0.0,0.0/),
-     >                            (/0.9,0.0,0.0/),
-     >                            (/0.9,0.0,1.0/),
+      call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
+     >                            (/0.93,0.0,0.0/),
+     >                            (/0.93,0.0,1.0/),
      >                            (/0.0,0.0,1.0/))
-      call ppiclf_solve_InitWall( (/0.0,-1.0,0.0/),
-     >                            (/0.0,1.0,0.0/),
-     >                            (/0.9,1.0,0.0/),
-     >                            (/0.9,1.0,1.0/),
+      call ppiclf_solve_InitWall( (/0.0,1.0,0.0/),
+     >                            (/1.0,1.0,0.0/),
+     >                            (/1.0,1.0,1.0/),
      >                            (/0.0,1.0,1.0/))
-      call ppiclf_solve_InitWall( (/1.0,0.0,0.0/),
-     >                            (/0.0,0.0,0.0/),
+      call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
      >                            (/0.0,1.0,0.0/),
      >                            (/0.0,1.0,1.0/),
      >                            (/0.0,0.0,1.0/))
-      call ppiclf_solve_InitWall( (/-1.0,0.0,0.0/),
-     >                            (/1.0,0.0,0.0/),
+      call ppiclf_solve_InitWall( (/1.0,0.0,0.0/),
      >                            (/1.0,1.0,0.0/),
      >                            (/1.0,1.0,1.0/),
      >                            (/1.0,0.0,1.0/))
-      call ppiclf_solve_InitWall( (/0.0,0.0,1.0/),
-     >                            (/0.0,0.0,0.0/),
+      call ppiclf_solve_InitWall( (/0.0,0.0,0.0/),
      >                            (/1.0,0.0,0.0/),
      >                            (/1.0,1.0,0.0/),
      >                            (/0.0,1.0,0.0/))
-      call ppiclf_solve_InitWall( (/0.0,0.0,-1.0/),
-     >                            (/0.0,0.0,1.0/),
+      call ppiclf_solve_InitWall( (/0.0,0.0,1.0/),
      >                            (/1.0,0.0,1.0/),
      >                            (/1.0,1.0,1.0/),
      >                            (/0.0,1.0,1.0/))
@@ -49,7 +43,7 @@ c main code below
       ! time loop
       iostep = 50
       nstep  = 10000
-      dt     = 8E-4
+      dt     = 1E-4
       do istep=1,nstep
          time = (istep-1)*dt
          call ppiclf_solve_IntegrateParticle(istep,iostep,dt,time

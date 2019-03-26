@@ -15,30 +15,24 @@ c main code below
       call ppiclf_solve_InitParticle(1,2,0,npart,ppiclf_y) 
       call ppiclf_solve_InitNeighborBin(0.07)
 
-c     call ppiclf_solve_InitWall( (/0.0,1.0/),
-c    >                            (/0.0,0.0/),
+c     call ppiclf_solve_InitWall( (/0.0,0.0/),
 c    >                            (/0.9,0.0/),
 c    >                            (/0.0,0.0/), ! last 2 don't matter
 c    >                            (/0.0,0.0/)) ! last 2 don't matter
-c     call ppiclf_solve_InitWall( (/0.0,-1.0/),
-c    >                            (/0.0,1.0/),
+c     call ppiclf_solve_InitWall( (/0.0,1.0/),
 c    >                            (/0.1,1.0/),
 c    >                            (/0.0,0.0/), ! last 2 don't matter
 c    >                            (/0.0,0.0/)) ! last 2 don't matter
-c     call ppiclf_solve_InitWall( (/1.0,0.0/),
-c    >                            (/0.0,0.0/),
+c     call ppiclf_solve_InitWall( (/0.0,0.0/),
 c    >                            (/0.0,1.0/),
 c    >                            (/0.0,0.0/), ! last 2 don't matter
 c    >                            (/0.0,0.0/)) ! last 2 don't matter
-c     call ppiclf_solve_InitWall( (/-1.0,0.0/),
-c    >                            (/1.0,0.0/),
+c     call ppiclf_solve_InitWall( (/1.0,0.0/),
 c    >                            (/1.0,1.0/),
 c    >                            (/0.0,0.0/), ! last 2 don't matter
 c    >                            (/0.0,0.0/)) ! last 2 don't matter
 
-      call ppiclf_io_ReadWallVTK("myout.vtk")
-
-      call ppiclf_exittr("EXIT HERE",0.0,0)
+      call ppiclf_io_ReadWallVTK("test2.vtk")
 
       ! time loop
       iostep = 50
