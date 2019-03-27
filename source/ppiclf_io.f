@@ -41,22 +41,19 @@
                call ppiclf_solve_InitWall( 
      >                 (/points(1,i1),points(2,i1)/),
      >                 (/points(1,i2),points(2,i2)/),
-     >                 (/points(1,i1),points(2,i1)/),  ! dummy 2d
-     >                 (/points(1,i2),points(2,i2)/) ) ! dummy 2d
+     >                 (/points(1,i1),points(2,i1)/))  ! dummy 2d
     
             elseif (ppiclf_ndim .eq. 3) then
-               read(fid,*) i1,i2,i3,i4
+               read(fid,*) i1,i2,i3
 
                i1 = i1 + 1
                i2 = i2 + 1
                i3 = i3 + 1
-               i4 = i4 + 1
     
                call ppiclf_solve_InitWall( 
      >                 (/points(1,i1),points(2,i1),points(3,i1)/),
      >                 (/points(1,i2),points(2,i2),points(3,i2)/),
-     >                 (/points(1,i3),points(2,i3),points(3,i3)/),  
-     >                 (/points(1,i4),points(2,i4),points(3,i4)/) ) 
+     >                 (/points(1,i3),points(2,i3),points(3,i3)/))
 
             endif
          enddo
@@ -71,8 +68,10 @@
       isize  = 4
       irsize = 8
       call ppiclf_bcast(ppiclf_nwall, isize)
-      call ppiclf_bcast(ppiclf_wall_c,12*ppiclf_nwall*irsize)
-      call ppiclf_bcast(ppiclf_wall_n,4*ppiclf_nwall*irsize)
+      call ppiclf_bcast(ppiclf_wall_c,9*PPICLF_LWALL*irsize)
+      call ppiclf_bcast(ppiclf_wall_n,4*PPICLF_LWALL*irsize)
+
+c     write(6,*) 'nid', ppiclf_nid, ppiclf_nwall
 
       call mpi_barrier(ppiclf_comm,ierr)
 

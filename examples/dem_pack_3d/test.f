@@ -20,25 +20,25 @@ c main code below
       call ppiclf_solve_InitParticle(1,3,0,npart,ppiclf_y) 
       call ppiclf_solve_InitNeighborBin(0.07)
 
-      call ppiclf_io_ReadWallVTK("geometry/ppiclf_mesh3d.vtk")
-      call ppiclf_solve_InitPeriodicZ(0.0,1.0)
+      call ppiclf_io_ReadWallVTK("geometry/ppiclf_tank.vtk")
+c     call ppiclf_solve_InitPeriodicZ(0.0,1.0)
       call ppiclf_solve_InitSuggestedDir('z')
 
       ! For user implemented collision model
       ksp    = 100000.0
-      erest  = 0.1
+      erest  = 0.01
       rpi    = 4.0*atan(1.0)
-      rmij1  = rpi/6.0*(0.07**3)*3307.327 ! change with diff ic's
-      rmij2  = rpi/6.0*(0.03**3)*3307.327 ! change with diff ic's
-      nres   = 10
-      rmij   = 1./(1./rmij1 + 1./rmij2)
-      dt_max = sqrt(rmij/ksp*(log(erest)**2 + rpi**2))/nres
+      rmij1  = rpi/6.0*(0.07**3)*2500. ! change with diff ic's
+      rmij2  = rpi/6.0*(0.05**3)*2500. ! change with diff ic's
+      nres   = 20
+      rmij   = 1./(1./rmij2 + 1./rmij2)
+      dt_c_max = sqrt(rmij/ksp*(log(erest)**2 + rpi**2))/nres
       ! For user implemented collision model
 
       ! time loop
       iostep = 25
-      nstep  = 10000
-      dt     = dt_max
+      nstep  = 20000
+      dt = dt_c_max
       do istep=1,nstep
          time = (istep-1)*dt
          call ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
@@ -59,18 +59,24 @@ c main code below
       external  ran2
 
       npart   = 200    ! particles/rank to distribute
-      dp_min  = 0.03   ! particle diameter min
+      dp_min  = 0.05   ! particle diameter min
       dp_max  = 0.07   ! particle diameter max
-      rhop    = 3307.327 ! particle density
+      rhop    = 2500. ! particle density
       rdum    = ran2(-1-ppiclf_nid) ! initialize random number generator
       PI      = 4.D0*DATAN(1.D0)
 
       do i=1,npart
          ! set initial conditions for solution
          j = PPICLF_LRS*(i-1)
-         y(PPICLF_JX +j) = 0.1 + 0.8*ran2(2)
-         y(PPICLF_JY +j) = 0.75 + 0.75*ran2(2)
-         y(PPICLF_JZ +j) = 0.1 + 0.8*ran2(2)
+c        y(PPICLF_JX +j) = 0.1 + 0.8*ran2(2)
+c        y(PPICLF_JY +j) = 0.75 + 0.75*ran2(2)
+c        y(PPICLF_JZ +j) = 0.1 + 0.8*ran2(2)
+         y(PPICLF_JX +j) = -0.2  + 0.4*ran2(2)
+         y(PPICLF_JY +j) = -0.2  + 0.6*ran2(2)
+         y(PPICLF_JZ +j) = -0.2  + 0.4*ran2(2)
+c        y(PPICLF_JX +j) = -0.25
+c        y(PPICLF_JY +j) = 0.9
+c        y(PPICLF_JZ +j) = -0.25
          y(PPICLF_JVX+j) = 0.0
          y(PPICLF_JVY+j) = 0.0
          y(PPICLF_JVZ+j) = 0.0

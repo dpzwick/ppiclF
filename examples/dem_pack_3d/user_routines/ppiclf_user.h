@@ -24,3 +24,5 @@ C>    -Entirely user defined
 #define PPICLF_R_JRHOP 1
 #define PPICLF_R_JDP   2
 #define PPICLF_R_JVOLP 3
+
+#define PPICLF_LWALL 500

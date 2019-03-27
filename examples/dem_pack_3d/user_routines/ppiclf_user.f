@@ -115,7 +115,11 @@ c
       ! boundaries
       elseif (j .eq. 0) then
 
-         rthresh  = 0.5*rpropi(PPICLF_R_JDP)
+         rksp_wall = ksp
+
+         ! give a bit larger collision threshold for walls
+         rextra   = 0.0
+         rthresh  = (0.5+rextra)*rpropi(PPICLF_R_JDP)
          
          rxdiff = yj(PPICLF_JX) - yi(PPICLF_JX)
          rydiff = yj(PPICLF_JY) - yi(PPICLF_JY)
@@ -128,7 +132,8 @@ c
          rm1 = rpropi(PPICLF_R_JRHOP)*rpropi(PPICLF_R_JVOLP)
          
          rmult = sqrt(rm1)
-         eta   = 2.*sqrt(ksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
+         eta   = 2.*sqrt(rksp_wall)*log(erest)
+     >           /sqrt(log(erest)**2+rpi2)*rmult
          
          rbot = 1./rdiff
          rn_12x = rxdiff*rbot
@@ -142,7 +147,7 @@ c
      >                    yi(PPICLF_JVZ)*rn_12z)
 
          rv12_mage = rv12_mag*eta
-         rksp_max  = ksp*rdelta12
+         rksp_max  = rksp_wall*rdelta12
          rnmag     = -rksp_max - rv12_mage
          
          PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)

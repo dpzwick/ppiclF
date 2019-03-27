@@ -348,12 +348,12 @@ c     enddo
             rny = -1.*rny
             rnz = -1.*rnz
          endif
-         
+
 
          a_sum = 0.0
          kmax = 2
-         if (ppiclf_ndim .eq. 3) kmax = 4
-         do k=1,kmax ! quad
+         if (ppiclf_ndim .eq. 3) kmax = 3
+         do k=1,kmax 
             kp = k+1
             if (kp .gt. kmax) kp = kp-kmax ! cycle
             
@@ -376,6 +376,8 @@ c     enddo
             rdist = abs(rnx*ppiclf_cp_map(1,i)+rny*ppiclf_cp_map(2,i)
      >                 +rnz*ppiclf_cp_map(3,i)+rd)
             rdist = rdist/sqrt(rnx**2 + rny**2 + rnz**2)
+
+            if (rdist .gt. 2.0*ppiclf_d2chk(3)) goto 1511
 
             ydum(1) = ppiclf_cp_map(1,i) - rdist*rnx
             ydum(2) = ppiclf_cp_map(2,i) - rdist*rny
@@ -421,7 +423,26 @@ c     enddo
             a_sum = a_sum + tri_area
          enddo
 
-         if (a_sum .gt. area) cycle
+c        write(6,*) 'Made it', ppiclf_cp_map(1,i),ppiclf_cp_map(2,i)
+c    >                       , ppiclf_cp_map(3,i)
+c        write(6,*) 'Made it', ydum(1),ydum(2),ydum(3)
+c        write(6,*) 'nodes1', ppiclf_wall_c(1,j),ppiclf_wall_c(2,j)
+c    >                      , ppiclf_wall_c(3,j)
+c        write(6,*) 'nodes2', ppiclf_wall_c(4,j),ppiclf_wall_c(5,j)
+c    >                      , ppiclf_wall_c(6,j)
+c        write(6,*) 'nodes3', ppiclf_wall_c(7,j),ppiclf_wall_c(8,j)
+c    >                      , ppiclf_wall_c(9,j)
+c        write(6,*) 'nodes4', ppiclf_wall_c(10,j),ppiclf_wall_c(11,j)
+c    >                      , ppiclf_wall_c(12,j)
+c        write(6,*) 'normsa', ppiclf_wall_n(1,j),ppiclf_wall_n(2,j)
+c    >                      , ppiclf_wall_n(3,j), ppiclf_wall_n(4,j)
+c        write(6,*) 'normsf', rnx,rny,rnz
+c        write(6,*) 'dist'  , rdist
+
+c        write(6,*) 'Element', j, a_sum, area
+         rthresh = 1.10 ! keep it from slipping through crack on edges
+         if (a_sum .gt. rthresh*area) cycle
+
 
          jp = 0
          call ppiclf_user_EvalNearestNeighbor(i,jp,ppiclf_cp_map(1,i)
@@ -429,18 +450,18 @@ c     enddo
      >                                 ,ydum
      >                                 ,rpropdum)
 
+ 1511 continue
       enddo
 
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitWall(xp1,xp2,xp3,xp4)
+      subroutine ppiclf_solve_InitWall(xp1,xp2,xp3)
 #include "PPICLF"
 
       real xp1(*)
       real xp2(*)
       real xp3(*)
-      real xp4(*)
       real A(3),B(3),C(3),D(3),AB(3),AC(3)
 
       if (.not.PPICLF_LCOMM)
@@ -458,7 +479,7 @@ c     enddo
       istride = ppiclf_ndim
       a_sum = 0.0
       kmax = 2
-      if (ppiclf_ndim .eq. 3) kmax = 4
+      if (ppiclf_ndim .eq. 3) kmax = 3
 
       if (ppiclf_ndim .eq. 3) then
          ppiclf_wall_c(1,ppiclf_nwall) = xp1(1)
@@ -470,13 +491,10 @@ c     enddo
          ppiclf_wall_c(7,ppiclf_nwall) = xp3(1)
          ppiclf_wall_c(8,ppiclf_nwall) = xp3(2)
          ppiclf_wall_c(9,ppiclf_nwall) = xp3(3)
-         ppiclf_wall_c(10,ppiclf_nwall) = xp4(1)
-         ppiclf_wall_c(11,ppiclf_nwall) = xp4(2)
-         ppiclf_wall_c(12,ppiclf_nwall) = xp4(3)
 
-         A(1) = (xp1(1) + xp2(1) + xp3(1) + xp4(1))/4.0
-         A(2) = (xp1(2) + xp2(2) + xp3(2) + xp4(2))/4.0
-         A(3) = (xp1(3) + xp2(3) + xp3(3) + xp4(3))/4.0
+         A(1) = (xp1(1) + xp2(1) + xp3(1))/3.0
+         A(2) = (xp1(2) + xp2(2) + xp3(2))/3.0
+         A(3) = (xp1(3) + xp2(3) + xp3(3))/3.0
       elseif (ppiclf_ndim .eq. 2) then
          ppiclf_wall_c(1,ppiclf_nwall) = xp1(1)
          ppiclf_wall_c(2,ppiclf_nwall) = xp1(2)
@@ -489,7 +507,7 @@ c     enddo
       endif
 
       ! compoute area:
-      do k=1,kmax ! quad
+      do k=1,kmax 
          kp = k+1
          if (kp .gt. kmax) kp = kp-kmax ! cycle
          
@@ -598,6 +616,14 @@ c     enddo
      >                                  /rmag
 
       endif
+
+c     if (ppiclf_nid .eq. 0) then
+
+c        write(6,*) ppiclf_wall_n(1,ppiclf_nwall)
+c    >             ,ppiclf_wall_n(2,ppiclf_nwall)
+c    >             ,ppiclf_wall_n(3,ppiclf_nwall)
+c    >             ,ppiclf_wall_n(4,ppiclf_nwall)
+c     endif
 
       return
       end

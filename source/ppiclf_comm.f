@@ -110,7 +110,16 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       iperiodicz = ppiclf_iperiodic(3)
       ndim       = ppiclf_ndim
 
+         
       ppiclf_d2chk(1) = max(ppiclf_d2chk(2),ppiclf_d2chk(3))
+
+      ! binning requires > 1 global particle. This takes care of 
+      ! single particle case
+      npt_total = ppiclf_iglsum(ppiclf_npart,1)
+      if (npt_total .eq. 1) then
+      if (.not. ppiclf_lproj .and. .not. ppiclf_lsubsubbin) 
+     >ppiclf_d2chk(1) = 1E-3
+      endif
 
       ! compute binb
       xmin = 1E10
@@ -249,6 +258,7 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
      >ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
 
       ppiclf_nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
+
 
 c     current box coordinates
       if (ppiclf_nid .le. ppiclf_nbin-1) then
@@ -601,6 +611,7 @@ c-----------------------------------------------------------------------
       iz = 1
       if (ppiclf_ndim.eq.3)
      >iz = 3
+
 
       do i=1,ppiclf_npart
          ! check if particles are greater or less than binb bounds....
