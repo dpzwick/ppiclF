@@ -362,14 +362,18 @@ c     write(6,*) fnamei
       return
       end
 C--------------------------------------------------------------------------
-c     subroutine ppiclf_byte_read_mpi(buf,icount,iorank,mpi_fh,ierr)
-c     include 'mpif.h'
+      subroutine ppiclf_byte_read_mpi(buf,icount,iorank,mpi_fh,ierr)
+#include "PPICLF"
+      include 'mpif.h'
 
-c     real*4 buf(1)          ! buffer
+      real*4 buf(1)          ! buffer
 
-c     iout = icount ! icount is in 4-byte words
-c     call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
-c    &                       MPI_STATUS_IGNORE,ierr)
+      iout = icount ! icount is in 4-byte words
+      call MPI_file_read_all(mpi_fh,buf,iout,MPI_REAL,
+     &                       MPI_STATUS_IGNORE,ierr)
+
+      return
+      end
 c--------------------------------------------------------------------------
       subroutine ppiclf_byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
 #include "PPICLF"

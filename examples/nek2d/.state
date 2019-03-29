@@ -1,6 +1,0 @@
-NEK_SOURCE_ROOT=/home/dpzwicklocal/libraries/Nek5000
-FC=mpif77
-FFLAGS= -I/home/dpzwicklocal/libraries/ppiclF/source -std=legacy -fdefault-real-8 -fdefault-double-8 -cpp
-CC=mpicc
-CFLAGS=
-PPLIST= MPI UNDERSCORE TIMER

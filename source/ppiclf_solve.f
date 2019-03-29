@@ -24,10 +24,11 @@
          
             call ppiclf_copy(ppiclf_y,y,ppiclf_npart)
          
+         if (.not. PPICLF_RESTART) then
          call ppiclf_prints('   *Begin ParticleTag$')
-            call ppiclf_solve_InitParticleTag
-            call ppiclf_solve_SetParticleTag
+               call ppiclf_solve_SetParticleTag
          call ppiclf_prints('    End ParticleTag$')
+         endif
 
          call ppiclf_prints('   *Begin CreateBin$')
             call ppiclf_comm_CreateBin
@@ -65,7 +66,7 @@
       integer  iendian
       integer  npart
 
-      if (imethod .le. 0 .or. imethod .ge. 3)
+      if (imethod .le. 0 .or. imethod .ge. 2)
      >   call ppiclf_exittr('Invalid integration method$',0.0,imethod)
       if (ndim .le. 1 .or. ndim .ge. 4)
      >   call ppiclf_exittr('Invalid problem dimension$',0.0,ndim)
@@ -90,7 +91,6 @@
       ppiclf_dt     = 0.0
       ppiclf_time   = 0.0
 
-      ppiclf_restart    = .false.
       ppiclf_overlap    = .false.
       ppiclf_linit      = .false.
       ppiclf_lfilt      = .false.
@@ -746,24 +746,10 @@ c     endif
 #include "PPICLF"
 
       do i=1,ppiclf_npart
-         if (ppiclf_iprop(5,i) .eq. -1) ppiclf_iprop(5,i) = ppiclf_nid 
-         if (ppiclf_iprop(6,i) .eq. -1) ppiclf_iprop(6,i) = ppiclf_cycle
-         if (ppiclf_iprop(7,i) .eq. -1) ppiclf_iprop(7,i) = i
+         ppiclf_iprop(5,i) = ppiclf_nid 
+         ppiclf_iprop(6,i) = ppiclf_cycle
+         ppiclf_iprop(7,i) = i
       enddo
-
-      return
-      end
-c----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitParticleTag
-#include "PPICLF"
-
-      if (.not. PPICLF_RESTART) then
-         do i=1,PPICLF_LPART
-            ppiclf_iprop(5,i) = -1
-            ppiclf_iprop(6,i) = -1
-            ppiclf_iprop(7,i) = -1
-         enddo
-      endif
 
       return
       end
@@ -787,8 +773,6 @@ c----------------------------------------------------------------------
       ! integerate in time
       if (ppiclf_imethod .eq. 1) 
      >   call ppiclf_solve_IntegrateRK3(time,y,ydot)
-      if (ppiclf_imethod .eq. 2) 
-     >   call ppiclf_solve_IntegrateFwdEuler(time,y,ydot)
 
       ! output files
       if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0) then
@@ -842,31 +826,6 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_IntegrateFwdEuler(time_,y,ydot)
-#include "PPICLF"
-
-      real time_
-      real y(*)
-      real ydot(*)
-
-      ndum = PPICLF_NPART*PPICLF_LRS
-
-      ! save stage 1 solution
-      do i=1,ndum
-         ppiclf_y1(i) = y(i)
-      enddo
-
-      ! evaluate ydot
-      call ppiclf_solve_SetYdot(time_,y,ydot)
-
-      ! rk3 integrate
-      do i=1,ndum
-         y(i) = y(i) + ppiclf_dt*ydot(i) 
-      enddo
-
-      return
-      end
-!-----------------------------------------------------------------------
       subroutine ppiclf_solve_SetYdot(time_,y,ydot)
 #include "PPICLF"
 

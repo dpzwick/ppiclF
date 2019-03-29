@@ -5,11 +5,6 @@ c main code below
 #include "PPICLF"
       include 'mpif.h' 
 
-      ! For user implemented collision model
-      real ksp,erest
-      common /external_user_collsion/ ksp,erest
-      ! For user implemented collision model
-
       call MPI_INIT(ierr) 
       ppiclf_comm = MPI_COMM_WORLD
       call MPI_COMM_RANK(ppiclf_comm, ppiclf_nid, ierr) 
@@ -17,26 +12,12 @@ c main code below
 
       call ppiclf_comm_InitMPI(ppiclf_comm,ppiclf_nid,ppiclf_np)
          call PlaceParticle(npart,ppiclf_y)
-      call ppiclf_solve_InitParticle(1,3,0,npart,ppiclf_y) 
-      call ppiclf_solve_InitNeighborBin(0.07)
-
-      call ppiclf_io_ReadWallVTK("geometry/ppiclf_tank.vtk")
-
-      ! For user implemented collision model
-      ksp      = 10000.0
-      erest    = 0.1
-      rpi      = 4.0*atan(1.0)
-      rmij1    = rpi/6.0*(0.07**3)*2500. ! change with diff ic's
-      rmij2    = rpi/6.0*(0.05**3)*2500. ! change with diff ic's
-      nres     = 20
-      rmij     = 1./(1./rmij2 + 1./rmij2)
-      dt_c_max = sqrt(rmij/ksp*(log(erest)**2 + rpi**2))/nres
-      ! For user implemented collision model
+      call ppiclf_solve_InitParticle(1,2,0,npart,ppiclf_y) 
 
       ! time loop
-      iostep = 25
-      nstep  = 20000
-      dt     = dt_c_max
+      iostep = 1E2
+      nstep  = 1E4
+      dt     = 1E-4
       do istep=1,nstep
          time = (istep-1)*dt
          call ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
@@ -53,32 +34,22 @@ c main code below
 
       integer   npart
       real      y(*)
-      real      pi
       real      ran2
       external  ran2
 
-      npart   = 200    ! particles/rank to distribute
-      dp_min  = 0.05   ! particle diameter min
-      dp_max  = 0.07   ! particle diameter max
-      rhop    = 2500. ! particle density
+      npart   = 250    ! particles/rank to distribute
       rdum    = ran2(-1-ppiclf_nid) ! initialize random number generator
-      PI      = 4.D0*DATAN(1.D0)
 
       do i=1,npart
          ! set initial conditions for solution
          j = PPICLF_LRS*(i-1)
-         y(PPICLF_JX +j) = -0.2  + 0.4*ran2(2)
-         y(PPICLF_JY +j) = -0.2  + 0.6*ran2(2)
-         y(PPICLF_JZ +j) = -0.2  + 0.4*ran2(2)
+         y(PPICLF_JX +j) = ran2(2)
+         y(PPICLF_JY +j) = ran2(2)
          y(PPICLF_JVX+j) = 0.0
          y(PPICLF_JVY+j) = 0.0
-         y(PPICLF_JVZ+j) = 0.0
       
          ! set some initial particle properties
-         ppiclf_rprop(PPICLF_R_JRHOP,i) = rhop
-         ppiclf_rprop(PPICLF_R_JDP  ,i) = dp_min+(dp_max-dp_min)*ran2(2)
-         ppiclf_rprop(PPICLF_R_JVOLP,i) = pi/6.0
-     >                                  *ppiclf_rprop(PPICLF_R_JDP,i)**3
+         ppiclf_rprop(PPICLF_R_JTAUP,i) = 1./9.8
       enddo
 
       return

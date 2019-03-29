@@ -1,4 +1,187 @@
 !-----------------------------------------------------------------------
+      subroutine ppiclf_io_ReadParticleVTU(filein1)
+#include "PPICLF"
+
+      real*4  rout_pos(3      *PPICLF_LPART) 
+     >       ,rout_sln(PPICLF_LRS*PPICLF_LPART)
+     >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
+     >       ,rout_lip(3      *PPICLF_LPART)
+
+      character*5 sprop1
+      character*9 rprop1
+
+      character (len = *)  filein1
+      character*3 filein
+      character*12 vtufile
+      character*13 vtufile1
+      character*50 dumstr
+      character*1 dum_read
+
+      integer icalld1
+      save    icalld1
+      data    icalld1 /0/
+
+      logical partl         
+      integer vtu,vtu1
+      integer*4 iint
+      integer*8 idisp_pos,idisp_sln,idisp_lrp,idisp_lip,disp
+      integer*8 stride_len
+      real*4 rnptot
+      integer idumread
+
+      isize  = 4
+      irsize = 8
+
+      icalld1 = icalld1+1
+
+      PPICLF_RESTART = .true.
+
+      jx    = 1
+      jy    = 2
+      jz    = 1
+      if (ppiclf_ndim .eq. 3)
+     >jz    = 3
+
+! --------------------------------------------------
+! COPY PARTICLES TO OUTPUT ARRAY
+! --------------------------------------------------
+
+      if (ppiclf_nid .eq. 0) then
+
+      vtu=867+ppiclf_nid
+      open(unit=vtu,file=filein1,access='stream',form="unformatted")
+
+      ivtu_size = -1
+      ifound = 0
+      do i=1,1000000
+      read(vtu) dum_read
+      if (dum_read == '_') ifound = ifound + 1
+      if (ifound .eq. 2) then
+         ivtu_size = i
+         exit
+      endif
+      enddo
+      read(vtu) npt_total
+      close(vtu)
+      npt_total = npt_total/isize/3
+      endif
+
+      call ppiclf_bcast(npt_total,isize)
+      call ppiclf_bcast(ivtu_size,isize)
+
+
+      npart_min = npt_total/ppiclf_np+1
+      if (npart_min*ppiclf_np .gt. npt_total) npart_min = npart_min-1
+
+      if (npt_total .gt. PPICLF_LPART*ppiclf_np) 
+     >   call ppiclf_exittr('Increase LPART to at least$',0.0
+     >    ,npart_min)
+
+
+      npmax = min(npt_total/PPICLF_LPART+1,ppiclf_np)
+      stride_len = 0
+      if (ppiclf_nid .le. npmax-1 .and. ppiclf_nid. ne. 0) 
+     >stride_len = ppiclf_nid*PPICLF_LPART
+
+      npart = PPICLF_LPART
+      if (ppiclf_nid .gt. npmax-1) npart = 0
+
+      ndiff = npt_total - (npmax-1)*PPICLF_LPART
+      if (ppiclf_nid .eq. npmax-1) npart = ndiff
+
+      iorank = -1
+
+      call ppiclf_byte_open_mpi(filein1,pth,.true.,ierr)
+
+      idisp_pos = ivtu_size + isize*(3*stride_len + 1)
+      icount_pos = npart*3   
+      call ppiclf_byte_set_view(idisp_pos,pth)
+      call ppiclf_byte_read_mpi(rout_pos,icount_pos,iorank,pth,ierr)
+
+      do i=1,PPICLF_LRS
+         idisp_sln = ivtu_size + isize*(3*npt_total 
+     >                         + (i-1)*npt_total
+     >                         + (1)*stride_len
+     >                         + 1 + i)
+         j = 1 + (i-1)*npart
+         icount_sln = npart
+
+         call ppiclf_byte_set_view(idisp_sln,pth)
+         call ppiclf_byte_read_mpi(rout_sln(j),icount_sln
+     >                            ,iorank,pth,ierr)
+      enddo
+
+      do i=1,PPICLF_LRP
+         idisp_lrp = ivtu_size + isize*(3*npt_total  
+     >                         + PPICLF_LRS*npt_total
+     >                         + (i-1)*npt_total
+     >                         + (1)*stride_len
+     >                         + 1 + PPICLF_LRS + i)
+
+         j = 1 + (i-1)*npart
+         icount_lrp = npart
+
+         call ppiclf_byte_set_view(idisp_lrp,pth)
+         call ppiclf_byte_read_mpi(rout_lrp(j),icount_lrp
+     >                            ,iorank,pth,ierr)
+      enddo
+
+      do i=1,3
+         idisp_lip = ivtu_size + isize*(3*npt_total  
+     >                         + PPICLF_LRS*npt_total
+     >                         + PPICLF_LRP*npt_total
+     >                         + (i-1)*npt_total
+     >                         + (1)*stride_len
+     >                         + 1 + PPICLF_LRS + PPICLF_LRP + i)
+
+         j = 1 + (i-1)*npart
+         icount_lip = npart
+
+         call ppiclf_byte_set_view(idisp_lip,pth)
+         call ppiclf_byte_read_mpi(rout_lip(j),icount_lip
+     >                            ,iorank,pth,ierr)
+      enddo
+
+      call ppiclf_byte_close_mpi(pth,ierr)
+
+      ic_pos = 0
+      ic_sln = 0
+      ic_lrp = 0
+      ic_lip = 0
+      do i=1,npart
+         ic_pos = ic_pos + 1
+         ppiclf_y(jx,i) = rout_pos(ic_pos)
+         ic_pos = ic_pos + 1
+         ppiclf_y(jy,i) = rout_pos(ic_pos)
+         ic_pos = ic_pos + 1
+         if (ppiclf_ndim .eq. 3) then
+         ppiclf_y(jz,i) = rout_pos(ic_pos)
+         endif
+      enddo
+      do j=1,PPICLF_LRS
+      do i=1,npart
+         ic_sln = ic_sln + 1
+         ppiclf_y(j,i) = rout_sln(ic_sln)
+      enddo
+      enddo
+      do j=1,PPICLF_LRP
+      do i=1,npart
+         ic_lrp = ic_lrp + 1
+         ppiclf_rprop(j,i) = rout_lrp(ic_lrp)
+      enddo
+      enddo
+      do j=5,7
+      do i=1,npart
+         ic_lip = ic_lip + 1
+         ppiclf_iprop(j,i) = int(rout_lip(ic_lip))
+      enddo
+      enddo
+
+      ppiclf_npart = npart
+
+      return
+      end
+!-----------------------------------------------------------------------
       subroutine ppiclf_io_ReadWallVTK(filein1)
 #include "PPICLF"
       include 'mpif.h'
@@ -1268,11 +1451,10 @@ c1511 continue
          rout_pos(ic_pos) = ppiclf_y(jx,i)
          ic_pos = ic_pos + 1
          rout_pos(ic_pos) = ppiclf_y(jy,i)
+         ic_pos = ic_pos + 1
          if (ppiclf_ndim .eq. 3) then
-            ic_pos = ic_pos + 1
             rout_pos(ic_pos) = ppiclf_y(jz,i)
          else
-            ic_pos = ic_pos + 1
             rout_pos(ic_pos) = 0.0
          endif
       enddo

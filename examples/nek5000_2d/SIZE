@@ -10,11 +10,11 @@ c
 
       ! BASIC
       parameter (ldim=2)               ! domain dimension (2 or 3)
-      parameter (lx1=6)               ! p-order (avoid uneven and values <6)
-      parameter (lxd=8)               ! p-order for over-integration (dealiasing) 
-      parameter (lx2=lx1)            ! polynomial order for pressure
+      parameter (lx1=10)               ! p-order (avoid uneven and values <6)
+      parameter (lxd=16)               ! p-order for over-integration (dealiasing) 
+      parameter (lx2=lx1-2)            ! polynomial order for pressure
 
-      parameter (lelg=512)             ! max total number of elements
+      parameter (lelg=1000)            ! max total number of elements
       parameter (lpmin=1)              ! min MPI ranks
       parameter (lpmax=4)              ! max MPI ranks
       parameter (ldimt=3)              ! max auxiliary fields (temperature + scalars)

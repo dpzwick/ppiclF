@@ -118,7 +118,7 @@ c
          rksp_wall = ksp
 
          ! give a bit larger collision threshold for walls
-         rextra   = 0.0
+         rextra   = 0.5
          rthresh  = (0.5+rextra)*rpropi(PPICLF_R_JDP)
          
          rxdiff = yj(PPICLF_JX) - yi(PPICLF_JX)

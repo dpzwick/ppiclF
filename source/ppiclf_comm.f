@@ -13,7 +13,7 @@
       ppiclf_nid  = id
       ppiclf_np   = np
 
-      call ppiclf_prints('   *Begin InitParam$')
+      call ppiclf_prints('   *Begin InitCrystal$')
          call ppiclf_comm_InitCrystal
       call ppiclf_prints('    End InitCrystal$')
 

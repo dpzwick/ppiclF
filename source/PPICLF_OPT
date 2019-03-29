@@ -10,6 +10,7 @@ c Particle options
      >                           ,PPICLF_LSUBSUBBIN
      >                           ,PPICLF_LFILTGAUSS, PPICLF_LFILTBOX
       DATA PPICLF_LCOMM /.false./
+      DATA PPICLF_RESTART /.false./
 
       INTEGER PPICLF_NDIM, PPICLF_IMETHOD, PPICLF_IPERIODIC(3)
      >       ,PPICLF_NGRIDS, PPICLF_CYCLE, PPICLF_IOSTEP, PPICLF_IENDIAN
