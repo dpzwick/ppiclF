@@ -19,7 +19,7 @@ c evaluate ydot
          fbx  = 0.0
          fby  = -9.8
 
-         ! set ydot for all PPICLF_SLN number of equations
+         ! set ydot for all PPICLF_LRS number of equations
          ydot(PPICLF_JX +j) = y(PPICLF_JVX +j)
          ydot(PPICLF_JY +j) = y(PPICLF_JVY +j)
          ydot(PPICLF_JVX+j) = fqsx+fbx

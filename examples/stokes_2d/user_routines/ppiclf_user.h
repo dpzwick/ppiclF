@@ -1,6 +1,3 @@
-C> Maximum number of particles per processor
-#define PPICLF_LPART 2000
-
 C> Max number of equations being solved for each particle
 #define PPICLF_LRS 4
 

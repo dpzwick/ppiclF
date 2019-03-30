@@ -6,11 +6,11 @@ c main code below
       include 'mpif.h' 
 
       call MPI_INIT(ierr) 
-      ppiclf_comm = MPI_COMM_WORLD
-      call MPI_COMM_RANK(ppiclf_comm, ppiclf_nid, ierr) 
-      call MPI_COMM_SIZE(ppiclf_comm, ppiclf_np , ierr)
-
-      call ppiclf_comm_InitMPI(ppiclf_comm,ppiclf_nid,ppiclf_np)
+      icomm = MPI_COMM_WORLD
+      call MPI_COMM_RANK(ppiclf_comm, nid, ierr) 
+      call MPI_COMM_SIZE(ppiclf_comm, np , ierr)
+ 
+      call ppiclf_comm_InitMPI(icomm,nid,np)
          call PlaceParticle(npart,ppiclf_y)
       call ppiclf_solve_InitParticle(1,2,0,npart,ppiclf_y) 
 
