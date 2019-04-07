@@ -2,21 +2,28 @@
 c main code below
 !-----------------------------------------------------------------------
       program test
+#include "PPICLF.h"
 #include "PPICLF"
       include 'mpif.h' 
-
+!
+! Internal:
+!
+      integer*4 icomm, nid, np
+      integer*4 istep, iostep, npart
+      real*8 dt, time
+!
       call MPI_INIT(ierr) 
       icomm = MPI_COMM_WORLD
-      call MPI_COMM_RANK(ppiclf_comm, nid, ierr) 
-      call MPI_COMM_SIZE(ppiclf_comm, np , ierr)
+      call MPI_COMM_RANK(icomm, nid, ierr) 
+      call MPI_COMM_SIZE(icomm, np , ierr)
  
       call ppiclf_comm_InitMPI(icomm,nid,np)
          call PlaceParticle(npart,ppiclf_y)
       call ppiclf_solve_InitParticle(1,2,0,npart,ppiclf_y) 
 
       ! time loop
-      iostep = 1E2
-      nstep  = 1E4
+      iostep = 100
+      nstep  = 1000
       dt     = 1E-4
       do istep=1,nstep
          time = (istep-1)*dt
@@ -30,11 +37,12 @@ c main code below
       end
 !-----------------------------------------------------------------------
       subroutine PlaceParticle(npart,y)
+#include "PPICLF.h"
 #include "PPICLF"
 
-      integer   npart
-      real      y(*)
-      real      ran2
+      integer*4 npart
+      real*8    y(*)
+      real*8    ran2
       external  ran2
 
       npart   = 250    ! particles/rank to distribute
@@ -55,9 +63,9 @@ c main code below
       return
       end
 !-----------------------------------------------------------------------
-      FUNCTION ran2(idum)
-      INTEGER idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV 
-      REAL ran2,AM,EPS,RNMX
+      real*8 FUNCTION ran2(idum)
+      INTEGER*4 idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV 
+      REAL*8 AM,EPS,RNMX
       PARAMETER (IM1=2147483563,IM2=2147483399,AM=1./IM1,IMM1=IM1-1,
      $        IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,
      $        IR2=3791,NTAB=32,NDIV=1+IMM1/NTAB,EPS=1.2e-7,RNMX=1.-EPS)
@@ -67,7 +75,7 @@ c between 0.0 and 1.0 (exclusive of the endpoint values).
 c Call with idum a negative integer to initialize; thereafter, do not alter 
 c idum between successive deviates in a sequence. RNMX should approximate the 
 c largest floating value that is less than 1.
-      INTEGER idum2,j,k,iv(NTAB),iy
+      INTEGER*4 idum2,j,k,iv(NTAB),iy
       SAVE iv,iy,idum2
       DATA idum2/123456789/, iv/NTAB*0/, iy/0/
       if (idum.le.0) then 

@@ -1,12 +1,26 @@
 !-----------------------------------------------------------------------
       subroutine ppiclf_user_SetYdot(time,y,ydot)
-#include "PPICLF"
-
-      real    time
-      real    y(*)
-      real    ydot(*)
-
-c evaluate ydot
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Input:
+!
+      real*8 time
+      real*8 y(*)
+!
+! Output:
+!
+      real*8 ydot(*)
+!
+! Internal:
+!
+      real*8 rmass,fbx,fby,fbz,fcx,fcy,fcz
+      integer*4 i,j
+!
+! evaluate ydot
       do i=1,ppiclf_npart
          ! striding solution y vector
          j = PPICLF_LRS*(i-1)
@@ -40,36 +54,51 @@ c evaluate ydot
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_user_MapProjPart(map,y,ydot,ydotc,rprop)
-c
-c     map Lagrangian quantity to Eulerian field
-c
-      real map(*)
-      real y(*)
-      real ydot(*)
-      real ydotc(*)
-      real rprop(*)
+!
+      implicit none
+!
+! Input:
+!
+      real*8 y(*)
+      real*8 ydot(*)
+      real*8 ydotc(*)
+      real*8 rprop(*)
+!
+! Output:
+!
+      real*8 map(*)
+!
 
       return
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_user_EvalNearestNeighbor
      >                                        (i,j,yi,rpropi,yj,rpropj)
-#include "PPICLF"
-c
-c     called for every j nearest neighbor of particle i
-c
-      integer i
-      integer j
-      real yi(*)     ! PPICLF_LRS
-      real rpropi(*) ! PPICLF_LRP
-      real yj(*)     ! PPICLF_LRS
-      real rpropj(*) ! PPICLF_LRP
-
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Input:
+!
+      integer*4 i
+      integer*4 j
+      real*8 yi(*)     ! PPICLF_LRS
+      real*8 rpropi(*) ! PPICLF_LRP
+      real*8 yj(*)     ! PPICLF_LRS
+      real*8 rpropj(*) ! PPICLF_LRP
+!
+! Internal:
+!
       ! For user implemented collision model
-      real ksp,erest
+      real*8 ksp,erest
       common /external_user_collsion/ ksp,erest
       ! For user implemented collision model
-      
+      real*8 rpi2, rthresh, rxdiff, rydiff, rzdiff, rdiff, rm1, rm2,
+     >       rmult, eta, rbot, rn_12x, rn_12y, rn_12z, rdelta12,
+     >       rv12_mag, rv12_mage, rksp_max, rnmag, rksp_wall, rextra
+!
       rpi2  =  9.869604401089358
 
       ! other particles

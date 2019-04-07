@@ -1,9 +1,9 @@
 FC               = mpif77
-FFLAGS          += -fdefault-real-8   \
-                   -fdefault-double-8 \
-	           -cpp               \
-          	   -fbacktrace        \
+FFLAGS          += -cpp               \
+                   -fdefault-real-8   \
+#           	   -fbacktrace        \
 	           -Wall
+ 	           
 INSTALL_LOCATION = .
 
 ####################

@@ -1,11 +1,18 @@
 c-----------------------------------------------------------------------
       subroutine ppiclf_gop( x, w, op, n)
-#include "PPICLF"
+! 
+      implicit none
+! 
+#include "PPICLF.h"
+#include "PPICLF"      
       include 'mpif.h'
-
-      real x(n), w(n)
+!
+! Input:
+!
+      real*8 x(n), w(n)
       character*3 op
-
+      integer*4 i, n, ie
+!
       if (op.eq.'+  ') then
       call mpi_allreduce
      >        (x,w,n,MPI_DOUBLE_PRECISION,mpi_sum,ppiclf_comm,ie)
@@ -28,10 +35,11 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_igop( x, w, op, n)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
 
-      integer x(n), w(n)
+      integer*4 x(n), w(n)
       character*3 op
 
       if     (op.eq.'+  ') then
@@ -51,9 +59,9 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      function ppiclf_iglsum(a,n)
-      integer a(1),tsum
-      integer tmp(1),work(1)
+      integer*4 function ppiclf_iglsum(a,n)
+      integer*4 a(1),tsum
+      integer*4 tmp(1),work(1)
       tsum= 0
       do i=1,n
          tsum=tsum+a(i)
@@ -64,9 +72,9 @@ c-----------------------------------------------------------------------
       return
       end
 C-----------------------------------------------------------------------
-      function ppiclf_glsum (x,n)
-      DIMENSION X(1)
-      DIMENSION TMP(1),WORK(1)
+      real*8 function ppiclf_glsum (x,n)
+      real*8 x(1),tsum
+      real*8 tmp(1),work(1)
       TSUM = 0.
       DO 100 I=1,N
          TSUM = TSUM+X(I)
@@ -77,9 +85,9 @@ C-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
-      function ppiclf_glmax(a,n)
-      REAL A(1)
-      DIMENSION TMP(1),WORK(1)
+      real*8 function ppiclf_glmax(a,n)
+      REAL*8 A(1),tmax
+      real*8 TMP(1),WORK(1)
       TMAX=-99.0e20
       DO 100 I=1,N
          TMAX=MAX(TMAX,A(I))
@@ -90,9 +98,9 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
-      function ppiclf_iglmax(a,n)
-      integer a(1),tmax
-      integer tmp(1),work(1)
+      integer*4 function ppiclf_iglmax(a,n)
+      integer*4 a(1),tmax
+      integer*4 tmp(1),work(1)
       tmax= -999999999
       do i=1,n
          tmax=max(tmax,a(i))
@@ -103,9 +111,9 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      function ppiclf_glmin(a,n)
-      REAL A(1)
-      DIMENSION TMP(1),WORK(1)
+      real*8 function ppiclf_glmin(a,n)
+      REAL*8 A(1),tmin
+      real*8 TMP(1),WORK(1)
       TMIN=99.0e20
       DO 100 I=1,N
          TMIN=MIN(TMIN,A(I))
@@ -116,9 +124,9 @@ c-----------------------------------------------------------------------
       return
       END
 c-----------------------------------------------------------------------
-      function ppiclf_iglmin(a,n)
-      integer a(1),tmin
-      integer tmp(1),work(1)
+      integer*4 function ppiclf_iglmin(a,n)
+      integer*4 a(1),tmin
+      integer*4 tmp(1),work(1)
       tmin=  999999999
       do i=1,n
          tmin=min(tmin,a(i))
@@ -129,29 +137,29 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      real function ppiclf_vlmin(vec,n)
-      REAL VEC(1)
+      real*8 function ppiclf_vlmin(vec,n)
+      REAL*8 VEC(1),tmin
       TMIN = 99.0E20
 C
       DO 100 I=1,N
          TMIN = MIN(TMIN,VEC(I))
  100  CONTINUE
-      VLMIN = TMIN
+      ppiclf_VLMIN = TMIN
       return
       END
 c-----------------------------------------------------------------------
-      real function ppiclf_vlmax(vec,n)
-      REAL VEC(1)
+      real*8 function ppiclf_vlmax(vec,n)
+      REAL*8 VEC(1),tmax
       TMAX =-99.0E20
       do i=1,n
          TMAX = MAX(TMAX,VEC(I))
       enddo
-      VLMAX = TMAX
+      ppiclf_VLMAX = TMAX
       return
       END
 c-----------------------------------------------------------------------
       subroutine ppiclf_copy(a,b,n)
-      real a(1),b(1)
+      real*8 a(1),b(1)
 
       do i=1,n
          a(i)=b(i)
@@ -161,7 +169,7 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_icopy(a,b,n)
-      INTEGER A(1), B(1)
+      INTEGER*4 A(1), B(1)
 C
       DO 100 I = 1, N
  100     A(I) = B(I)
@@ -177,13 +185,14 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine ppiclf_exittr(stringi,rdata,idata)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
       character*1 stringi(132)
       character*1 stringo(132)
       character*25 s25
-      integer ilen
-      integer ppiclf_indx1
+      integer*4 ilen
+      integer*4 ppiclf_indx1
       external ppiclf_indx1
 
       call ppiclf_blank(stringo,132)
@@ -203,13 +212,14 @@ c     call mpi_finalize (ierr)
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_printsri(stringi,rdata,idata)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
       character*1 stringi(132)
       character*1 stringo(132)
       character*25 s25
-      integer ilen
-      integer ppiclf_indx1
+      integer*4 ilen
+      integer*4 ppiclf_indx1
       external ppiclf_indx1
 
       call ppiclf_blank(stringo,132)
@@ -230,13 +240,14 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_printsi(stringi,idata)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
       character*1 stringi(132)
       character*1 stringo(132)
       character*10 s10
-      integer ilen
-      integer ppiclf_indx1
+      integer*4 ilen
+      integer*4 ppiclf_indx1
       external ppiclf_indx1
 
       call ppiclf_blank(stringo,132)
@@ -257,13 +268,14 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_printsr(stringi,rdata)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
       character*1 stringi(132)
       character*1 stringo(132)
       character*15 s15
-      integer ilen
-      integer ppiclf_indx1
+      integer*4 ilen
+      integer*4 ppiclf_indx1
       external ppiclf_indx1
 
       call ppiclf_blank(stringo,132)
@@ -284,12 +296,13 @@ c-----------------------------------------------------------------------
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_prints(stringi)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
       character*1 stringi(132)
       character*1 stringo(132)
-      integer ilen
-      integer ppiclf_indx1
+      integer*4 ilen
+      integer*4 ppiclf_indx1
       external ppiclf_indx1
 
       call ppiclf_blank(stringo,132)
@@ -318,7 +331,7 @@ C
       RETURN
       END
 c-----------------------------------------------------------------------
-      INTEGER FUNCTION PPICLF_INDX1(S1,S2,L2)
+      INTEGER*4 FUNCTION PPICLF_INDX1(S1,S2,L2)
       CHARACTER*132 S1,S2
 C
       N1=132-L2+1
@@ -337,7 +350,8 @@ C
       END
 c-----------------------------------------------------------------------
       subroutine ppiclf_byte_open_mpi(fnamei,mpi_fh,ifro,ierr)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
 
       character fnamei*(*)
@@ -362,8 +376,9 @@ c     write(6,*) fnamei
       return
       end
 C--------------------------------------------------------------------------
-      subroutine ppiclf_byte_read_mpi(buf,icount,iorank,mpi_fh,ierr)
-#include "PPICLF"
+      subroutine ppiclf_byte_read_mpi(buf,icount,mpi_fh,ierr)
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
 
       real*4 buf(1)          ! buffer
@@ -376,7 +391,8 @@ C--------------------------------------------------------------------------
       end
 c--------------------------------------------------------------------------
       subroutine ppiclf_byte_write_mpi(buf,icount,iorank,mpi_fh,ierr)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
 
       real*4 buf(1)          ! buffer
@@ -408,7 +424,8 @@ c--------------------------------------------------------------------------
       end
 C--------------------------------------------------------------------------
       subroutine ppiclf_bcast(buf,len)
-#include "PPICLF"
+#include "PPICLF.h"
+#include "PPICLF"          
       include 'mpif.h'
       real*4 buf(1)
 

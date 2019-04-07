@@ -1,18 +1,27 @@
 c-----------------------------------------------------------------------
       subroutine fgslib_mxm(a,n1,b,n2,c,n3)
-      real a(n1,n2),b(n2,n3),c(n1,n3)
-
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3
+      real*8 a(n1,n2),b(n2,n3),c(n1,n3)
+!
       call ppiclf_mxmf2(a,n1,b,n2,c,n3)
 
       return
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxmf2(A,N1,B,N2,C,N3)
-c
-c     unrolled loop version 
-c
-      real a(n1,n2),b(n2,n3),c(n1,n3)
-
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3
+      real*8 a(n1,n2),b(n2,n3),c(n1,n3)
+!
       if (n2.le.8) then
          if (n2.eq.1) then
             call ppiclf_mxf1(a,n1,b,n2,c,n3)
@@ -75,9 +84,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf1(a,n1,b,n2,c,n3)
-c
-      real a(n1,1),b(1,n3),c(n1,n3)
-c
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,1),b(1,n3),c(n1,n3)
+!
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -87,9 +104,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf2(a,n1,b,n2,c,n3)
-c
-      real a(n1,2),b(2,n3),c(n1,n3)
-c
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,2),b(2,n3),c(n1,n3)
+!
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -100,9 +125,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf3(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,3),b(3,n3),c(n1,n3)
 c
-      real a(n1,3),b(3,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -114,9 +147,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf4(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,4),b(4,n3),c(n1,n3)
 c
-      real a(n1,4),b(4,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -129,9 +170,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf5(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,5),b(5,n3),c(n1,n3)
 c
-      real a(n1,5),b(5,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -145,9 +194,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf6(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,6),b(6,n3),c(n1,n3)
 c
-      real a(n1,6),b(6,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -162,9 +219,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf7(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,7),b(7,n3),c(n1,n3)
 c
-      real a(n1,7),b(7,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -180,9 +245,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf8(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,8),b(8,n3),c(n1,n3)
 c
-      real a(n1,8),b(8,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -199,9 +272,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf9(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,9),b(9,n3),c(n1,n3)
 c
-      real a(n1,9),b(9,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -219,9 +300,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf10(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,10),b(10,n3),c(n1,n3)
 c
-      real a(n1,10),b(10,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -240,9 +329,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf11(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,11),b(11,n3),c(n1,n3)
 c
-      real a(n1,11),b(11,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -262,9 +359,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf12(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,12),b(12,n3),c(n1,n3)
 c
-      real a(n1,12),b(12,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -285,9 +390,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf13(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,13),b(13,n3),c(n1,n3)
 c
-      real a(n1,13),b(13,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -309,9 +422,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf14(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,14),b(14,n3),c(n1,n3)
 c
-      real a(n1,14),b(14,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -334,9 +455,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf15(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,15),b(15,n3),c(n1,n3)
 c
-      real a(n1,15),b(15,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -360,9 +489,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf16(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,16),b(16,n3),c(n1,n3)
 c
-      real a(n1,16),b(16,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -387,9 +524,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf17(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,17),b(17,n3),c(n1,n3)
 c
-      real a(n1,17),b(17,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -415,9 +560,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf18(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,18),b(18,n3),c(n1,n3)
 c
-      real a(n1,18),b(18,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -444,9 +597,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf19(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,19),b(19,n3),c(n1,n3)
 c
-      real a(n1,19),b(19,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -474,9 +635,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf20(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,20),b(20,n3),c(n1,n3)
 c
-      real a(n1,20),b(20,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -505,9 +674,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf21(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,21),b(21,n3),c(n1,n3)
 c
-      real a(n1,21),b(21,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -537,9 +714,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf22(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,22),b(22,n3),c(n1,n3)
 c
-      real a(n1,22),b(22,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -570,9 +755,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf23(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,23),b(23,n3),c(n1,n3)
 c
-      real a(n1,23),b(23,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -604,9 +797,17 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxf24(a,n1,b,n2,c,n3)
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 n1, n2, n3, i, j
+      real*8 a(n1,24),b(24,n3),c(n1,n3)
 c
-      real a(n1,24),b(24,n3),c(n1,n3)
-c
+      n1 = n1
+      n2 = n2
+      n3 = n3
       do j=1,n3
          do i=1,n1
             c(i,j) = a(i,1)*b(1,j)
@@ -639,13 +840,16 @@ c
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_mxm44_0(a, m, b, k, c, n)
-c
-c matrix multiply with a 4x4 pencil 
-c
-      real a(m,k), b(k,n), c(m,n)
-      real s11, s12, s13, s14, s21, s22, s23, s24
-      real s31, s32, s33, s34, s41, s42, s43, s44
-
+!
+      implicit none
+!
+! Internal:
+!
+      integer*4 m, k, n, i, j, l, m1, n1, nresid, mresid
+      real*8 a(m,k), b(k,n), c(m,n)
+      real*8 s11, s12, s13, s14, s21, s22, s23, s24
+      real*8 s31, s32, s33, s34, s41, s42, s43, s44
+!
       mresid = iand(m,3) 
       nresid = iand(n,3) 
       m1 = m - mresid + 1

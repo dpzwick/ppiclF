@@ -1,11 +1,17 @@
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitMPI(comm,id,np)
-#include "PPICLF"
-
-      integer comm
-      integer id
-      integer np
-
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Input: 
+!
+      integer*4 comm
+      integer*4 id
+      integer*4 np
+!
       if (PPICLF_LINIT .or. PPICLF_LFILT .or. PPICLF_OVERLAP)
      >   call ppiclf_exittr('InitMPI must be called first$',0.0,0)
 
@@ -23,13 +29,21 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitFindptsDum
-#include "PPICLF"
-
-      real xm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
-     >     ym1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
-     >     zm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Internal:
+!
+      real*8 tol, bb_t, npt_max
+      integer*4 n, ie
+      real*4 xm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
+     >       ym1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
+     >       zm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
       common /ppiclf_tmp_grid/ xm1, ym1, zm1
-
+!
       n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       do ie=1,ppiclf_neltb
          call ppiclf_copy(xm1(1,1,1,ie),ppiclf_xm1b(1,1,1,1,ie),n)
@@ -65,22 +79,40 @@
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitCrystal
-#include "PPICLF"
-
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
       call fgslib_crystal_setup(ppiclf_cr_hndl,ppiclf_comm,ppiclf_np)
 
       return
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_CreateBin
-#include "PPICLF"
-
-      integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Internal:
+!
+      integer*4  el_face_num(18),el_edge_num(36),el_corner_num(24),
      >                            nfacegp, nedgegp, ncornergp
-      integer  ifac(3), icount(3)
-      real     d2new(3)
+      integer*4  ifac(3), icount(3)
+      real*8     d2new(3)
+      integer*4 ix, iy, iz, iperiodicx, iperiodicy, iperiodicz, ndim,
+     >          npt_total, j, i, nmax, nbb, idum, jdum, kdum, nbin
+      real*8 xmin, ymin, zmin, xmax, ymax, zmax, rduml, rdumr
+      integer*4 ppiclf_iglsum
+      external ppiclf_iglsum
+      real*8 ppiclf_glmin,ppiclf_glmax
+      external ppiclf_glmin,ppiclf_glmax
+!
 
-c     face, edge, and corner number, x,y,z are all inline, so stride=3
+! face, edge, and corner number, x,y,z are all inline, so stride=3
       el_face_num = (/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /)
       el_edge_num = (/ -1,-1,0 , 1,-1,0, 1,1,0 , -1,1,0 ,
      >                  0,-1,-1, 1,0,-1, 0,1,-1, -1,0,-1,
@@ -109,7 +141,6 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       iperiodicy = ppiclf_iperiodic(2)
       iperiodicz = ppiclf_iperiodic(3)
       ndim       = ppiclf_ndim
-
          
       ppiclf_d2chk(1) = max(ppiclf_d2chk(2),ppiclf_d2chk(3))
 
@@ -156,7 +187,6 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       if(ppiclf_ndim .gt. 2) ppiclf_binb(5) = ppiclf_glmin(zmin,1)
       if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
 
-
       if (ppiclf_xdrange(2,1) .lt. ppiclf_binb(2) .or.
      >    ppiclf_xdrange(1,1) .gt. ppiclf_binb(1)) then
          ppiclf_binb(1) = ppiclf_xdrange(1,1)
@@ -187,10 +217,9 @@ c     face, edge, and corner number, x,y,z are all inline, so stride=3
       d2new(2) = ppiclf_d2chk(1)
       d2new(3) = ppiclf_d2chk(1)
 
-
       ! first check if suggested direction 
       j = -1
-      nmax = 1E8
+      nmax = int(1E8)
       if (ppiclf_nbin_dir(1) .eq. 1) j = 0
       if (ppiclf_nbin_dir(2) .eq. 1) j = 1
       if (ppiclf_nbin_dir(3) .eq. 1) j = 2
@@ -241,7 +270,7 @@ c              icount(j+1) = icount(j+1) + 1
       enddo
 
 ! -------------------------------------------------------
-c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
+! SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 ! -------------------------------------------------------
       ! how many spacings in each direction
       ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
@@ -257,11 +286,10 @@ c SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
       if (ppiclf_ndim .gt. 2) 
      >ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
 
-      ppiclf_nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
+      nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
 
-
-c     current box coordinates
-      if (ppiclf_nid .le. ppiclf_nbin-1) then
+!     current box coordinates
+      if (ppiclf_nid .le. nbin-1) then
          idum = modulo(ppiclf_nid,ppiclf_ndxgp)
          jdum = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
          kdum = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
@@ -282,12 +310,22 @@ c     current box coordinates
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_CreateSubBin
-#include "PPICLF"
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Internal:
+!
+      integer*4 nbin, idum, jdum, kdum, ndumx, ndumy, itmp, jtmp, ktmp,
+     >          i, j, k
+!
 
-      ppiclf_nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
+      nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
 
 c     current box coordinates
-      if (ppiclf_nid .le. ppiclf_nbin-1) then
+      if (ppiclf_nid .le. nbin-1) then
          idum = modulo(ppiclf_nid,ppiclf_ndxgp)
          jdum = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
          kdum = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
@@ -324,9 +362,12 @@ c     current box coordinates
          do k=1,ppiclf_bz
          do j=1,ppiclf_by
          do i=1,ppiclf_bx
-            ppiclf_grid_x(i,j,k) = ppiclf_binx(1,1) + (i-1)*ppiclf_rdx
-            ppiclf_grid_y(i,j,k) = ppiclf_biny(1,1) + (j-1)*ppiclf_rdy
-            ppiclf_grid_z(i,j,k) = ppiclf_binz(1,1) + (k-1)*ppiclf_rdz
+            ppiclf_grid_x(i,j,k) = (ppiclf_binx(1,1) +
+     >                                  (i-1)*ppiclf_rdx)
+            ppiclf_grid_y(i,j,k) = (ppiclf_biny(1,1) +
+     >                                  (j-1)*ppiclf_rdy)
+            ppiclf_grid_z(i,j,k) = (ppiclf_binz(1,1) +
+     >                                  (k-1)*ppiclf_rdz)
 
             itmp = idum*(ppiclf_bx-1) + (i-1)
             jtmp = jdum*(ppiclf_by-1) + (j-1)
@@ -344,14 +385,26 @@ c     current box coordinates
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_MapOverlapMesh
-#include "PPICLF"
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
       include 'mpif.h'
-
-      integer icalld
-      save    icalld
-      data    icalld /0/
-
-      integer nkey(2)
+!
+! Internal:
+!
+      integer*4 icalld
+      save      icalld
+      data      icalld /0/
+      integer*4 nkey(2), i, j, k, ie, iee, ii, jj, kk, ndum, nrank,
+     >          nl, nii, njj, nrr, ilow, jlow, klow, nxyz, il,
+     >          ihigh, jhigh, khigh, ierr
+      real*8 rxval, ryval, rzval
+      logical partl
+      real*8 ppiclf_vlmin, ppiclf_vlmax
+      external ppiclf_vlmin, ppiclf_vlmax
+!
 
       ! see which bins are in which elements
       ppiclf_neltb = 0
@@ -559,15 +612,26 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitOverlapMesh(ncell,lx1,ly1,lz1,
      >                                       xgrid,ygrid,zgrid)
-#include "PPICLF"
-
-      integer ncell
-      integer lx1
-      integer ly1
-      integer lz1
-      real    xgrid(*)
-      real    ygrid(*)
-      real    zgrid(*)
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Input:
+!
+      integer*4 ncell
+      integer*4 lx1
+      integer*4 ly1
+      integer*4 lz1
+      real*8    xgrid(*)
+      real*8    ygrid(*)
+      real*8    zgrid(*)
+!
+! External:
+!
+      integer*4 nxyz, i, j, ie
+!
 
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitOverlap$',0.,0)
@@ -604,14 +668,21 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_comm_FindParticle
-#include "PPICLF"
-
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Internal:
+!
+      integer*4 ix, iy, iz, i, ii, jj, kk, ndum, nrank
+!
       ix = 1
       iy = 2
       iz = 1
       if (ppiclf_ndim.eq.3)
      >iz = 3
-
 
       do i=1,ppiclf_npart
          ! check if particles are greater or less than binb bounds....
@@ -638,12 +709,20 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       end
 !-----------------------------------------------------------------------
       subroutine ppiclf_comm_MoveParticle
-#include "PPICLF"
-
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Internal:
+!
       logical partl    
-
+      integer*4 lrf
       parameter(lrf = PPICLF_LRS*4 + PPICLF_LRP + PPICLF_LRP2)
-      real rwork(lrf,PPICLF_LPART)
+      real*8 rwork(lrf,PPICLF_LPART)
+      integer*4 i, ic, j0
+!
 
       do i=1,ppiclf_npart
          ic = 1
@@ -692,14 +771,25 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       end
 c-----------------------------------------------------------------------
       subroutine ppiclf_comm_CreateGhost
-#include "PPICLF"
-
-      real xdlen,ydlen,zdlen,rxdrng(3),rxnew(3)
-      integer iadd(3),gpsave(27)
-      real map(PPICLF_LRP_PRO)
-
-      integer  el_face_num(18),el_edge_num(36),el_corner_num(24),
-     >                            nfacegp, nedgegp, ncornergp
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Internal:
+!
+      real*8 xdlen,ydlen,zdlen,rxdrng(3),rxnew(3), rfac, rxval, ryval,
+     >       rzval, rxl, ryl, rzl, rxr, ryr, rzr, distchk, dist
+      integer*4 iadd(3),gpsave(27)
+      real*8 map(PPICLF_LRP_PRO)
+      integer*4  el_face_num(18),el_edge_num(36),el_corner_num(24),
+     >           nfacegp, nedgegp, ncornergp, iperiodicx, iperiodicy,
+     >           iperiodicz, jx, jy, jz, ip, idum, iip, jjp, kkp, ii1,
+     >           jj1, kk1, iig, jjg, kkg, iflgx, iflgy, iflgz,
+     >           isave, iflgsum, ndumn, nrank, ibctype, i, ifc, ist, j,
+     >           k
+!
 
 c     face, edge, and corner number, x,y,z are all inline, so stride=3
       el_face_num = (/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /)
@@ -1088,91 +1178,79 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_comm_CheckPeriodicBC(rxnew,rxdrng,iadd)
-#include "PPICLF"
-c
-      real rxnew(3), rxdrng(3)
-      integer iadd(3), irett(3)
-
-      xloc = rxnew(1)
-      yloc = rxnew(2)
-      zloc = rxnew(3)
-
-      xdlen = rxdrng(1)
-      ydlen = rxdrng(2)
-      zdlen = rxdrng(3)
-
-      ii = iadd(1)
-      jj = iadd(2)
-      kk = iadd(3)
-
-      irett(1) = 0
-      irett(2) = 0
-      irett(3) = 0
-
-      if (xdlen .gt. 0 ) then
-      if (ii .ge. ppiclf_ndxgp) then
-         xloc = xloc - xdlen
-         irett(1) = 1
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Input:
+!
+      real*8 rxdrng(3)
+      integer*4 iadd(3)
+!
+! Input/Output:
+!
+      real*8 rxnew(3)
+!
+      if (rxdrng(1) .gt. 0 ) then
+      if (iadd(1) .ge. ppiclf_ndxgp) then
+         rxnew(1) = rxnew(1) - rxdrng(1)
          goto 123
       endif
       endif
-      if (xdlen .gt. 0 ) then
-      if (ii .lt. 0) then
-         xloc = xloc + xdlen
-         irett(1) = 1
+      if (rxdrng(1) .gt. 0 ) then
+      if (iadd(1) .lt. 0) then
+         rxnew(1) = rxnew(1) + rxdrng(1)
          goto 123
       endif
       endif
 
   123 continue    
-      if (ydlen .gt. 0 ) then
-      if (jj .ge. ppiclf_ndygp) then
-         yloc = yloc - ydlen
-         irett(2) = 1
+      if (rxdrng(2) .gt. 0 ) then
+      if (iadd(2) .ge. ppiclf_ndygp) then
+         rxnew(2) = rxnew(2) - rxdrng(2)
          goto 124
       endif
       endif
-      if (ydlen .gt. 0 ) then
-      if (jj .lt. 0) then
-         yloc = yloc + ydlen
-         irett(2) = 1
+      if (rxdrng(2) .gt. 0 ) then
+      if (iadd(2) .lt. 0) then
+         rxnew(2) = rxnew(2) + rxdrng(2)
          goto 124
       endif
       endif
   124 continue
 
       if (ppiclf_ndim .gt. 2) then
-         if (zdlen .gt. 0 ) then
-         if (kk .ge. ppiclf_ndzgp) then
-            zloc = zloc - zdlen
-            irett(3) = 1
+         if (rxdrng(3) .gt. 0 ) then
+         if (iadd(3) .ge. ppiclf_ndzgp) then
+            rxnew(3) = rxnew(3) - rxdrng(3)
             goto 125
          endif
          endif
-         if (zdlen .gt. 0 ) then
-         if (kk .lt. 0) then
-            zloc = zloc + zdlen
-            irett(3) = 1
+         if (rxdrng(3) .gt. 0 ) then
+         if (iadd(3) .lt. 0) then
+            rxnew(3) = rxnew(3) + rxdrng(3)
             goto 125
          endif
          endif
       endif
   125 continue
 
-      rxnew(1) = xloc
-      rxnew(2) = yloc
-      rxnew(3) = zloc
-
       return
       end
 c----------------------------------------------------------------------
       subroutine ppiclf_comm_MoveGhost
-c
-#include "PPICLF"
-
+!
+      implicit none
+!
+#include "PPICLF.h"
+#include "PPICLF"      
+!
+! Internal:
+!
       logical partl         
-
-      ! send ghost particles
+!
       call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl
      >                                  ,ppiclf_npart_gp,PPICLF_LPART_GP
      >                                  ,ppiclf_iprop_gp,PPICLF_LIP_GP
