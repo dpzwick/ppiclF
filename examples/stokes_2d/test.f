@@ -39,7 +39,6 @@ c main code below
       subroutine PlaceParticle(npart,y)
 #include "PPICLF.h"
 #include "PPICLF"
-
       integer*4 npart
       real*8    y(*)
       real*8    ran2
