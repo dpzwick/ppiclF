@@ -1,31 +1,18 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_user_SetYdot(time,y,ydot)
+      subroutine ppiclf_user_SetYdot
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
-!
-! Input:
-!
-      real*8 time
-      real*8 y(*)
-!
-! Output:
-!
-      real*8 ydot(*)
 !
 ! Internal:
 !
       real*8 rmass,fbx,fby,fbz,fcx,fcy,fcz
-      integer*4 i,j
+      integer*4 i
 !
 ! evaluate ydot
       do i=1,ppiclf_npart
-         ! striding solution y vector
-         j = PPICLF_LRS*(i-1)
-
-         ! particle mass
+         ! Particle mass
          rmass = ppiclf_rprop(PPICLF_R_JVOLP,i)
      >          *ppiclf_rprop(PPICLF_R_JRHOP,i)
 
@@ -34,21 +21,23 @@
          fby  = -9.8d0*rmass
          fbz  = 0.0d0
 
+         ! Collision search
          call ppiclf_solve_NearestNeighbor(i)
 
+         ! User implemented collision force from EvalNearestNeighbor()
          fcx  = ppiclf_ydotc(PPICLF_JVX,i)
          fcy  = ppiclf_ydotc(PPICLF_JVY,i)
          fcz  = ppiclf_ydotc(PPICLF_JVZ,i)
 
-         ! set ydot for all PPICLF_SLN number of equations
-         ydot(PPICLF_JX +j) = y(PPICLF_JVX +j)
-         ydot(PPICLF_JY +j) = y(PPICLF_JVY +j)
-         ydot(PPICLF_JZ +j) = y(PPICLF_JVZ +j)
-         ydot(PPICLF_JVX+j) = (fbx+fcx)/rmass
-         ydot(PPICLF_JVY+j) = (fby+fcy)/rmass
-         ydot(PPICLF_JVZ+j) = (fbz+fcz)/rmass
+         ! set ydot for all PPICLF_LRS number of equations
+         ppiclf_ydot(PPICLF_JX ,i) = ppiclf_y(PPICLF_JVX,i)
+         ppiclf_ydot(PPICLF_JY ,i) = ppiclf_y(PPICLF_JVY,i)
+         ppiclf_ydot(PPICLF_JZ ,i) = ppiclf_y(PPICLF_JVZ,i)
+         ppiclf_ydot(PPICLF_JVX,i) = (fbx+fcx)/rmass
+         ppiclf_ydot(PPICLF_JVY,i) = (fby+fcy)/rmass
+         ppiclf_ydot(PPICLF_JVZ,i) = (fbz+fcz)/rmass
       enddo 
-c evaluate ydot
+! evaluate ydot
 
       return
       end
@@ -78,7 +67,6 @@ c evaluate ydot
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
@@ -91,10 +79,12 @@ c evaluate ydot
 !
 ! Internal:
 !
-      ! For user implemented collision model
       real*8 ksp,erest
-      common /external_user_collsion/ ksp,erest
-      ! For user implemented collision model
+      common /ucollision/ ksp,erest
+#ifdef PPICLC
+      BIND(C, name="ucollision") :: /ucollision/ ! c binding
+#endif
+
       real*8 rpi2, rthresh, rxdiff, rydiff, rzdiff, rdiff, rm1, rm2,
      >       rmult, eta, rbot, rn_12x, rn_12y, rn_12z, rdelta12,
      >       rv12_mag, rv12_mage, rksp_max, rnmag, rksp_wall, rextra
@@ -135,11 +125,11 @@ c evaluate ydot
          rksp_max  = ksp*rdelta12
          rnmag     = -rksp_max - rv12_mage
          
-         PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)
+         ppiclf_ydotc(PPICLF_JVX,i) = ppiclf_ydotc(PPICLF_JVX,i)
      >                              + rnmag*rn_12x
-         PPICLF_YDOTC(PPICLF_JVY,i) = PPICLF_YDOTC(PPICLF_JVY,i)
+         ppiclf_ydotc(PPICLF_JVY,i) = ppiclf_ydotc(PPICLF_JVY,i)
      >                              + rnmag*rn_12y
-         PPICLF_YDOTC(PPICLF_JVZ,i) = PPICLF_YDOTC(PPICLF_JVZ,i)
+         ppiclf_ydotc(PPICLF_JVZ,i) = ppiclf_ydotc(PPICLF_JVZ,i)
      >                              + rnmag*rn_12z
 
       ! boundaries
@@ -180,11 +170,11 @@ c evaluate ydot
          rksp_max  = rksp_wall*rdelta12
          rnmag     = -rksp_max - rv12_mage
          
-         PPICLF_YDOTC(PPICLF_JVX,i) = PPICLF_YDOTC(PPICLF_JVX,i)
+         ppiclf_ydotc(PPICLF_JVX,i) = ppiclf_ydotc(PPICLF_JVX,i)
      >                              + rnmag*rn_12x
-         PPICLF_YDOTC(PPICLF_JVY,i) = PPICLF_YDOTC(PPICLF_JVY,i)
+         ppiclf_ydotc(PPICLF_JVY,i) = ppiclf_ydotc(PPICLF_JVY,i)
      >                              + rnmag*rn_12y
-         PPICLF_YDOTC(PPICLF_JVZ,i) = PPICLF_YDOTC(PPICLF_JVZ,i)
+         ppiclf_ydotc(PPICLF_JVZ,i) = ppiclf_ydotc(PPICLF_JVZ,i)
      >                              + rnmag*rn_12z
 
       endif

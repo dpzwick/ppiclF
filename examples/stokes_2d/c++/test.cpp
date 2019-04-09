@@ -7,7 +7,6 @@
 int main(int argc, char *argv[])
 {
 
-
     int np, nid, icomm;
     int imethod, ndim, iendian, npart;
     double y    [PPICLF_LPART][PPICLF_LRS]; // Opposite ordering

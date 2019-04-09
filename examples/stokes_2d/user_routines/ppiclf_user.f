@@ -8,7 +8,7 @@
 ! Internal:
 !
       real*8 fqsx,fqsy,fbx,fby
-      integer*4 i,j
+      integer*4 i
 !
 ! evaluate ydot
       do i=1,ppiclf_npart

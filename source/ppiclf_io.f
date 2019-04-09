@@ -32,6 +32,8 @@
       character*132 PPICLF_CHSTR
       EXTERNAL PPICLF_CHSTR
 !
+      call ppiclf_prints(' *Begin ReadParticleVTU$')
+      
       PPICLF_RESTART = .true.
 
       indx1 = ppiclf_indx1(filein1,'.')
@@ -179,6 +181,8 @@
 
       ppiclf_npart = npart
 
+      call ppiclf_printsi('  End ReadParticleVTU$',npt_total)
+
       return
       end
 !-----------------------------------------------------------------------
@@ -192,7 +196,6 @@
       implicit none
 !
 #include "PPICLF.h"
-      include 'mpif.h'
 !
 ! Input:
 !
@@ -211,6 +214,7 @@
       external PPICLF_CHSTR
 !
       !! THROW ERRORS HERE IN FUTURE
+      call ppiclf_prints(' *Begin ReadWallVTK$')
       
       indx1 = ppiclf_indx1(filein1,'.')
       indx1 = indx1 + 3 ! v (1) t (2) k (3)
@@ -272,7 +276,7 @@
       call ppiclf_bcast(ppiclf_wall_c,9*PPICLF_LWALL*irsize)
       call ppiclf_bcast(ppiclf_wall_n,4*PPICLF_LWALL*irsize)
 
-      call mpi_barrier(ppiclf_comm,ierr)
+      call ppiclf_printsi('  End ReadWallVTK$',nwalls)
 
       return
       end

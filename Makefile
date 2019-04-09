@@ -3,7 +3,7 @@ FFLAGS          += -cpp               \
              	   -fbacktrace        \
 #	           -Wall              \
 #                  -fdefault-real-8   
- FFLAGS          += -DPPICLC
+FFLAGS          += -DPPICLC
  	           
 INSTALL_LOCATION = .
 
