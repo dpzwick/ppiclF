@@ -1,14 +1,18 @@
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_io_ReadParticleVTU(filein1)
+     > bind(C, name="ppiclc_io_ReadParticleVTU")
+#else
+      subroutine ppiclf_io_ReadParticleVTU(filein1)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
-      character (len = *) filein1
+      character*1 filein1(132)
 !
 ! Internal:
 !
@@ -17,13 +21,22 @@
      >       ,rout_lrp(PPICLF_LRP*PPICLF_LPART)
      >       ,rout_lip(3      *PPICLF_LPART)
       character*1 dum_read
+      character*132 filein2
       integer*8 idisp_pos,idisp_sln,idisp_lrp,idisp_lip,stride_len
       integer*4 vtu, isize, jx, jy, jz, ivtu_size, ifound, i, npt_total,
      >          npart_min, npmax, npart, ndiff, iorank, icount_pos,
      >          icount_sln, icount_lrp, icount_lip, j, ic_pos, ic_sln,
-     >          ic_lrp, ic_lip, pth, ierr
+     >          ic_lrp, ic_lip, pth, ierr, indx1
+      integer*4 ppiclf_indx1
+      external ppiclf_indx1
+      character*132 PPICLF_CHSTR
+      EXTERNAL PPICLF_CHSTR
 !
       PPICLF_RESTART = .true.
+
+      indx1 = ppiclf_indx1(filein1,'.')
+      indx1 = indx1 + 3 ! v (1) t (2) u (3)
+      filein2 = ppiclf_chstr(filein1(1:indx1))
 
       isize = 4
       jx    = 1
@@ -35,7 +48,8 @@
       if (ppiclf_nid .eq. 0) then
 
       vtu=867+ppiclf_nid
-      open(unit=vtu,file=filein1,access='stream',form="unformatted")
+      open(unit=vtu,file=trim(filein2)
+     >    ,access='stream',form="unformatted")
 
       ivtu_size = -1
       ifound = 0
@@ -60,7 +74,7 @@
       if (npart_min*ppiclf_np .gt. npt_total) npart_min = npart_min-1
 
       if (npt_total .gt. PPICLF_LPART*ppiclf_np) 
-     >   call ppiclf_exittr('Increase LPART to at least$',0.0
+     >   call ppiclf_exittr('Increase LPART to at least$',0.0d0
      >    ,npart_min)
 
 
@@ -77,7 +91,7 @@
 
       iorank = -1
 
-      call ppiclf_byte_open_mpi(filein1,pth,.true.,ierr)
+      call ppiclf_byte_open_mpi(trim(filein2),pth,.true.,ierr)
 
       idisp_pos = ivtu_size + isize*(3*stride_len + 1)
       icount_pos = npart*3   
@@ -168,32 +182,45 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_io_ReadWallVTK(filein1)
+     > bind(C, name="ppiclc_io_ReadWallVTK")
+#else
+      subroutine ppiclf_io_ReadWallVTK(filein1)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
       include 'mpif.h'
 !
 ! Input:
 !
-      character (len = *) filein1
+      character*1 filein1(132)
 !
 ! Internal:
 !
       real*8 points(3,4*PPICLF_LWALL)
       integer*4 fid, nmax, i, j, i1, i2, i3, isize, irsize, ierr,
-     >          npoints, nwalls
+     >          npoints, nwalls, indx1
       character*1000 text
+      character*132 filein2
+      integer*4 ppiclf_indx1
+      external ppiclf_indx1
+      character*132 PPICLF_CHSTR
+      external PPICLF_CHSTR
 !
       !! THROW ERRORS HERE IN FUTURE
+      
+      indx1 = ppiclf_indx1(filein1,'.')
+      indx1 = indx1 + 3 ! v (1) t (2) k (3)
+      filein2 = ppiclf_chstr(filein1(1:indx1))
 
       if (ppiclf_nid .eq. 0) then
 
       fid = 432
 
-      open (unit=fid,file=filein1,action="read")
+      open (unit=fid,file=trim(filein2),action="read")
       
       nmax = 10000
       do i=1,nmax
@@ -255,7 +282,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
       include 'mpif.h'
 !
 ! Input:
@@ -696,7 +722,7 @@ c1511 continue
          icount_dum  = icount_pos(i,j,k)
          rpoint(1)   = ppiclf_grid_x(i,j,k)
          rpoint(2)   = ppiclf_grid_y(i,j,k)
-         rpoint(3)   = 0.0
+         rpoint(3)   = 0.0d0
          if (ppiclf_ndim .eq. 3)
      >   rpoint(3)   = ppiclf_grid_z(i,j,k)
          call ppiclf_byte_set_view(idisp_pos,pth)
@@ -768,7 +794,6 @@ c1511 continue
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
       include 'mpif.h'
 !
 ! Input:
@@ -1078,11 +1103,11 @@ c1511 continue
          icount_pos = 3
       endif
       idisp_pos  = ivtu_size + isize*(3*stride_lenv(1) + 1)
-      rpoint(1)  = (ppiclf_binx(1,1))
-      rpoint(2)  = (ppiclf_biny(1,1))
+      rpoint(1)  = sngl(ppiclf_binx(1,1))
+      rpoint(2)  = sngl(ppiclf_biny(1,1))
       rpoint(3)  = 0.0
       if (ppiclf_ndim .eq. 3)
-     >rpoint(3)  = (ppiclf_binz(1,1))
+     >rpoint(3)  = sngl(ppiclf_binz(1,1))
       call ppiclf_byte_set_view(idisp_pos,pth)
       call ppiclf_byte_write_mpi(rpoint,icount_pos,iorank,pth,ierr)
 
@@ -1096,9 +1121,9 @@ c1511 continue
      >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          if (ibin .eq. ppiclf_ndxgp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(2,1))
-            rpoint(2)  = (ppiclf_biny(1,1))
-            rpoint(3)  = (ppiclf_binz(1,1))
+            rpoint(1)  = sngl(ppiclf_binx(2,1))
+            rpoint(2)  = sngl(ppiclf_biny(1,1))
+            rpoint(3)  = sngl(ppiclf_binz(1,1))
          endif
          endif
          call ppiclf_byte_set_view(idisp_pos,pth)
@@ -1111,9 +1136,9 @@ c1511 continue
      >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          if (jbin .eq. ppiclf_ndygp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(1,1))
-            rpoint(2)  = (ppiclf_biny(2,1))
-            rpoint(3)  = (ppiclf_binz(1,1))
+            rpoint(1)  = sngl(ppiclf_binx(1,1))
+            rpoint(2)  = sngl(ppiclf_biny(2,1))
+            rpoint(3)  = sngl(ppiclf_binz(1,1))
          endif
          endif
          call ppiclf_byte_set_view(idisp_pos,pth)
@@ -1126,9 +1151,9 @@ c1511 continue
      >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(1,1))
-            rpoint(2)  = (ppiclf_biny(1,1))
-            rpoint(3)  = (ppiclf_binz(2,1))
+            rpoint(1)  = sngl(ppiclf_binx(1,1))
+            rpoint(2)  = sngl(ppiclf_biny(1,1))
+            rpoint(3)  = sngl(ppiclf_binz(2,1))
          endif
          endif
          call ppiclf_byte_set_view(idisp_pos,pth)
@@ -1142,9 +1167,9 @@ c1511 continue
          if (ibin .eq. ppiclf_ndxgp-1) then
          if (jbin .eq. ppiclf_ndygp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(2,1))
-            rpoint(2)  = (ppiclf_biny(2,1))
-            rpoint(3)  = (ppiclf_binz(1,1))
+            rpoint(1)  = sngl(ppiclf_binx(2,1))
+            rpoint(2)  = sngl(ppiclf_biny(2,1))
+            rpoint(3)  = sngl(ppiclf_binz(1,1))
          endif
          endif
          endif
@@ -1159,9 +1184,9 @@ c1511 continue
          if (ibin .eq. ppiclf_ndxgp-1) then
          if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(2,1))
-            rpoint(2)  = (ppiclf_biny(1,1))
-            rpoint(3)  = (ppiclf_binz(2,1))
+            rpoint(1)  = sngl(ppiclf_binx(2,1))
+            rpoint(2)  = sngl(ppiclf_biny(1,1))
+            rpoint(3)  = sngl(ppiclf_binz(2,1))
          endif
          endif
          endif
@@ -1176,9 +1201,9 @@ c1511 continue
          if (jbin .eq. ppiclf_ndygp-1) then
          if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(1,1))
-            rpoint(2)  = (ppiclf_biny(2,1))
-            rpoint(3)  = (ppiclf_binz(2,1))
+            rpoint(1)  = sngl(ppiclf_binx(1,1))
+            rpoint(2)  = sngl(ppiclf_biny(2,1))
+            rpoint(3)  = sngl(ppiclf_binz(2,1))
          endif
          endif
          endif
@@ -1194,9 +1219,9 @@ c1511 continue
          if (jbin .eq. ppiclf_ndygp-1) then
          if (kbin .eq. ppiclf_ndzgp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(2,1))
-            rpoint(2)  = (ppiclf_biny(2,1))
-            rpoint(3)  = (ppiclf_binz(2,1))
+            rpoint(1)  = sngl(ppiclf_binx(2,1))
+            rpoint(2)  = sngl(ppiclf_biny(2,1))
+            rpoint(3)  = sngl(ppiclf_binz(2,1))
          endif
          endif
          endif
@@ -1215,8 +1240,8 @@ c1511 continue
      >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          if (ibin .eq. ppiclf_ndxgp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(2,1))
-            rpoint(2)  = (ppiclf_biny(1,1))
+            rpoint(1)  = sngl(ppiclf_binx(2,1))
+            rpoint(2)  = sngl(ppiclf_biny(1,1))
             rpoint(3)  = 0.0
          endif
          endif
@@ -1230,8 +1255,8 @@ c1511 continue
      >       ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp-1) then
          if (jbin .eq. ppiclf_ndygp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(1,1))
-            rpoint(2)  = (ppiclf_biny(2,1))
+            rpoint(1)  = sngl(ppiclf_binx(1,1))
+            rpoint(2)  = sngl(ppiclf_biny(2,1))
             rpoint(3)  = 0.0
          endif
          endif
@@ -1246,8 +1271,8 @@ c1511 continue
          if (ibin .eq. ppiclf_ndxgp-1) then
          if (jbin .eq. ppiclf_ndygp-1) then
             icount_pos = 3
-            rpoint(1)  = (ppiclf_binx(2,1))
-            rpoint(2)  = (ppiclf_biny(2,1))
+            rpoint(1)  = sngl(ppiclf_binx(2,1))
+            rpoint(2)  = sngl(ppiclf_biny(2,1))
             rpoint(3)  = 0.0
          endif
          endif
@@ -1310,7 +1335,6 @@ c1511 continue
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
       include 'mpif.h'
 !
 ! Input:
@@ -1381,12 +1405,12 @@ c1511 continue
       do i=1,nxx
 
          ic_pos = ic_pos + 1
-         rout_pos(ic_pos) = (ppiclf_y(jx,i))
+         rout_pos(ic_pos) = sngl(ppiclf_y(jx,i))
          ic_pos = ic_pos + 1
-         rout_pos(ic_pos) = (ppiclf_y(jy,i))
+         rout_pos(ic_pos) = sngl(ppiclf_y(jy,i))
          ic_pos = ic_pos + 1
          if (ppiclf_ndim .eq. 3) then
-            rout_pos(ic_pos) = (ppiclf_y(jz,i))
+            rout_pos(ic_pos) = sngl(ppiclf_y(jz,i))
          else
             rout_pos(ic_pos) = 0.0
          endif
@@ -1394,13 +1418,13 @@ c1511 continue
       do j=1,PPICLF_LRS
       do i=1,nxx
          ic_sln = ic_sln + 1
-         rout_sln(ic_sln) = (ppiclf_y(j,i))
+         rout_sln(ic_sln) = sngl(ppiclf_y(j,i))
       enddo
       enddo
       do j=1,PPICLF_LRP
       do i=1,nxx
          ic_lrp = ic_lrp + 1
-         rout_lrp(ic_lrp) = (ppiclf_rprop(j,i))
+         rout_lrp(ic_lrp) = sngl(ppiclf_rprop(j,i))
       enddo
       enddo
       do j=5,7
@@ -1513,16 +1537,6 @@ c1511 continue
          call ppiclf_io_WriteDataArrayVTU(vtu,prostr,1,iint)
          iint = iint + 1*isize*npt_total + isize
       enddo
-
-c     call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-y',PPICLF_LRS,iint)
-c     iint = iint + PPICLF_LRS*isize*npt_total + isize
-
-c     call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-rprop',PPICLF_LRP
-c    >                                ,iint)
-c     iint = iint + PPICLF_LRP*isize*npt_total + isize
-
-c     call ppiclf_io_WriteDataArrayVTU(vtu,'ppiclf-iprop',3,iint)
-c     iint = iint + 3*isize*npt_total + isize
 
       write(vtu,'(A)',advance='yes') '   </PointData> '
 
@@ -1715,7 +1729,6 @@ c     iint = iint + 3*isize*npt_total + isize
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
       call ppiclf_prints('*********** PPICLF OUTPUT *****************$')
       call ppiclf_io_OutputDiagGen
@@ -1731,7 +1744,6 @@ c     iint = iint + 3*isize*npt_total + isize
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -1782,7 +1794,6 @@ c     iint = iint + 3*isize*npt_total + isize
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -1818,7 +1829,6 @@ c     iint = iint + 3*isize*npt_total + isize
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -1846,7 +1856,6 @@ c     iint = iint + 3*isize*npt_total + isize
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !

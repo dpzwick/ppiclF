@@ -1,8 +1,9 @@
 FC               = mpif77
 FFLAGS          += -cpp               \
-                   -fdefault-real-8   \
-#           	   -fbacktrace        \
-	           -Wall
+             	   -fbacktrace        \
+#	           -Wall              \
+#                  -fdefault-real-8   
+ FFLAGS          += -DPPICLC
  	           
 INSTALL_LOCATION = .
 

@@ -1,10 +1,14 @@
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_comm_InitMPI(comm,id,np)
+     > bind(C, name="ppiclc_comm_InitMPI")
+#else
+      subroutine ppiclf_comm_InitMPI(comm,id,np)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input: 
 !
@@ -13,7 +17,7 @@
       integer*4 np
 !
       if (PPICLF_LINIT .or. PPICLF_LFILT .or. PPICLF_OVERLAP)
-     >   call ppiclf_exittr('InitMPI must be called first$',0.0,0)
+     >   call ppiclf_exittr('InitMPI must be called first$',0.0d0,0)
 
       ppiclf_comm = comm
       ppiclf_nid  = id
@@ -33,7 +37,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -83,7 +86,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
       call fgslib_crystal_setup(ppiclf_cr_hndl,ppiclf_comm,ppiclf_np)
 
@@ -95,7 +97,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -182,8 +183,8 @@
       ppiclf_binb(2) = ppiclf_glmax(xmax,1)
       ppiclf_binb(3) = ppiclf_glmin(ymin,1)
       ppiclf_binb(4) = ppiclf_glmax(ymax,1)
-      ppiclf_binb(5) = 0.0
-      ppiclf_binb(6) = 0.0
+      ppiclf_binb(5) = 0.0d0
+      ppiclf_binb(6) = 0.0d0
       if(ppiclf_ndim .gt. 2) ppiclf_binb(5) = ppiclf_glmin(zmin,1)
       if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
 
@@ -282,7 +283,7 @@ c              icount(j+1) = icount(j+1) + 1
       ! grid spacing for that many spacings
       ppiclf_rdxgp = (ppiclf_binb(2) -ppiclf_binb(1))/real(ppiclf_ndxgp)
       ppiclf_rdygp = (ppiclf_binb(4) -ppiclf_binb(3))/real(ppiclf_ndygp)
-      ppiclf_rdzgp = 1.
+      ppiclf_rdzgp = 1.0d0
       if (ppiclf_ndim .gt. 2) 
      >ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
 
@@ -298,8 +299,8 @@ c              icount(j+1) = icount(j+1) + 1
          ppiclf_binx(2,1) = ppiclf_binb(1) + (idum+1)*ppiclf_rdxgp
          ppiclf_biny(1,1) = ppiclf_binb(3) + jdum    *ppiclf_rdygp
          ppiclf_biny(2,1) = ppiclf_binb(3) + (jdum+1)*ppiclf_rdygp
-         ppiclf_binz(1,1) = 0.0
-         ppiclf_binz(2,1) = 0.0
+         ppiclf_binz(1,1) = 0.0d0
+         ppiclf_binz(2,1) = 0.0d0
          if (ppiclf_ndim .gt. 2) then
             ppiclf_binz(1,1) = ppiclf_binb(5) + kdum    *ppiclf_rdzgp
             ppiclf_binz(2,1) = ppiclf_binb(5) + (kdum+1)*ppiclf_rdzgp
@@ -314,7 +315,6 @@ c              icount(j+1) = icount(j+1) + 1
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -362,11 +362,11 @@ c     current box coordinates
          do k=1,ppiclf_bz
          do j=1,ppiclf_by
          do i=1,ppiclf_bx
-            ppiclf_grid_x(i,j,k) = (ppiclf_binx(1,1) +
+            ppiclf_grid_x(i,j,k) = sngl(ppiclf_binx(1,1) +
      >                                  (i-1)*ppiclf_rdx)
-            ppiclf_grid_y(i,j,k) = (ppiclf_biny(1,1) +
+            ppiclf_grid_y(i,j,k) = sngl(ppiclf_biny(1,1) +
      >                                  (j-1)*ppiclf_rdy)
-            ppiclf_grid_z(i,j,k) = (ppiclf_binz(1,1) +
+            ppiclf_grid_z(i,j,k) = sngl(ppiclf_binz(1,1) +
      >                                  (k-1)*ppiclf_rdz)
 
             itmp = idum*(ppiclf_bx-1) + (i-1)
@@ -389,7 +389,6 @@ c     current box coordinates
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
       include 'mpif.h'
 !
 ! Internal:
@@ -414,7 +413,7 @@ c     current box coordinates
       do i=1,PPICLF_LEX
          rxval = ppiclf_xm1bs(i,j,k,1,ie)
          ryval = ppiclf_xm1bs(i,j,k,2,ie)
-         rzval = 0.
+         rzval = 0.0d0
          if(ppiclf_ndim.gt.2) rzval = ppiclf_xm1bs(i,j,k,3,ie)
 
          if (rxval .gt. ppiclf_binb(2)) goto 1233
@@ -439,29 +438,13 @@ c     current box coordinates
          ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
          nrank = ndum
 
-c        if (ii .eq. ppiclf_ndxgp-1) write(6,*) rxval,ppiclf_ndxgp
-
-c        if (ppiclf_binb(3) .gt. ryval)
-c    >      write(6,*) ryval,ppiclf_binb(3),jj
-         if (ii .lt. 0 .or. ii .gt. ppiclf_ndxgp-1) then
-c           write(6,*) 'Bounds here:',ppiclf_binb
-c           write(6,*) 'Failed here:',rxval,ryval,rzval
-            goto 1233
-         endif
-         if (jj .lt. 0 .or. jj .gt. ppiclf_ndygp-1) then
-c           write(6,*) 'Bounds here:',ppiclf_binb
-c           write(6,*) 'Failed here:',rxval,ryval,rzval
-            goto 1233
-         endif
-         if (kk .lt. 0 .or. kk .gt. ppiclf_ndzgp-1) then
-c           write(6,*) 'Bounds here:',ppiclf_binb
-c           write(6,*) 'Failed here:',rxval,ryval,rzval
-            goto 1233
-         endif
+         if (ii .lt. 0 .or. ii .gt. ppiclf_ndxgp-1) goto 1233
+         if (jj .lt. 0 .or. jj .gt. ppiclf_ndygp-1) goto 1233
+         if (kk .lt. 0 .or. kk .gt. ppiclf_ndzgp-1) goto 1233
 
          ppiclf_neltb = ppiclf_neltb + 1
          if(ppiclf_neltb .gt. PPICLF_LEE) then
-           call ppiclf_exittr('Increase PPICLF_LEE$',0.,ppiclf_neltb)
+           call ppiclf_exittr('Increase PPICLF_LEE$',0.0d0,ppiclf_neltb)
          endif
 
          ppiclf_er_map(1,ppiclf_neltb) = ie
@@ -524,7 +507,7 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       do i=1,PPICLF_LEX
          rxval = ppiclf_xm1b(i,j,k,1,ie)
          ryval = ppiclf_xm1b(i,j,k,2,ie)
-         rzval = 0.
+         rzval = 0.0d0
          if(ppiclf_ndim.gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
          
          ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
@@ -610,13 +593,18 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_comm_InitOverlapMesh(ncell,lx1,ly1,lz1,
      >                                       xgrid,ygrid,zgrid)
+     > bind(C, name="ppiclc_comm_InitOverlapMesh")
+#else
+      subroutine ppiclf_comm_InitOverlapMesh(ncell,lx1,ly1,lz1,
+     >                                       xgrid,ygrid,zgrid)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
@@ -634,19 +622,19 @@ c           write(6,*) 'Failed here:',rxval,ryval,rzval
 !
 
       if (.not.PPICLF_LCOMM)
-     >call ppiclf_exittr('InitMPI must be before InitOverlap$',0.,0)
+     >call ppiclf_exittr('InitMPI must be before InitOverlap$',0.0d0,0)
       if (.not.PPICLF_LINIT)
      >call ppiclf_exittr('InitParticle must be before InitOverlap$'
-     >                  ,0.,0)
+     >                  ,0.0d0,0)
 
       if (ncell .gt. PPICLF_LEE .or. ncell .lt. 0) 
-     >   call ppiclf_exittr('Increase LEE in InitOverlap$',0.,ncell)
+     >   call ppiclf_exittr('Increase LEE in InitOverlap$',0.0d0,ncell)
       if (lx1 .ne. PPICLF_LEX) 
-     >   call ppiclf_exittr('LX1 != LEX in InitOverlap$',0.,ncell)
+     >   call ppiclf_exittr('LX1 != LEX in InitOverlap$',0.0d0,ncell)
       if (ly1 .ne. PPICLF_LEY)
-     >   call ppiclf_exittr('LY1 != LEY in InitOverlap$',0.,ncell)
+     >   call ppiclf_exittr('LY1 != LEY in InitOverlap$',0.0d0,ncell)
       if (lz1 .ne. PPICLF_LEZ)
-     >   call ppiclf_exittr('LZ1 != LEZ in InitOverlap$',0.,ncell)
+     >   call ppiclf_exittr('LZ1 != LEZ in InitOverlap$',0.0d0,ncell)
 
       ppiclf_nee = ncell
       nxyz       = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
@@ -672,7 +660,6 @@ c-----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -690,9 +677,6 @@ c-----------------------------------------------------------------------
          jj    = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_rdygp) 
          kk    = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_rdzgp) 
          if (ppiclf_ndim .lt. 3) kk = 0
-c        if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-c        if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
          ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
          nrank = ndum
 
@@ -713,7 +697,6 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -749,7 +732,7 @@ c        if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
      >                                  ,j0)
 
       if (ppiclf_npart .gt. PPICLF_LPART .or. ppiclf_npart .lt. 0)
-     >   call ppiclf_exittr('Increase LPART$',0.0,ppiclf_npart)
+     >   call ppiclf_exittr('Increase LPART$',0.0d0,ppiclf_npart)
 
       do i=1,ppiclf_npart
          ic = 1
@@ -775,7 +758,6 @@ c-----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -835,7 +817,7 @@ c CREATING GHOST PARTICLES
 
       ppiclf_npart_gp = 0
 
-      rfac = 1.0
+      rfac = 1.0d0
 
       do ip=1,ppiclf_npart
 
@@ -867,7 +849,7 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
 
          rxval = ppiclf_cp_map(1,ip)
          ryval = ppiclf_cp_map(2,ip)
-         rzval = 0.
+         rzval = 0.0d0
          if (ppiclf_ndim .gt. 2) rzval = ppiclf_cp_map(3,ip)
 
          iip    = ppiclf_iprop(8,ip)
@@ -878,8 +860,8 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
          rxr = rxl + ppiclf_rdxgp
          ryl = ppiclf_binb(3) + ppiclf_rdygp*jjp
          ryr = ryl + ppiclf_rdygp
-         rzl = 0.0
-         rzr = 0.0
+         rzl = 0.0d0
+         rzr = 0.0d0
          if (ppiclf_ndim .gt. 2) then
             rzl = ppiclf_binb(5) + ppiclf_rdzgp*kkp
             rzr = rzl + ppiclf_rdzgp
@@ -898,8 +880,8 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
             jjg = jj1
             kkg = kk1
 
-            distchk = 0.0
-            dist = 0.0
+            distchk = 0.0d0
+            dist = 0.0d0
             if (ii1-iip .ne. 0) then
                distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
@@ -993,8 +975,8 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
             jjg = jj1
             kkg = kk1
 
-            distchk = 0.0
-            dist = 0.0
+            distchk = 0.0d0
+            dist = 0.0d0
             if (ii1-iip .ne. 0) then
                distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
@@ -1088,8 +1070,8 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
             jjg = jj1
             kkg = kk1
 
-            distchk = 0.0
-            dist = 0.0
+            distchk = 0.0d0
+            dist = 0.0d0
             if (ii1-iip .ne. 0) then
                distchk = distchk + (rfac*ppiclf_d2chk(1))**2
                if (ii1-iip .lt. 0) dist = dist +(rxval - rxl)**2
@@ -1182,7 +1164,6 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
@@ -1245,7 +1226,6 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !

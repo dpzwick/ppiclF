@@ -1,10 +1,16 @@
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitParticle(imethod,ndim,iendian,npart,y)
+#ifdef PPICLC
+      subroutine ppiclf_solve_InitParticle(imethod,ndim,iendian,npart,y,
+     >                                     rprop)
+     > bind(C, name="ppiclc_solve_InitParticle")
+#else
+      subroutine ppiclf_solve_InitParticle(imethod,ndim,iendian,npart,y,
+     >                                     rprop)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input: 
 !
@@ -13,14 +19,17 @@
       integer*4  iendian
       integer*4  npart
       real*8     y(*)
+      real*8     rprop(*)
 !
       if (.not.PPICLF_LCOMM)
-     >call ppiclf_exittr('InitMPI must be before InitParticle$',0.
+     >call ppiclf_exittr('InitMPI must be before InitParticle$',0.0d0
      >   ,ppiclf_nid)
       if (PPICLF_LFILT)
-     >call ppiclf_exittr('InitFilter must be before InitParticle$',0.,0)
+     >call ppiclf_exittr('InitFilter must be before InitParticle$',0.0d0
+     >                  ,0)
       if (PPICLF_OVERLAP)
-     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.,0)
+     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.0d0
+     >                  ,0)
 
       call ppiclf_prints('*Begin InitParticle$')
 
@@ -28,12 +37,12 @@
             call ppiclf_solve_InitParam(imethod,ndim,iendian,npart)
          call ppiclf_prints('    End InitParam$')
          
-            call ppiclf_copy(ppiclf_y,y,ppiclf_npart)
-         
          if (.not. PPICLF_RESTART) then
-         call ppiclf_prints('   *Begin ParticleTag$')
-               call ppiclf_solve_SetParticleTag
-         call ppiclf_prints('    End ParticleTag$')
+            call ppiclf_copy(ppiclf_y    ,y    ,PPICLF_LPART*PPICLF_LRS)
+            call ppiclf_copy(ppiclf_rprop,rprop,PPICLF_LPART*PPICLF_LRP)
+            call ppiclf_prints('   *Begin ParticleTag$')
+                  call ppiclf_solve_SetParticleTag
+            call ppiclf_prints('    End ParticleTag$')
          endif
 
          call ppiclf_prints('   *Begin CreateBin$')
@@ -70,7 +79,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
@@ -80,13 +88,13 @@
       integer*4  npart
 !
       if (imethod .le. 0 .or. imethod .ge. 2)
-     >   call ppiclf_exittr('Invalid integration method$',0.0,imethod)
+     >   call ppiclf_exittr('Invalid integration method$',0.0d0,imethod)
       if (ndim .le. 1 .or. ndim .ge. 4)
-     >   call ppiclf_exittr('Invalid problem dimension$',0.0,ndim)
+     >   call ppiclf_exittr('Invalid problem dimension$',0.0d0,ndim)
       if (iendian .lt. 0 .or. iendian .gt. 1)
-     >   call ppiclf_exittr('Invalid Endian$',0.0,iendian)
+     >   call ppiclf_exittr('Invalid Endian$',0.0d0,iendian)
       if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
-     >   call ppiclf_exittr('Invalid number of particles$',0.0,npart)
+     >   call ppiclf_exittr('Invalid number of particles$',0.0d0,npart)
 
       ppiclf_imethod      = imethod
       ppiclf_ndim         = ndim
@@ -101,8 +109,8 @@
 
       ppiclf_cycle  = 0
       ppiclf_iostep = 1
-      ppiclf_dt     = 0.0
-      ppiclf_time   = 0.0
+      ppiclf_dt     = 0.0d0
+      ppiclf_time   = 0.0d0
 
       ppiclf_overlap    = .false.
       ppiclf_linit      = .false.
@@ -116,16 +124,16 @@
       if (PPICLF_INTERP .eq. 1)  ppiclf_lintp = .true.
       if (PPICLF_PROJECT .eq. 1) ppiclf_lproj = .true.
 
-      ppiclf_xdrange(1,1) = -1E10
-      ppiclf_xdrange(2,1) =  1E10
-      ppiclf_xdrange(1,2) = -1E10
-      ppiclf_xdrange(2,2) =  1E10
-      ppiclf_xdrange(1,3) = -1E10
-      ppiclf_xdrange(2,3) =  1E10
+      ppiclf_xdrange(1,1) = -1E20
+      ppiclf_xdrange(2,1) =  1E20
+      ppiclf_xdrange(1,2) = -1E20
+      ppiclf_xdrange(2,2) =  1E20
+      ppiclf_xdrange(1,3) = -1E20
+      ppiclf_xdrange(2,3) =  1E20
 
-      ppiclf_d2chk(1) = 0
-      ppiclf_d2chk(2) = 0
-      ppiclf_d2chk(3) = 0
+      ppiclf_d2chk(1) = 0.0d0
+      ppiclf_d2chk(2) = 0.0d0
+      ppiclf_d2chk(3) = 0.0d0
 
       ppiclf_nbin_dir(1) = 0
       ppiclf_nbin_dir(2) = 0
@@ -138,22 +146,27 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_InitNeighborBin(rwidth)
+     > bind(C, name="ppiclc_solve_InitNeighborBin")
+#else
+      subroutine ppiclf_solve_InitNeighborBin(rwidth)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
       real*8 rwidth
 !
       if (.not.PPICLF_LCOMM)
-     >call ppiclf_exittr('InitMPI must be before InitNeighborBin$',0.,0)
+     >call ppiclf_exittr('InitMPI must be before InitNeighborBin$',0.0d0
+     >                  ,0)
       if (.not.PPICLF_LINIT)
      >call ppiclf_exittr('InitParticle must be before InitNeighborBin$'
-     >                  ,0.,0)
+     >                  ,0.0d0,0)
 
       ppiclf_lsubsubbin = .true.
 
@@ -162,12 +175,16 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_InitSuggestedDir(str)
+     > bind(C, name="ppiclc_solve_InitSuggestedDir")
+#else
+      subroutine ppiclf_solve_InitSuggestedDir(str)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
@@ -175,10 +192,10 @@
 !
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitSuggestedDir$'
-     >                   ,0.,0)
+     >                   ,0.0d0,0)
       if (.not.PPICLF_LINIT)
      >call ppiclf_exittr('InitParticle must be before InitSuggestedDir$'
-     >                  ,0.,0)
+     >                  ,0.0d0,0)
 
       if (str == 'x' .or. str == 'X') then 
          ppiclf_nbin_dir(1) = 1
@@ -199,7 +216,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -235,7 +251,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input:
 ! 
@@ -330,14 +345,14 @@
 
          rnx  = ppiclf_wall_n(1,j)
          rny  = ppiclf_wall_n(2,j)
-         rnz  = 0.0
+         rnz  = 0.0d0
          area = ppiclf_wall_n(3,j)
          rpx1 = ppiclf_cp_map(1,i)
          rpy1 = ppiclf_cp_map(2,i)
-         rpz1 = 0.0
+         rpz1 = 0.0d0
          rpx2 = ppiclf_wall_c(1,j)
          rpy2 = ppiclf_wall_c(2,j)
-         rpz2 = 0.0
+         rpz2 = 0.0d0
          rpx2 = rpx2 - rpx1
          rpy2 = rpy2 - rpy1
 
@@ -350,14 +365,14 @@
          endif
     
          rflip = rnx*rpx2 + rny*rpy2 + rnz*rpz2
-         if (rflip .gt. 0.0) then
-            rnx = -1.*rnx
-            rny = -1.*rny
-            rnz = -1.*rnz
+         if (rflip .gt. 0.0d0) then
+            rnx = -1.0d0*rnx
+            rny = -1.0d0*rny
+            rnz = -1.0d0*rnz
          endif
 
 
-         a_sum = 0.0
+         a_sum = 0.0d0
          kmax = 2
          if (ppiclf_ndim .eq. 3) kmax = 3
          do k=1,kmax 
@@ -368,10 +383,10 @@
             kkp  = istride*(kp-1)
             rpx1 = ppiclf_wall_c(kk+1,j)
             rpy1 = ppiclf_wall_c(kk+2,j)
-            rpz1 = 0.0
+            rpz1 = 0.0d0
             rpx2 = ppiclf_wall_c(kkp+1,j)
             rpy2 = ppiclf_wall_c(kkp+2,j)
-            rpz2 = 0.0
+            rpz2 = 0.0d0
 
             if (ppiclf_ndim .eq. 3) then
                rpz1 = ppiclf_wall_c(kk+3,j)
@@ -385,31 +400,31 @@
             rdist = rdist/sqrt(rnx**2 + rny**2 + rnz**2)
 
             ! give a little extra room for walls (2x)
-            if (rdist .gt. 2.0*ppiclf_d2chk(3)) goto 1511
+            if (rdist .gt. 2.0d0*ppiclf_d2chk(3)) goto 1511
 
             ydum(1) = ppiclf_cp_map(1,i) - rdist*rnx
             ydum(2) = ppiclf_cp_map(2,i) - rdist*rny
-            ydum(3) = 0.0
+            ydum(3) = 0.0d0
 
             A(1) = ydum(1)
             A(2) = ydum(2)
-            A(3) = 0.0
+            A(3) = 0.0d0
 
             B(1) = rpx1
             B(2) = rpy1
-            B(3) = 0.0
+            B(3) = 0.0d0
 
             C(1) = rpx2
             C(2) = rpy2
-            C(3) = 0.0
+            C(3) = 0.0d0
 
             AB(1) = B(1) - A(1)
             AB(2) = B(2) - A(2)
-            AB(3) = 0.0
+            AB(3) = 0.0d0
 
             AC(1) = C(1) - A(1)
             AC(2) = C(2) - A(2)
-            AC(3) = 0.0
+            AC(3) = 0.0d0
 
             if (ppiclf_ndim .eq. 3) then
                ydum(3) = ppiclf_cp_map(3,i) - rdist*rnz
@@ -423,7 +438,7 @@
                AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
                AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
                theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
-               tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+               tri_area = 0.5d0*AB_MAG*AC_MAG*sin(theta)
             elseif (ppiclf_ndim .eq. 2) then
                AB_MAG = sqrt(AB(1)**2 + AB(2)**2)
                tri_area = AB_MAG
@@ -431,7 +446,7 @@
             a_sum = a_sum + tri_area
          enddo
 
-         rthresh = 1.10 ! keep it from slipping through crack on edges
+         rthresh = 1.10d0 ! keep it from slipping through crack on edges
          if (a_sum .gt. rthresh*area) cycle
 
          jp = 0
@@ -451,7 +466,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input:
 ! 
@@ -469,19 +483,19 @@
       real*8 A(3),B(3),C(3),AB(3),AC(3)
 !
       if (.not.PPICLF_LCOMM)
-     >call ppiclf_exittr('InitMPI must be before InitWall$',0.,0)
+     >call ppiclf_exittr('InitMPI must be before InitWall$',0.d0,0)
       if (.not.PPICLF_LINIT)
      >call ppiclf_exittr('InitParticle must be before InitWall$'
-     >                  ,0.,0)
+     >                  ,0.d0,0)
 
       ppiclf_nwall = ppiclf_nwall + 1 
 
       if (ppiclf_nwall .gt. PPICLF_LWALL)
      >call ppiclf_exittr('Increase LWALL in user file$'
-     >                  ,0.,ppiclf_nwall)
+     >                  ,0.d0,ppiclf_nwall)
 
       istride = ppiclf_ndim
-      a_sum = 0.0
+      a_sum = 0.0d0
       kmax = 2
       if (ppiclf_ndim .eq. 3) kmax = 3
 
@@ -496,18 +510,18 @@
          ppiclf_wall_c(8,ppiclf_nwall) = xp3(2)
          ppiclf_wall_c(9,ppiclf_nwall) = xp3(3)
 
-         A(1) = (xp1(1) + xp2(1) + xp3(1))/3.0
-         A(2) = (xp1(2) + xp2(2) + xp3(2))/3.0
-         A(3) = (xp1(3) + xp2(3) + xp3(3))/3.0
+         A(1) = (xp1(1) + xp2(1) + xp3(1))/3.0d0
+         A(2) = (xp1(2) + xp2(2) + xp3(2))/3.0d0
+         A(3) = (xp1(3) + xp2(3) + xp3(3))/3.0d0
       elseif (ppiclf_ndim .eq. 2) then
          ppiclf_wall_c(1,ppiclf_nwall) = xp1(1)
          ppiclf_wall_c(2,ppiclf_nwall) = xp1(2)
          ppiclf_wall_c(3,ppiclf_nwall) = xp2(1)
          ppiclf_wall_c(4,ppiclf_nwall) = xp2(2)
 
-         A(1) = (xp1(1) + xp2(1))/2.0
-         A(2) = (xp1(2) + xp2(2))/2.0
-         A(3) = 0.0
+         A(1) = (xp1(1) + xp2(1))/2.0d0
+         A(2) = (xp1(2) + xp2(2))/2.0d0
+         A(3) = 0.0d0
       endif
 
       ! compoute area:
@@ -519,26 +533,26 @@
          kkp  = istride*(kp-1)
          rpx1 = ppiclf_wall_c(kk+1,ppiclf_nwall)
          rpy1 = ppiclf_wall_c(kk+2,ppiclf_nwall)
-         rpz1 = 0.0
+         rpz1 = 0.0d0
          rpx2 = ppiclf_wall_c(kkp+1,ppiclf_nwall)
          rpy2 = ppiclf_wall_c(kkp+2,ppiclf_nwall)
-         rpz2 = 0.0
+         rpz2 = 0.0d0
 
          B(1) = rpx1
          B(2) = rpy1
-         B(3) = 0.0
+         B(3) = 0.0d0
         
          C(1) = rpx2
          C(2) = rpy2
-         C(3) = 0.
+         C(3) = 0.0d0
         
          AB(1) = B(1) - A(1)
          AB(2) = B(2) - A(2)
-         AB(3) = 0.0
+         AB(3) = 0.0d0
         
          AC(1) = C(1) - A(1)
          AC(2) = C(2) - A(2)
-         AC(3) = 0.0
+         AC(3) = 0.0d0
 
          if (ppiclf_ndim .eq. 3) then
              rpz1 = ppiclf_wall_c(kk+3,ppiclf_nwall)
@@ -552,7 +566,7 @@
              AB_MAG = sqrt(AB(1)**2 + AB(2)**2 + AB(3)**2)
              AC_MAG = sqrt(AC(1)**2 + AC(2)**2 + AC(3)**2)
              theta  = acos(AB_DOT_AC/(AB_MAG*AC_MAG))
-             tri_area = 0.5*AB_MAG*AC_MAG*sin(theta)
+             tri_area = 0.5d0*AB_MAG*AC_MAG*sin(theta)
          elseif (ppiclf_ndim .eq. 2) then
              AB_MAG = sqrt(AB(1)**2 + AB(2)**2)
              tri_area = AB_MAG
@@ -623,12 +637,16 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_InitPeriodicX(xl,xr)
+     > bind(C, name="ppiclc_solve_InitPeriodicX")
+#else
+      subroutine ppiclf_solve_InitPeriodicX(xl,xr)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input: 
 ! 
@@ -646,12 +664,16 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_InitPeriodicY(yl,yr)
+     > bind(C, name="ppiclc_solve_InitPeriodicY")
+#else
+      subroutine ppiclf_solve_InitPeriodicY(yl,yr)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input: 
 ! 
@@ -669,12 +691,16 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_InitPeriodicZ(zl,zr)
+     > bind(C, name="ppiclc_solve_InitPeriodicZ")
+#else
+      subroutine ppiclf_solve_InitPeriodicZ(zl,zr)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input: 
 ! 
@@ -694,12 +720,16 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
+     > bind(C, name="ppiclc_solve_InitGaussianFilter")
+#else
+      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input: 
 ! 
@@ -712,19 +742,21 @@
       real*8 rsig
 ! 
       if (.not.PPICLF_LCOMM)
-     >call ppiclf_exittr('InitMPI must be before InitFilter$',0.,0)
+     >call ppiclf_exittr('InitMPI must be before InitFilter$',0.0d0,0)
       if (.not.PPICLF_LINIT)
-     >call ppiclf_exittr('InitParticle must be before InitFilter$',0.,0)
+     >call ppiclf_exittr('InitParticle must be before InitFilter$',0.0d0
+     >                  ,0)
       if (PPICLF_OVERLAP)
-     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.,0)
+     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.0d0
+     >                  ,0)
       if (PPICLF_LFILT)
-     >call ppiclf_exittr('InitFilter can only be called once$',0.,0)
+     >call ppiclf_exittr('InitFilter can only be called once$',0.0d0,0)
 
       ppiclf_filter = filt
       ppiclf_ngrids = ngrid
       ppiclf_alpha  = alpha 
 
-      rsig             = ppiclf_filter/(2.*sqrt(2.*log(2.)))
+      rsig             = ppiclf_filter/(2.0d0*sqrt(2.0d0*log(2.0d0)))
       ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_alpha))
 
       PPICLF_LSUBBIN = .true.
@@ -736,12 +768,16 @@
       return
       end
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_InitBoxFilter(filt,ngrid)
+     > bind(C, name="ppiclc_solve_InitBoxFilter")
+#else
+      subroutine ppiclf_solve_InitBoxFilter(filt,ngrid)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input: 
 ! 
@@ -749,18 +785,20 @@
       integer*4 ngrid
 ! 
       if (.not.PPICLF_LCOMM)
-     >call ppiclf_exittr('InitMPI must be before InitFilter$',0.,0)
+     >call ppiclf_exittr('InitMPI must be before InitFilter$',0.0d0,0)
       if (.not.PPICLF_LINIT)
-     >call ppiclf_exittr('InitParticle must be before InitFilter$',0.,0)
+     >call ppiclf_exittr('InitParticle must be before InitFilter$',0.0d0
+     >                   ,0)
       if (PPICLF_OVERLAP)
-     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.,0)
+     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.0d0
+     >                   ,0)
       if (PPICLF_LFILT)
-     >call ppiclf_exittr('InitFilter can only be called once$',0.,0)
+     >call ppiclf_exittr('InitFilter can only be called once$',0.0d0,0)
 
       ppiclf_filter = filt
       ppiclf_ngrids = ngrid
 
-      ppiclf_d2chk(2)  = filt/2.0
+      ppiclf_d2chk(2)  = filt/2.0d0
 
       PPICLF_LSUBBIN = .true.
       if (ppiclf_ngrids .eq. 0) PPICLF_LSUBBIN = .false.
@@ -776,7 +814,6 @@
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Internal: 
 ! 
@@ -791,13 +828,16 @@
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_IntegrateParticle(istep,iostep,dt,time
-     >                                         ,y,ydot)
+#ifdef PPICLC
+      subroutine ppiclf_solve_IntegrateParticle(istep,iostep,dt,time)
+     > bind(C, name="ppiclc_solve_IntegrateParticle")
+#else
+      subroutine ppiclf_solve_IntegrateParticle(istep,iostep,dt,time)
+#endif
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input: 
 ! 
@@ -806,14 +846,6 @@ c----------------------------------------------------------------------
       real*8    dt
       real*8    time
 ! 
-! Output: 
-! 
-      real*8    ydot(*)
-! 
-! Input/Output: 
-! 
-      real*8    y(*)
-! 
       ppiclf_cycle  = istep
       ppiclf_iostep = iostep
       ppiclf_dt     = dt
@@ -821,7 +853,7 @@ c----------------------------------------------------------------------
 
       ! integerate in time
       if (ppiclf_imethod .eq. 1) 
-     >   call ppiclf_solve_IntegrateRK3(time,y,ydot)
+     >   call ppiclf_solve_IntegrateRK3
 
       ! output files
       if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0) then
@@ -841,26 +873,13 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_IntegrateRK3(time_,y,ydot)
+      subroutine ppiclf_solve_IntegrateRK3
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Input: 
-! 
-      real*8 time_
-! 
-! Output: 
-! 
-      real*8 ydot(*)
-! 
-! Input/Output: 
-! 
-      real*8 y(*)
-! 
-! Internal: 
 ! 
       integer*4 i, ndum, nstage, istage
 !
@@ -868,7 +887,7 @@ c----------------------------------------------------------------------
 
       ! save stage 1 solution
       do i=1,ndum
-         ppiclf_y1(i) = y(i)
+         ppiclf_y1(i) = ppiclf_y(i,1)
       enddo
 
       ! get rk3 coeffs
@@ -878,37 +897,27 @@ c----------------------------------------------------------------------
       do istage=1,nstage
 
          ! evaluate ydot
-         call ppiclf_solve_SetYdot(time_,y,ydot)
+         call ppiclf_solve_SetYdot
 
          ! rk3 integrate
          do i=1,ndum
-            y(i) =  ppiclf_rk3coef(1,istage)*ppiclf_y1 (i)
-     >            + ppiclf_rk3coef(2,istage)*y      (i)
-     >            + ppiclf_rk3coef(3,istage)*ydot   (i)
+            ppiclf_y(i,1) =  ppiclf_rk3coef(1,istage)*ppiclf_y1   (i)
+     >                     + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
+     >                     + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
          enddo
       enddo
 
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_SetYdot(time_,y,ydot)
+      subroutine ppiclf_solve_SetYdot
 !
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
-! 
-! Input: 
-! 
-      real*8 time_
-      real*8 y(*)
-! 
-! Output: 
-! 
-      real*8 ydot(*)
 !
       call ppiclf_solve_InitSolve
-      call ppiclf_user_SetYdot(time_,y,ydot)
+      call ppiclf_user_SetYdot
 
       return
       end
@@ -918,7 +927,6 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Internal: 
 ! 
@@ -942,7 +950,7 @@ c----------------------------------------------------------------------
 
       do i=1,PPICLF_LPART
       do j=1,PPICLF_LRS
-         ppiclf_ydotc(j,i) = 0.0
+         ppiclf_ydotc(j,i) = 0.0d0
       enddo
       enddo
 
@@ -954,7 +962,6 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 ! 
 ! Internal: 
 ! 
@@ -962,10 +969,12 @@ c----------------------------------------------------------------------
       real*8 tol, bb_t
 !
       if (.not.ppiclf_overlap)
-     >call ppiclf_exittr('Cannot interpolate unless overlap grid$',0.,0)
+     >call ppiclf_exittr('Cannot interpolate unless overlap grid$',0.0d0
+     >                   ,0)
       if (PPICLF_INTERP .eq. 0)
      >call ppiclf_exittr(
-     >     'No specified interpolated fields, set PPICLF_LRP_INT$',0.,0)
+     >     'No specified interpolated fields, set PPICLF_LRP_INT$',0.0d0
+     >                   ,0)
 
       PPICLF_INT_ICNT = 0
 
@@ -1023,7 +1032,6 @@ c     ndum    = ppiclf_neltb*n
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input: 
 !
@@ -1035,16 +1043,16 @@ c     ndum    = ppiclf_neltb*n
       integer*4 n, ie, iee, j
 !
       if (ppiclf_int_icnt .eq. -1)
-     >call ppiclf_exittr('Call InitInterp before InterpField$',0.,0)
+     >call ppiclf_exittr('Call InitInterp before InterpField$',0.0d0,0)
 
       PPICLF_INT_ICNT = PPICLF_INT_ICNT + 1
 
       if (PPICLF_INT_ICNT .gt. PPICLF_LRP_INT)
      >   call ppiclf_exittr('Interpolating too many fields$'
-     >                     ,0.0,PPICLF_INT_ICNT)
+     >                     ,0.0d0,PPICLF_INT_ICNT)
       if (jp .le. 0 .or. jp .gt. PPICLF_LRP)
      >   call ppiclf_exittr('Invalid particle array interp. location$'
-     >                     ,0.0,jp)
+     >                     ,0.0d0,jp)
 
       PPICLF_INT_MAP(PPICLF_INT_ICNT) = jp
 
@@ -1066,7 +1074,6 @@ c     ndum    = ppiclf_neltb*n
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal: 
 !
@@ -1137,22 +1144,21 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Input:
 !
       real*8 dt
 !
 
-      ppiclf_rk3coef(1,1) = 0.0
-      ppiclf_rk3coef(2,1) = 1.0 
+      ppiclf_rk3coef(1,1) = 0.d00
+      ppiclf_rk3coef(2,1) = 1.0d0 
       ppiclf_rk3coef(3,1) = dt
-      ppiclf_rk3coef(1,2) = 3.0/4.0
-      ppiclf_rk3coef(2,2) = 1.0/4.0 
-      ppiclf_rk3coef(3,2) = dt/4.0 
-      ppiclf_rk3coef(1,3) = 1.0/3.0
-      ppiclf_rk3coef(2,3) = 2.0/3.0 
-      ppiclf_rk3coef(3,3) = dt*2.0/3.0 
+      ppiclf_rk3coef(1,2) = 3.0d0/4.0d0
+      ppiclf_rk3coef(2,2) = 1.0d0/4.0d0 
+      ppiclf_rk3coef(3,2) = dt/4.0d0
+      ppiclf_rk3coef(1,3) = 1.0d0/3.0d0
+      ppiclf_rk3coef(2,3) = 2.0d0/3.0d0
+      ppiclf_rk3coef(3,3) = dt*2.0d0/3.0d0
 
       return
       end
@@ -1162,7 +1168,6 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -1247,7 +1252,6 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -1269,7 +1273,7 @@ c----------------------------------------------------------------------
 
       nxyzdum = nxyz*PPICLF_LRP_PRO*PPICLF_LEE
       do i=1,nxyzdum
-         ppiclf_pro_fldb(i,1,1,1,1) = 0.0
+         ppiclf_pro_fldb(i,1,1,1,1) = 0.0d0
       enddo
 
       d2chk2_sq = ppiclf_d2chk(2)**2
@@ -1280,16 +1284,16 @@ c----------------------------------------------------------------------
       ppiclf_jzgp  = 1
       if (if3d) ppiclf_jzgp  = 3
 
-      rdum = 0.0
+      rdum = 0.0d0
       if (ppiclf_lfiltgauss) then
-         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
-         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (if3d) multfci = multfci**(1.5d+0)
-         rdum   = 1./(-2.*rsig**2)
+         rsig    = ppiclf_filter/(2.0d0*sqrt(2.0d0*log(2.0d0)))
+         multfci = 1.0d0/(sqrt(2.0d0*pi)**2 * rsig**2) 
+         if (if3d) multfci = multfci**(1.5d0)
+         rdum   = 1.0d0/(-2.0d0*rsig**2)
       endif
 
       if (ppiclf_lfiltbox) then
-         multfci = 1.0/ppiclf_filter**2
+         multfci = 1.0d0/ppiclf_filter**2
          if (if3d) multfci = multfci/ppiclf_filter
       endif
 
@@ -1383,7 +1387,7 @@ c----------------------------------------------------------------------
 
             if (rdist2 .gt. d2chk2_sq) cycle
 
-            rexp = 1.0
+            rexp = 1.0d0
             if (ppiclf_lfiltgauss)
      >         rexp = exp(rdist2*rproj(1,ip))
             
@@ -1422,7 +1426,7 @@ c----------------------------------------------------------------------
       ! add the fields from the bins to ptw array
       nlxyzep = nxyz*PPICLF_LEE*PPICLF_LRP_PRO
       do i=1,nlxyzep
-         PPICLF_PRO_FLD(i,1,1,1,1) = 0.0
+         PPICLF_PRO_FLD(i,1,1,1,1) = 0.0d0
       enddo
 
 
@@ -1448,7 +1452,6 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-#include "PPICLF"      
 !
 ! Internal:
 !
@@ -1470,7 +1473,7 @@ c----------------------------------------------------------------------
 
       nxyzdum = nxyz*PPICLF_LRP_PRO
       do i=1,nxyzdum
-         ppiclf_grid_fld(i,1,1,1) = 0.0
+         ppiclf_grid_fld(i,1,1,1) = 0.0d0
       enddo
 
       d2chk2_sq = ppiclf_d2chk(2)**2
@@ -1482,16 +1485,16 @@ c----------------------------------------------------------------------
       if (if3d)
      >ppiclf_jzgp  = 3
 
-      rdum = 0.0
+      rdum = 0.0d0
       if (ppiclf_lfiltgauss) then
-         rsig    = ppiclf_filter/(2.*sqrt(2.*log(2.)))
-         multfci = 1./(sqrt(2.*pi)**2 * rsig**2) 
-         if (if3d) multfci = multfci**(1.5d+0)
-         rdum   = 1./(-2.*rsig**2)
+         rsig    = ppiclf_filter/(2.0d0*sqrt(2.0d0*log(2.0d0)))
+         multfci = 1.0d0/(sqrt(2.0d0*pi)**2 * rsig**2) 
+         if (if3d) multfci = multfci**(1.5d0)
+         rdum   = 1.0d0/(-2.0d0*rsig**2)
       endif
 
       if (ppiclf_lfiltbox) then
-         multfci = 1.0/ppiclf_filter**2
+         multfci = 1.0d0/ppiclf_filter**2
          if (if3d) multfci = multfci/ppiclf_filter
       endif
 
@@ -1548,14 +1551,14 @@ c----------------------------------------------------------------------
       ndum = ppiclf_npart+ppiclf_npart_gp
 
       if (ppiclf_lfiltgauss) then
-         idum = floor(ppiclf_filter/2.0/ppiclf_rdx
-     >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
-         jdum = floor(ppiclf_filter/2.0/ppiclf_rdy
-     >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
+         idum = floor(ppiclf_filter/2.0d0/ppiclf_rdx
+     >    *sqrt(-log(ppiclf_alpha)/log(2.0d0)))+1
+         jdum = floor(ppiclf_filter/2.0d0/ppiclf_rdy
+     >    *sqrt(-log(ppiclf_alpha)/log(2.0d0)))+1
          kdum = 999999999
          if (if3d)
-     >   kdum = floor(ppiclf_filter/2.0/ppiclf_rdz
-     >    *sqrt(-log(ppiclf_alpha)/log(2.0)))+1
+     >   kdum = floor(ppiclf_filter/2.0d0/ppiclf_rdz
+     >    *sqrt(-log(ppiclf_alpha)/log(2.0d0)))+1
       endif
 
       if (ppiclf_lfiltbox) then
@@ -1593,7 +1596,7 @@ c----------------------------------------------------------------------
 
             if (rdist2 .gt. d2chk2_sq) cycle
 
-            rexp = 1.0
+            rexp = 1.0d0
             if (ppiclf_lfiltgauss)
      >         rexp = exp(rdist2*rproj(1,ip))
 

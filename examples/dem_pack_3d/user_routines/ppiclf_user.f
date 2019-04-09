@@ -30,9 +30,9 @@
      >          *ppiclf_rprop(PPICLF_R_JRHOP,i)
 
          ! Gravity
-         fbx  = 0.0
-         fby  = -9.8*rmass
-         fbz  = 0.0
+         fbx  = 0.0d0
+         fby  = -9.8d0*rmass
+         fbz  = 0.0d0
 
          call ppiclf_solve_NearestNeighbor(i)
 
@@ -99,11 +99,11 @@ c evaluate ydot
      >       rmult, eta, rbot, rn_12x, rn_12y, rn_12z, rdelta12,
      >       rv12_mag, rv12_mage, rksp_max, rnmag, rksp_wall, rextra
 !
-      rpi2  =  9.869604401089358
+      rpi2  =  9.869604401089358d0
 
       ! other particles
       if (j .ne. 0) then
-         rthresh  = 0.5*(rpropi(PPICLF_R_JDP) + rpropj(PPICLF_R_JDP))
+         rthresh  = 0.5d0*(rpropi(PPICLF_R_JDP) + rpropj(PPICLF_R_JDP))
          
          rxdiff = yj(PPICLF_JX) - yi(PPICLF_JX)
          rydiff = yj(PPICLF_JY) - yi(PPICLF_JY)
@@ -116,10 +116,11 @@ c evaluate ydot
          rm1 = rpropi(PPICLF_R_JRHOP)*rpropi(PPICLF_R_JVOLP)
          rm2 = rpropj(PPICLF_R_JRHOP)*rpropj(PPICLF_R_JVOLP)
          
-         rmult = 1./sqrt(1./rm1+1./rm2)
-         eta   = 2.*sqrt(ksp)*log(erest)/sqrt(log(erest)**2+rpi2)*rmult
+         rmult = 1.0d0/sqrt(1.0d0/rm1+1.0d0/rm2)
+         eta   = 2.0d0*sqrt(ksp)*log(erest)/sqrt(log(erest)**2+rpi2)
+     >           *rmult
          
-         rbot = 1./rdiff
+         rbot = 1.0d0/rdiff
          rn_12x = rxdiff*rbot
          rn_12y = rydiff*rbot
          rn_12z = rzdiff*rbot
@@ -127,8 +128,8 @@ c evaluate ydot
          rdelta12 = rthresh - rdiff
          
          rv12_mag = (yj(PPICLF_JVX)-yi(PPICLF_JVX))*rn_12x +
-     >           (yj(PPICLF_JVY)-yi(PPICLF_JVY))*rn_12y +
-     >           (yj(PPICLF_JVZ)-yi(PPICLF_JVZ))*rn_12z
+     >              (yj(PPICLF_JVY)-yi(PPICLF_JVY))*rn_12y +
+     >              (yj(PPICLF_JVZ)-yi(PPICLF_JVZ))*rn_12z
 
          rv12_mage = rv12_mag*eta
          rksp_max  = ksp*rdelta12
@@ -147,8 +148,8 @@ c evaluate ydot
          rksp_wall = ksp
 
          ! give a bit larger collision threshold for walls
-         rextra   = 0.5
-         rthresh  = (0.5+rextra)*rpropi(PPICLF_R_JDP)
+         rextra   = 0.5d0
+         rthresh  = (0.5d0+rextra)*rpropi(PPICLF_R_JDP)
          
          rxdiff = yj(PPICLF_JX) - yi(PPICLF_JX)
          rydiff = yj(PPICLF_JY) - yi(PPICLF_JY)
@@ -161,19 +162,19 @@ c evaluate ydot
          rm1 = rpropi(PPICLF_R_JRHOP)*rpropi(PPICLF_R_JVOLP)
          
          rmult = sqrt(rm1)
-         eta   = 2.*sqrt(rksp_wall)*log(erest)
+         eta   = 2.0d0*sqrt(rksp_wall)*log(erest)
      >           /sqrt(log(erest)**2+rpi2)*rmult
          
-         rbot = 1./rdiff
+         rbot = 1.0d0/rdiff
          rn_12x = rxdiff*rbot
          rn_12y = rydiff*rbot
          rn_12z = rzdiff*rbot
          
          rdelta12 = rthresh - rdiff
          
-         rv12_mag = -1.0*(yi(PPICLF_JVX)*rn_12x +
-     >                    yi(PPICLF_JVY)*rn_12y +
-     >                    yi(PPICLF_JVZ)*rn_12z)
+         rv12_mag = -1.0d0*(yi(PPICLF_JVX)*rn_12x +
+     >                      yi(PPICLF_JVY)*rn_12y +
+     >                      yi(PPICLF_JVZ)*rn_12z)
 
          rv12_mage = rv12_mag*eta
          rksp_max  = rksp_wall*rdelta12
