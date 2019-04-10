@@ -1,0 +1,10 @@
+[GENERAL]
+variableDT = yes
+dt = 6.5E-5
+targetcfl = 0.5
+writeinterval = 50
+numsteps = 50000
+
+[VELOCITY]
+density = 1.205
+viscosity = 1.8E-5

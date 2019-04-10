@@ -404,7 +404,6 @@ c     current box coordinates
       real*8 ppiclf_vlmin, ppiclf_vlmax
       external ppiclf_vlmin, ppiclf_vlmax
 !
-
       ! see which bins are in which elements
       ppiclf_neltb = 0
       do ie=1,ppiclf_nee
@@ -587,6 +586,10 @@ c     current box coordinates
      >                         ,ierr)
          call ppiclf_prints('    End mpi_comm_split$')
 
+         call ppiclf_prints('   *Begin InitSolve$')
+            call ppiclf_solve_InitSolve
+         call ppiclf_prints('    End InitSolve$')
+
          call ppiclf_io_OutputDiagGrid
       endif
 
@@ -620,6 +623,7 @@ c     current box coordinates
 !
       integer*4 nxyz, i, j, ie
 !
+      ppiclf_overlap = .true.
 
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitOverlap$',0.0d0,0)
@@ -650,7 +654,6 @@ c     current box coordinates
 
       call ppiclf_comm_MapOverlapMesh
 
-      ppiclf_overlap = .true.
 
       return
       end

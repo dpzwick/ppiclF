@@ -34,6 +34,7 @@
 !
       call ppiclf_prints(' *Begin ReadParticleVTU$')
       
+      call ppiclf_solve_InitZero
       PPICLF_RESTART = .true.
 
       indx1 = ppiclf_indx1(filein1,'.')

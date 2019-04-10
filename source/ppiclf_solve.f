@@ -21,6 +21,7 @@
       real*8     y(*)
       real*8     rprop(*)
 !
+      integer*4 i
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitParticle$',0.0d0
      >   ,ppiclf_nid)
@@ -30,16 +31,21 @@
       if (PPICLF_OVERLAP)
      >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.0d0
      >                  ,0)
+      if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
+     >   call ppiclf_exittr('Invalid number of particles$',0.0d0,npart)
 
       call ppiclf_prints('*Begin InitParticle$')
 
          call ppiclf_prints('   *Begin InitParam$')
-            call ppiclf_solve_InitParam(imethod,ndim,iendian,npart)
+            call ppiclf_solve_InitParam(imethod,ndim,iendian)
          call ppiclf_prints('    End InitParam$')
          
          if (.not. PPICLF_RESTART) then
+            call ppiclf_solve_InitZero
+            call ppiclf_copy(ppiclf_npart,npart,1                      )
             call ppiclf_copy(ppiclf_y    ,y    ,PPICLF_LPART*PPICLF_LRS)
             call ppiclf_copy(ppiclf_rprop,rprop,PPICLF_LPART*PPICLF_LRP)
+
             call ppiclf_prints('   *Begin ParticleTag$')
                   call ppiclf_solve_SetParticleTag
             call ppiclf_prints('    End ParticleTag$')
@@ -74,7 +80,7 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InitParam(imethod,ndim,iendian,npart)
+      subroutine ppiclf_solve_InitParam(imethod,ndim,iendian)
 !
       implicit none
 !
@@ -85,7 +91,6 @@
       integer*4  imethod
       integer*4  ndim
       integer*4  iendian
-      integer*4  npart
 !
       if (imethod .le. 0 .or. imethod .ge. 2)
      >   call ppiclf_exittr('Invalid integration method$',0.0d0,imethod)
@@ -93,13 +98,10 @@
      >   call ppiclf_exittr('Invalid problem dimension$',0.0d0,ndim)
       if (iendian .lt. 0 .or. iendian .gt. 1)
      >   call ppiclf_exittr('Invalid Endian$',0.0d0,iendian)
-      if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
-     >   call ppiclf_exittr('Invalid number of particles$',0.0d0,npart)
 
       ppiclf_imethod      = imethod
       ppiclf_ndim         = ndim
       ppiclf_iendian      = iendian
-      ppiclf_npart        = npart
 
       ppiclf_filter       = -1   ! filt default for no projection
 
@@ -139,7 +141,8 @@
       ppiclf_nbin_dir(2) = 0
       ppiclf_nbin_dir(3) = 0
 
-      ppiclf_nwall = 0
+      ppiclf_nwall    = 0
+      ppiclf_iwallm   = 0
 
       PPICLF_INT_ICNT = -1
 
@@ -242,6 +245,40 @@
      >   ppiclf_nb_g(3,i) = floor((ppiclf_rprop_gp(3,i)-ppiclf_binb(5))/
      >                             ppiclf_d2chk(3))
       enddo
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InitZero
+!
+      implicit none
+!
+#include "PPICLF.h"
+!
+! Internal:
+!
+      integer i,j,ic
+!
+      ic = 0
+      do i=1,PPICLF_LPART
+      do j=1,PPICLF_LRS
+         ic = ic + 1
+         ppiclf_y    (j,i) = 0.0d0
+         ppiclf_ydot (j,i) = 0.0d0
+         ppiclf_ydotc(j,i) = 0.0d0
+         ppiclf_y1   (ic ) = 0.0d0
+      enddo
+      do j=1,PPICLF_LRP
+         ppiclf_rprop(j,i) = 0.0d0
+      enddo
+      do j=1,PPICLF_LRP2
+         ppiclf_rprop2(j,i) = 0.0d0
+      enddo
+      do j=1,PPICLF_LIP
+         ppiclf_iprop(j,i) = 0
+      enddo
+      enddo
+      ppiclf_npart = 0
 
       return
       end
@@ -721,10 +758,10 @@
       end
 !-----------------------------------------------------------------------
 #ifdef PPICLC
-      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
+      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,iwallm)
      > bind(C, name="ppiclc_solve_InitGaussianFilter")
 #else
-      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,ngrid)
+      subroutine ppiclf_solve_InitGaussianFilter(filt,alpha,iwallm)
 #endif
 !
       implicit none
@@ -735,7 +772,7 @@
 ! 
       real*8    filt
       real*8    alpha
-      integer*4 ngrid
+      integer*4 iwallm
 ! 
 ! Internal: 
 ! 
@@ -751,10 +788,13 @@
      >                  ,0)
       if (PPICLF_LFILT)
      >call ppiclf_exittr('InitFilter can only be called once$',0.0d0,0)
+      if (iwallm .lt. 0 .or. iwallm .gt. 1)
+     >call ppiclf_exittr('0 or 1 must be used to specify filter mirror$'
+     >                  ,0.0d0,iwallm)
 
       ppiclf_filter = filt
-      ppiclf_ngrids = ngrid
       ppiclf_alpha  = alpha 
+      ppiclf_iwallm = iwallm
 
       rsig             = ppiclf_filter/(2.0d0*sqrt(2.0d0*log(2.0d0)))
       ppiclf_d2chk(2)  = rsig*sqrt(-2*log(ppiclf_alpha))
@@ -764,6 +804,8 @@
 
       PPICLF_LFILT      = .true.
       PPICLF_LFILTGAUSS = .true.
+
+      ppiclf_ngrids = 0 ! for now leave sub bin off
 
       return
       end
@@ -1246,6 +1288,87 @@ c----------------------------------------------------------------------
 
       return
       end
+!----------------------------------------------------------------------
+      subroutine ppiclf_solve_FindWallProject(rx2)
+!
+      implicit none
+!
+#include "PPICLF.h"
+!
+! Input:
+!
+       real*8 rx2(3)
+!
+! Internal:
+!
+      real*8 rnx,rny,rnz,rpx1,rpy1,rpz1,rpx2,rpy2,rpz2,rflip,rd,rdist
+      integer*4 j, istride
+!
+      istride = ppiclf_ndim
+      ppiclf_nwall_m = 0
+      do j = 1,ppiclf_nwall
+
+         rnx  = ppiclf_wall_n(1,j)
+         rny  = ppiclf_wall_n(2,j)
+         rnz  = 0.0d0
+         rpx1 = rx2(1)
+         rpy1 = rx2(2)
+         rpz1 = 0.0d0
+         rpx2 = ppiclf_wall_c(1,j)
+         rpy2 = ppiclf_wall_c(2,j)
+         rpz2 = 0.0d0
+         rpx2 = rpx2 - rpx1
+         rpy2 = rpy2 - rpy1
+
+         if (ppiclf_ndim .eq. 3) then
+            rnz  = ppiclf_wall_n(3,j)
+            rpz1 = rx2(3)
+            rpz2 = ppiclf_wall_c(3,j)
+            rpz2 = rpz2 - rpz1
+         endif
+    
+         rflip = rnx*rpx2 + rny*rpy2 + rnz*rpz2
+         if (rflip .gt. 0.0d0) then
+            rnx = -1.0d0*rnx
+            rny = -1.0d0*rny
+            rnz = -1.0d0*rnz
+         endif
+
+         rpx1 = ppiclf_wall_c(1,j)
+         rpy1 = ppiclf_wall_c(2,j)
+         rpz1 = 0.0d0
+         rpx2 = ppiclf_wall_c(istride+1,j)
+         rpy2 = ppiclf_wall_c(istride+2,j)
+         rpz2 = 0.0d0
+
+         if (ppiclf_ndim .eq. 3) then
+            rpz1 = ppiclf_wall_c(3,j)
+            rpz2 = ppiclf_wall_c(istride+3,j)
+         endif
+
+         rd   = -(rnx*rpx1 + rny*rpy1 + rnz*rpz1)
+
+         rdist = abs(rnx*rx2(1)+rny*rx2(2)
+     >              +rnz*rx2(3)+rd)
+         rdist = rdist/sqrt(rnx**2 + rny**2 + rnz**2)
+         rdist = rdist*2.0d0 ! Mirror
+
+         if (rdist .gt. ppiclf_d2chk(2)) goto 1511
+
+         ppiclf_nwall_m = ppiclf_nwall_m + 1
+
+         ppiclf_xyz_mirror(1,ppiclf_nwall_m) = rx2(1) - rdist*rnx
+         ppiclf_xyz_mirror(2,ppiclf_nwall_m) = rx2(2) - rdist*rny
+         ppiclf_xyz_mirror(3,ppiclf_nwall_m) = 0.0d0
+         if (ppiclf_ndim .eq. 3) then
+            ppiclf_xyz_mirror(3,ppiclf_nwall_m) = rx2(3) - rdist*rnz
+         endif
+
+ 1511 continue
+      enddo
+
+      return
+      end
 c----------------------------------------------------------------------
       subroutine ppiclf_solve_ProjectParticleGrid
 !
@@ -1262,7 +1385,8 @@ c----------------------------------------------------------------------
       integer*4 nkey(2), nxyz, nxyzdum, i, j, k, idum, ic, ip, iip, jjp,
      >          kkp, ilow, ihigh, jlow, jhigh, klow, khigh, ie, jj, j1,
      >          neltbc, ndum, nl, nii, njj, nrr, nlxyzep, iee, ndumdum
-      real*8 pi, d2chk2_sq, rdum, multfci, rsig, rdist2, rexp
+      real*8 pi, d2chk2_sq, rdum, multfci, rsig, rdist2, rexp, rx2(3),
+     >       rx22, ry22, rz22, rtmp2
 !
       if3d = .false.
       if (ppiclf_ndim .eq. 3) if3d = .true.
@@ -1361,6 +1485,14 @@ c----------------------------------------------------------------------
             khigh = kkp+1
          endif
 
+         ! Find if particle near wall and should mirror itself
+         if (ppiclf_iwallm .eq. 1) then
+            rx2(1) = rproj(2,ip)
+            rx2(2) = rproj(3,ip)
+            rx2(3) = rproj(4,ip)
+            call ppiclf_solve_FindWallProject(rx2)
+         endif
+
          do ie=1,ppiclf_neltb
 
                if (ppiclf_el_map(1,ie) .gt. ndumdum) exit
@@ -1390,6 +1522,28 @@ c----------------------------------------------------------------------
             rexp = 1.0d0
             if (ppiclf_lfiltgauss)
      >         rexp = exp(rdist2*rproj(1,ip))
+
+            ! add wall effects
+            if (ppiclf_iwallm .eq. 1) then
+               do jj=1,ppiclf_nwall_m
+                  rx22 = (ppiclf_xm1b(i,j,k,1,ie) 
+     >                   -ppiclf_xyz_mirror(1,jj))**2
+                  ry22 = (ppiclf_xm1b(i,j,k,2,ie)
+     >                   -ppiclf_xyz_mirror(2,jj))**2
+                  rtmp2 = rx22 + ry22
+                  if (if3d) then
+                     rz22 = (ppiclf_xm1b(i,j,k,3,ie)
+     >                      -ppiclf_xyz_mirror(3,jj))**2
+                     rtmp2 = rtmp2 + rz22
+                  endif
+                  if (ppiclf_lfiltgauss) then
+                     rexp = rexp + exp(rtmp2*rproj(1,ip))
+                  else
+                     rexp = rexp + 1.0d0
+                  endif
+               enddo
+            endif
+
             
             do jj=1,PPICLF_LRP_PRO
                j1 = jj+4
@@ -1438,6 +1592,7 @@ c----------------------------------------------------------------------
          do i=1,PPICLF_LEX
            PPICLF_PRO_FLD(i,j,k,iee,ip) = PPICLF_PRO_FLD(i,j,k,iee,ip) +
      >                                    PPICLF_PRO_FLDB(i,j,k,ip,ie)
+
          enddo
          enddo
          enddo
