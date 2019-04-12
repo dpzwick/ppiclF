@@ -31,10 +31,6 @@ c-----------------------------------------------------------------------
       ffy = ffy*rdum
       ffz = 0.0
 
-c     ffx = 0.0
-c     ffy = 0.0
-c     ffz = 0.0
-
       return
       end
 c-----------------------------------------------------------------------
@@ -54,32 +50,21 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
 #include "PPICLF.h"
 
-      ! External from Nek5000 to be used in ppiclf_user.f
-      real*8 fld_to_interp(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE,
-     >                   PPICLF_LRP_INT)
-      common /interp_fld_nek/ fld_to_interp
-
-      ! Copy fields to be interpolated from Nek5000
-      do ie=1,nelt
-      do k=1,lz1
-      do j=1,ly1
-      do i=1,lx1
-         fld_to_interp(i,j,k,ie,1) 
-     >                 = ppiclf_pro_fld(i,j,k,ie,PPICLF_P_JPHIP)
-         fld_to_interp(i,j,k,ie,2) 
-     >                 = vx(i,j,k,ie)
-         fld_to_interp(i,j,k,ie,3) 
-     >                 = vy(i,j,k,ie)
-      enddo
-      enddo
-      enddo
-      enddo
-
-      ! Both outflow and particle divergence
+      ! Set divergence equal to -1/phi_f * D/Dt( phi_f )
       call qtl_pvol(usrdiv,
      >              ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP))
+      ! Set divergence at outflow elements so that characteristics go out
       call fill_div(usrdiv)  
 
+      ! Interpolate fields to particle positions
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JPHIP
+     >                          ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP))
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JUX
+     >                          ,vx(1,1,1,1))
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JUY
+     >                          ,vy(1,1,1,1))
+
+      ! Integrate particles
       call ppiclf_solve_IntegrateParticle(istep ,
      >                                    iostep,
      >                                    dt    ,

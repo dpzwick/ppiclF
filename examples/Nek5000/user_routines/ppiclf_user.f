@@ -12,24 +12,7 @@
      >       beta1, beta2, rs, rdum
 
       integer*4 i
-
-      real*8 fld_to_interp(PPICLF_LEX
-     >                    ,PPICLF_LEY
-     >                    ,PPICLF_LEZ
-     >                    ,PPICLF_LEE
-     >                    ,PPICLF_LRP_INT)
-      common /interp_fld_nek/ fld_to_interp
 !
-      ! Interpolate fields
-      call ppiclf_solve_InitInterp
-         call ppiclf_solve_InterpField
-     >                 (PPICLF_R_JPHIP,fld_to_interp(1,1,1,1,1))
-         call ppiclf_solve_InterpField
-     >                 (PPICLF_R_JUX  ,fld_to_interp(1,1,1,1,2))
-         call ppiclf_solve_InterpField
-     >                 (PPICLF_R_JUY  ,fld_to_interp(1,1,1,1,3))
-      call ppiclf_solve_FinalizeInterp
-
       rpi  = 4.0*atan(1.0)
       rmu  = 1.8E-5
       rhof = 1.205

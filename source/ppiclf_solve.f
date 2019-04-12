@@ -144,7 +144,7 @@
       ppiclf_nwall    = 0
       ppiclf_iwallm   = 0
 
-      PPICLF_INT_ICNT = -1
+      PPICLF_INT_ICNT = 0
 
       return
       end
@@ -957,13 +957,13 @@ c----------------------------------------------------------------------
       implicit none
 !
 #include "PPICLF.h"
-!
+! 
       call ppiclf_solve_InitSolve
       call ppiclf_user_SetYdot
 
       return
       end
-!-----------------------------------------------------------------------
+c----------------------------------------------------------------------
       subroutine ppiclf_solve_InitSolve
 !
       implicit none
@@ -978,7 +978,10 @@ c----------------------------------------------------------------------
       call ppiclf_comm_CreateBin
       call ppiclf_comm_FindParticle
       call ppiclf_comm_MoveParticle
-      if (ppiclf_overlap) call ppiclf_comm_MapOverlapMesh
+      if (ppiclf_overlap) 
+     >   call ppiclf_comm_MapOverlapMesh
+      if (ppiclf_lintp .and. ppiclf_int_icnt .ne. 0) 
+     >   call ppiclf_solve_InterpParticleGrid
 
       if (ppiclf_lsubsubbin .or. ppiclf_lproj) then
          call ppiclf_comm_CreateGhost
@@ -990,11 +993,71 @@ c----------------------------------------------------------------------
       if (ppiclf_lsubsubbin) 
      >   call ppiclf_solve_SetNeighborBin
 
+      ! Zero 
       do i=1,PPICLF_LPART
       do j=1,PPICLF_LRS
          ppiclf_ydotc(j,i) = 0.0d0
       enddo
       enddo
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InterpParticleGrid
+!
+      implicit none
+!
+#include "PPICLF.h"
+!
+! Internal:
+!
+      integer*4 j
+!
+      call ppiclf_solve_InitInterp
+      do j=1,PPICLF_INT_ICNT
+         call ppiclf_solve_InterpField(j)
+      enddo
+      call ppiclf_solve_FinalizeInterp
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_InterpFieldUser(jp,infld)
+!
+      implicit none
+!
+#include "PPICLF.h"
+!
+! Input: 
+!
+      integer*4 jp
+      real*8 infld(*)
+!
+! Internal:
+!
+      integer*4 n
+!
+      if (PPICLF_INTERP .eq. 0)
+     >call ppiclf_exittr(
+     >     'No specified interpolated fields, set PPICLF_LRP_INT$',0.0d0
+     >                   ,0)
+
+      PPICLF_INT_ICNT = PPICLF_INT_ICNT + 1
+
+      if (PPICLF_INT_ICNT .gt. PPICLF_LRP_INT)
+     >   call ppiclf_exittr('Interpolating too many fields$'
+     >                     ,0.0d0,PPICLF_INT_ICNT)
+      if (jp .le. 0 .or. jp .gt. PPICLF_LRP)
+     >   call ppiclf_exittr('Invalid particle array interp. location$'
+     >                     ,0.0d0,jp)
+
+      ! set up interpolation map
+      PPICLF_INT_MAP(PPICLF_INT_ICNT) = jp
+
+      ! copy to infld internal storage
+      n = PPICLF_NEE*PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      call ppiclf_copy(ppiclf_int_fldu(1,1,1,1,PPICLF_INT_ICNT)
+     >                ,infld(1),n)
 
       return
       end
@@ -1013,12 +1076,9 @@ c----------------------------------------------------------------------
       if (.not.ppiclf_overlap)
      >call ppiclf_exittr('Cannot interpolate unless overlap grid$',0.0d0
      >                   ,0)
-      if (PPICLF_INTERP .eq. 0)
-     >call ppiclf_exittr(
-     >     'No specified interpolated fields, set PPICLF_LRP_INT$',0.0d0
-     >                   ,0)
-
-      PPICLF_INT_ICNT = 0
+      if (.not.ppiclf_lintp) 
+     >call ppiclf_exittr('To interpolate, set PPICLF_LRP_PRO to ~= 0$'
+     >                   ,0.0d0,0)
 
       n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       do ie=1,ppiclf_neltb
@@ -1069,7 +1129,7 @@ c     ndum    = ppiclf_neltb*n
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_InterpField(jp,infld)
+      subroutine ppiclf_solve_InterpField(j)
 !
       implicit none
 !
@@ -1078,34 +1138,18 @@ c     ndum    = ppiclf_neltb*n
 ! Input: 
 !
       integer*4 jp
-      real*8 infld(*)
 !
 ! Internal:
 !
       integer*4 n, ie, iee, j
 !
-      if (ppiclf_int_icnt .eq. -1)
-     >call ppiclf_exittr('Call InitInterp before InterpField$',0.0d0,0)
-
-      PPICLF_INT_ICNT = PPICLF_INT_ICNT + 1
-
-      if (PPICLF_INT_ICNT .gt. PPICLF_LRP_INT)
-     >   call ppiclf_exittr('Interpolating too many fields$'
-     >                     ,0.0d0,PPICLF_INT_ICNT)
-      if (jp .le. 0 .or. jp .gt. PPICLF_LRP)
-     >   call ppiclf_exittr('Invalid particle array interp. location$'
-     >                     ,0.0d0,jp)
-
-      PPICLF_INT_MAP(PPICLF_INT_ICNT) = jp
-
       ! use the map to take original grid and map to fld which will be
       ! sent to mapped processors
       n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
       do ie=1,ppiclf_neltbbb
          iee = ppiclf_er_mapc(1,ie)
-         j = (iee-1)*n + 1
-         call ppiclf_copy(ppiclf_int_fld(1,1,1,PPICLF_INT_ICNT,ie)
-     >                   ,infld(j),n)
+         call ppiclf_copy(ppiclf_int_fld (1,1,1,j  ,ie)
+     >                   ,ppiclf_int_fldu(1,1,1,iee,j ),n)
       enddo
 
       return
@@ -1177,6 +1221,9 @@ c     ndum    = ppiclf_neltb*n
 
       ! free since mapping can change on next call
       call fgslib_findpts_free(PPICLF_FP_HNDL)
+
+      ! Set interpolated fields to zero again
+      PPICLF_INT_ICNT = 0
 
       return
       end
