@@ -84,11 +84,6 @@
          ppiclf_ydot(PPICLF_JVX,i) = (fbx+fqsx+fcx)/rmass
          ppiclf_ydot(PPICLF_JVY,i) = (fby+fqsy+fcy)/rmass
 
-         ! Store drag force for coupling with fluid
-         if (ppiclf_cycle .lt. 1000) then
-            fqsx = 0.0d0
-            fqsy = 0.0d0
-         endif
          ppiclf_ydotc(PPICLF_JVX,i) = -fqsx
          ppiclf_ydotc(PPICLF_JVY,i) = -fqsy
       enddo 
