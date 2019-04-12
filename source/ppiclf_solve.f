@@ -92,7 +92,7 @@
       integer*4  ndim
       integer*4  iendian
 !
-      if (imethod .le. 0 .or. imethod .ge. 2)
+      if (imethod .eq. 0 .or. abs(imethod) .ge. 2)
      >   call ppiclf_exittr('Invalid integration method$',0.0d0,imethod)
       if (ndim .le. 1 .or. ndim .ge. 4)
      >   call ppiclf_exittr('Invalid problem dimension$',0.0d0,ndim)
@@ -888,6 +888,10 @@ c----------------------------------------------------------------------
       real*8    dt
       real*8    time
 ! 
+! Internal:
+! 
+      logical iout
+!
       ppiclf_cycle  = istep
       ppiclf_iostep = iostep
       ppiclf_dt     = dt
@@ -895,10 +899,12 @@ c----------------------------------------------------------------------
 
       ! integerate in time
       if (ppiclf_imethod .eq. 1) 
-     >   call ppiclf_solve_IntegrateRK3
+     >   call ppiclf_solve_IntegrateRK3(iout)
+      if (ppiclf_imethod .eq. -1) 
+     >   call ppiclf_solve_IntegrateRK3s(iout)
 
       ! output files
-      if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0) then
+      if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0 .and. iout) then
 
          ! already wrote initial conditions
          if (ppiclf_cycle .ne. 0) then
@@ -915,19 +921,22 @@ c----------------------------------------------------------------------
       return
       end
 c----------------------------------------------------------------------
-      subroutine ppiclf_solve_IntegrateRK3
+      subroutine ppiclf_solve_IntegrateRK3(iout)
 !
       implicit none
 !
 #include "PPICLF.h"
 ! 
-! Input: 
+! Internal: 
 ! 
       integer*4 i, ndum, nstage, istage
 !
-      ndum = PPICLF_NPART*PPICLF_LRS
-
+! Output:
+!
+      logical iout
+!
       ! save stage 1 solution
+      ndum = PPICLF_NPART*PPICLF_LRS
       do i=1,ndum
          ppiclf_y1(i) = ppiclf_y(i,1)
       enddo
@@ -943,10 +952,61 @@ c----------------------------------------------------------------------
 
          ! rk3 integrate
          do i=1,ndum
+            ndum = PPICLF_NPART*PPICLF_LRS
             ppiclf_y(i,1) =  ppiclf_rk3coef(1,istage)*ppiclf_y1   (i)
      >                     + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
      >                     + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
          enddo
+      enddo
+
+      iout = .true.
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine ppiclf_solve_IntegrateRK3s(iout)
+!
+      implicit none
+!
+#include "PPICLF.h"
+! 
+! Internal: 
+! 
+      integer*4 i, ndum, nstage, istage
+      integer*4 icalld
+      save      icalld
+      data      icalld /0/
+!
+! Output:
+!
+      logical iout
+!
+      icalld = icalld + 1
+
+      ! save stage 1 solution
+      ndum = PPICLF_NPART*PPICLF_LRS
+      do i=1,ndum
+         ppiclf_y1(i) = ppiclf_y(i,1)
+      enddo
+
+      ! get rk3 coeffs
+      call ppiclf_solve_SetRK3Coeff(ppiclf_dt)
+
+      nstage = 3
+      istage = mod(icalld,nstage)
+      if (istage .eq. 0) istage = 3
+      iout = .false.
+      if (istage .eq. nstage) iout = .true.
+
+      ! evaluate ydot
+      call ppiclf_solve_SetYdot
+
+      ! rk3 integrate
+      ndum = PPICLF_NPART*PPICLF_LRS
+      do i=1,ndum
+         ppiclf_y(i,1) =  ppiclf_rk3coef(1,istage)*ppiclf_y1   (i)
+     >                  + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
+     >                  + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
       enddo
 
       return

@@ -48,14 +48,14 @@
 !
 ! Input:
 !
-      real*8 y(*)
-      real*8 ydot(*)
-      real*8 ydotc(*)
-      real*8 rprop(*)
+      real*8 y    (PPICLF_LRS)
+      real*8 ydot (PPICLF_LRS)
+      real*8 ydotc(PPICLF_LRS)
+      real*8 rprop(PPICLF_LRP)
 !
 ! Output:
 !
-      real*8 map(*)
+      real*8 map  (PPICLF_LRP_PRO)
 !
 
       return
@@ -72,10 +72,10 @@
 !
       integer*4 i
       integer*4 j
-      real*8 yi(*)     ! PPICLF_LRS
-      real*8 rpropi(*) ! PPICLF_LRP
-      real*8 yj(*)     ! PPICLF_LRS
-      real*8 rpropj(*) ! PPICLF_LRP
+      real*8 yi    (PPICLF_LRS)    
+      real*8 rpropi(PPICLF_LRP)
+      real*8 yj    (PPICLF_LRS)    
+      real*8 rpropj(PPICLF_LRP)
 !
 ! Internal:
 !

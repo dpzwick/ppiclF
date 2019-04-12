@@ -4,7 +4,7 @@
 #-------------------------------------------------------------------------------
 
 # source path 
-NEK_SOURCE_ROOT="$HOME/libraries/Nek5000" 
+NEK_SOURCE_ROOT="$HOME/Nek5000" 
 
 # Fortran/C compiler
 FC="mpif77"
@@ -17,7 +17,7 @@ CC="mpicc"
 # WHAT FOLLOWS ARE OPTIONAL SETTINGS
 #-------------------------------------------------------------------------------
 
-SOURCE_ROOT_PPICLF=$HOME/libraries/ppiclF/source
+SOURCE_ROOT_PPICLF=$HOME/ppiclF/source
 
 # optional compiler flags
 FFLAGS=" -I$SOURCE_ROOT_PPICLF"
