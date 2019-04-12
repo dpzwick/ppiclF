@@ -12,7 +12,7 @@
       real*8 dt, time
       integer*4 ierr
 
-      real*8 rdum, ran2, pi
+      real*8 rdum, ran2, pi, dp_min, dp_max, rhop
       external ran2
 
       real*8 ksp,erest
