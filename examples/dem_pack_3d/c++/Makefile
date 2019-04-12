@@ -1,7 +1,7 @@
 ENAME            = test.out
 CC               = mpiCC
 FC               = mpif77
-PPICLF_LOCATION  = $(HOME)/libraries/ppiclF
+PPICLF_LOCATION  = $(HOME)/ppiclF
 CFLAGS          += -z muldefs
 
 ####################
