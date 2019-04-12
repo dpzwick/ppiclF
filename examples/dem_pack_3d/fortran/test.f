@@ -61,7 +61,7 @@
 
       ! Set min bin size to be largest particle diameter
       call ppiclf_solve_InitNeighborBin(dp_max)
-      call ppiclf_io_ReadWallVTK("../geometry/ppiclf_tank.vtk")
+      call ppiclf_io_ReadWallVTK("ppiclf_tank.vtk")
 
       ! For user implemented collision model
       ksp      = 10000.0

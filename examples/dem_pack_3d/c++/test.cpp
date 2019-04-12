@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 
     // Read file with boundary conditions
     //    Here, we have to pass in array of chars not a string
-       std::string bndrys = "../geometry/ppiclf_tank.vtk";
+       std::string bndrys = "ppiclf_tank.vtk";
        int nl = bndrys.length();
        char bndryc[nl+1];
        strcpy(bndryc, bndrys.c_str());
