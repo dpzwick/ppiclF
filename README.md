@@ -1,6 +1,7 @@
 # ppiclF
 A parallel particle-in-cell library in Fortran.
 
+## Build Status
 [![Build Status](https://travis-ci.com/dpzwick/ppiclF.svg?branch=master)](https://travis-ci.com/dpzwick/ppiclF)
 
 ## Capabilities
