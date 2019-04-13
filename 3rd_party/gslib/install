@@ -5,7 +5,7 @@ VER=1.0.3
 GSLIB_PREFIX="gslib_"
 GSLIB_FPREFIX="fgslib_"
 GSLIB_OPT+=" DESTDIR=.."
-GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
+#GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
 GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
 GSLIB_OPT+=" PREFIX=$GSLIB_PREFIX FPREFIX=$GSLIB_FPREFIX"
 
@@ -19,12 +19,12 @@ if [ -f ./lib/libgs.a ]; then
 fi
 
 if [ ! -f v$VER.tar.gz ]; then
-  wget --no-check-certificate -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
+  wget --no-check-certificate -q -O v$VER.tar.gz http://github.com/gslib/gslib/archive/v$VER.tar.gz
 fi
 
 rm -rf gslib 2>/dev/null
 mkdir gslib 
-tar -zxvf *.tar.gz -C ./gslib --strip-components=1
+tar -zxf *.tar.gz -C ./gslib --strip-components=1
 cd gslib
 set -x
 make -j4 $GSLIB_OPT

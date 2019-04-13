@@ -1,0 +1,34 @@
+language: fortran
+
+sudo: required
+
+env:
+  matrix:
+    - TEST_CASE=stokes_2d::test_Parallel
+
+before_install: 
+  - export ROOT_DIR=`pwd`
+
+  - export SOURCE_ROOT=$ROOT_DIR
+  - export EXAMPLES_ROOT=$ROOT_DIR/short_tests
+  - export VERBOSE_TESTS=true
+  - export PARALLEL_PROCS=2
+
+  # Install MPICH
+  - sudo apt-get update -qq
+  - sudo apt-get install -y libmpich-dev mpich
+
+  - sudo apt-get purge cmake
+
+  # Set up Python virtualenv
+  - virtualenv -p python2.7 $ROOT_DIR/python2-env
+  - source $ROOT_DIR/python2-env/bin/activate
+  - export PYTHONPATH="$ROOT_DIR/short_tests:$PYTHONPATH"
+
+install:
+  - pip install --upgrade pip
+  - pip install --upgrade cmake
+  - pip install pytest
+
+script: 
+  - py.test -s -v $ROOT_DIR/short_tests/ppiclfTests.py::$TEST_CASE
