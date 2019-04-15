@@ -201,12 +201,13 @@ class ppiclfTestCase(unittest.TestCase):
             verbose     = self.verbose,
         )
 
-    def run_ppiclf(self):
+    def run_ppiclf(self, rea_file=None):
         from lib.ppiclfBinRun import run_ppiclf
         cls = self.__class__
 
         run_ppiclf(
             cwd        = os.path.join(self.examples_root, cls.example_subdir),
+            rea_file   = cls.case_name if not rea_file else rea_file,
             ifmpi      = self.ifmpi,
             log_suffix = self.log_suffix,
             n_procs    = self.mpi_procs,

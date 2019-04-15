@@ -7,23 +7,21 @@
 !
 ! Internal:
 !
-      real*8 fqsx,fqsy,fbx,fby
+      real*8 fqsy,fby
       integer*4 i
 !
 ! evaluate ydot
       do i=1,ppiclf_npart
          ! Stokes drag
-         fqsx = -ppiclf_y(PPICLF_JVX,i)/ppiclf_rprop(PPICLF_R_JTAUP,i)
          fqsy = -ppiclf_y(PPICLF_JVY,i)/ppiclf_rprop(PPICLF_R_JTAUP,i)
 
          ! Gravity
-         fbx  = 0.0d0
          fby  = -9.8d0
 
          ! set ydot for all PPICLF_LRS number of equations
-         ppiclf_ydot(PPICLF_JX ,i) = ppiclf_y(PPICLF_JVX,i)
+         ppiclf_ydot(PPICLF_JX ,i) = 0.0d0
          ppiclf_ydot(PPICLF_JY ,i) = ppiclf_y(PPICLF_JVY,i)
-         ppiclf_ydot(PPICLF_JVX,i) = fqsx+fbx
+         ppiclf_ydot(PPICLF_JZ ,i) = 0.0d0
          ppiclf_ydot(PPICLF_JVY,i) = fqsy+fby
       enddo 
 ! evaluate ydot
@@ -46,6 +44,8 @@
 !
       real*8 map  (PPICLF_LRP_PRO)
 !
+
+      map(PPICLF_P_JTEST) = rprop(PPICLF_R_JTAUP)
 
       return
       end

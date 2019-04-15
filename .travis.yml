@@ -4,7 +4,7 @@ sudo: required
 
 env:
   matrix:
-    - TEST_CASE=stokes_2d::test_Parallel
+    - TEST_CASE=test1::test_Parallel
 
 before_install: 
   - export ROOT_DIR=`pwd`

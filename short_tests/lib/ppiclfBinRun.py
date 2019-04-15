@@ -2,10 +2,10 @@ import os
 import sys
 from subprocess import call, check_call, PIPE, STDOUT, Popen, CalledProcessError
 
-def run_ppiclf(cwd, ifmpi, log_suffix='', n_procs=1, verbose=False):
+def run_ppiclf(cwd, rea_file, ifmpi, log_suffix='', n_procs=1, verbose=False):
     # Paths to executables, files
     test         = os.path.join(cwd, 'test.out')
-    logfile      = os.path.join(cwd, 'log.{0}{1}'.format(n_procs, log_suffix))
+    logfile      = os.path.join(cwd, '{0}.log.{1}{2}'.format(rea_file, n_procs, log_suffix))
     if ifmpi:
         command = ['mpiexec', '-np', str(n_procs), test]
     else:

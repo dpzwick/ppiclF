@@ -66,11 +66,16 @@ makeThird: $(SOURCE_ROOT_GSLIB)/install
 	@echo "                       "
 
 clean:
-	@rm -r $(SOURCE_ROOT_PPICLF)/*.o         \
-	       $(INSTALL_LOCATION)/tools/*.f     \
-	       $(INSTALL_LOCATION)/tools/*.h     \
-	       $(SOURCE_ROOT_PPICLF)/libppiclF.a \
-	       $(SOURCE_ROOT_GSLIB)/gslib        \
-	       $(SOURCE_ROOT_GSLIB)/lib          \
-	       $(SOURCE_ROOT_GSLIB)/include      \
-	       $(SOURCE_ROOT_GSLIB)/*.tar.gz
+	 rm -r $(SOURCE_ROOT_PPICLF)/*.o                        
+	 rm -r $(SOURCE_ROOT_PPICLF)/libppiclF.a                
+	 rm -r $(SOURCE_ROOT_GSLIB)/gslib                       
+	 rm -r $(SOURCE_ROOT_GSLIB)/lib                         
+	 rm -r $(SOURCE_ROOT_GSLIB)/include                     
+	 rm -r $(SOURCE_ROOT_GSLIB)/*.tar.gz                    
+	 rm -r $(INSTALL_LOCATION)/short_tests/*.pyc            
+	 rm -r $(INSTALL_LOCATION)/short_tests/lib/*.pyc        
+	 rm -r $(INSTALL_LOCATION)/short_tests/test1/test1.log*
+	 rm -r $(INSTALL_LOCATION)/short_tests/test1/*.vtu
+	 cd $(INSTALL_LOCATION)/short_tests/test1/; \
+	make clean
+

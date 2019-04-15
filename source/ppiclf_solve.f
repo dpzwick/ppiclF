@@ -21,7 +21,6 @@
       real*8     y(*)
       real*8     rprop(*)
 !
-      integer*4 i
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitParticle$',0.0d0
      >   ,ppiclf_nid)
@@ -811,10 +810,10 @@
       end
 !-----------------------------------------------------------------------
 #ifdef PPICLC
-      subroutine ppiclf_solve_InitBoxFilter(filt,ngrid)
+      subroutine ppiclf_solve_InitBoxFilter(filt,iwallm)
      > bind(C, name="ppiclc_solve_InitBoxFilter")
 #else
-      subroutine ppiclf_solve_InitBoxFilter(filt,ngrid)
+      subroutine ppiclf_solve_InitBoxFilter(filt,iwallm)
 #endif
 !
       implicit none
@@ -824,7 +823,7 @@
 ! Input: 
 ! 
       real*8    filt
-      integer*4 ngrid
+      integer*4 iwallm
 ! 
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitFilter$',0.0d0,0)
@@ -837,8 +836,10 @@
       if (PPICLF_LFILT)
      >call ppiclf_exittr('InitFilter can only be called once$',0.0d0,0)
 
+c     filt = sqrt(1.5d0*filt**2/log(2.0d0) + 1.0d0)
+
       ppiclf_filter = filt
-      ppiclf_ngrids = ngrid
+      ppiclf_iwallm = iwallm
 
       ppiclf_d2chk(2)  = filt/2.0d0
 
@@ -847,6 +848,8 @@
 
       PPICLF_LFILT    = .true.
       PPICLF_LFILTBOX = .true.
+
+      ppiclf_ngrids = 0 ! for now leave sub bin off
 
       return
       end
@@ -1524,8 +1527,9 @@ c----------------------------------------------------------------------
       endif
 
       if (ppiclf_lfiltbox) then
-         multfci = 1.0d0/ppiclf_filter**2
-         if (if3d) multfci = multfci/ppiclf_filter
+         multfci = 1.0d0/(PI/4.0d0*ppiclf_filter**2)
+         if (if3d) multfci = multfci/(1.0d0/1.5d0*ppiclf_filter)
+         rdum = multfci
       endif
 
       ! real particles
@@ -1756,8 +1760,8 @@ c----------------------------------------------------------------------
       endif
 
       if (ppiclf_lfiltbox) then
-         multfci = 1.0d0/ppiclf_filter**2
-         if (if3d) multfci = multfci/ppiclf_filter
+         multfci = 1.0d0/(PI/4.0d0*ppiclf_filter**2)
+         if (if3d) multfci = multfci/(1.0d0/1.5d0*ppiclf_filter)
       endif
 
       ! real particles
@@ -1848,9 +1852,12 @@ c----------------------------------------------------------------------
          kr  = min(ppiclf_bz,kkp+kdum)
          endif
 
-         do k=kl,kr
-         do j=jl,jr
-         do i=il,ir
+c        do k=kl,kr
+c        do j=jl,jr
+c        do i=il,ir
+         do k=1,ppiclf_bz
+         do j=1,ppiclf_by
+         do i=1,ppiclf_bx
             rdist2  = (ppiclf_grid_x(i,j,k) - rproj(2,ip))**2 +
      >                (ppiclf_grid_y(i,j,k) - rproj(3,ip))**2
             if(if3d) rdist2 = rdist2 +

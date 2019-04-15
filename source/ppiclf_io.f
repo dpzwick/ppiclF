@@ -399,7 +399,7 @@ c     goto 1511
       write(vtu,'(A)',advance='yes') ' </DataArray> '
 
       write(vtu,'(A)',advance='no') '   <DataArray '  ! cycle
-      write(vtu,'(A)',advance='no') 'type="Int32" '
+      write(vtu,'(A)',advance='no') 'type="ProjectParticleSubBinInt32" '
       write(vtu,'(A)',advance='no') 'Name="CYCLE" '
       write(vtu,'(A)',advance='no') 'NumberOfTuples="1" '
       write(vtu,'(A)',advance='no') 'format="ascii"> '

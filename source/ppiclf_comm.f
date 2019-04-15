@@ -106,7 +106,7 @@
       real*8     d2new(3)
       integer*4 ix, iy, iz, iperiodicx, iperiodicy, iperiodicz, ndim,
      >          npt_total, j, i, nmax, nbb, idum, jdum, kdum, nbin
-      real*8 xmin, ymin, zmin, xmax, ymax, zmax, rduml, rdumr
+      real*8 xmin, ymin, zmin, xmax, ymax, zmax, rduml, rdumr, rthresh
       integer*4 ppiclf_iglsum
       external ppiclf_iglsum
       real*8 ppiclf_glmin,ppiclf_glmax
@@ -148,10 +148,10 @@
       ! binning requires > 1 global particle. This takes care of 
       ! single particle case
       npt_total = ppiclf_iglsum(ppiclf_npart,1)
-      if (npt_total .eq. 1) then
+c     if (npt_total .eq. 1) then
       if (.not. ppiclf_lproj .and. .not. ppiclf_lsubsubbin) 
-     >ppiclf_d2chk(1) = 1E-3
-      endif
+     >ppiclf_d2chk(1) = 1E-16
+c     endif
 
       ! compute binb
       xmin = 1E10
@@ -214,9 +214,6 @@
       icount(1) = 0
       icount(2) = 0
       icount(3) = 0
-      d2new(1) = ppiclf_d2chk(1)
-      d2new(2) = ppiclf_d2chk(1)
-      d2new(3) = ppiclf_d2chk(1)
 
       ! first check if suggested direction 
       j = -1
@@ -232,7 +229,9 @@
      >                    ifac(j+1)
             nbb = ifac(1)*ifac(2)*ifac(3)
            
-            if( nbb .gt. ppiclf_np ) then
+            if( nbb        .gt. ppiclf_np .or. 
+     >          d2new(j+1) .lt. ppiclf_d2chk(j+1) .and. 
+     >          .not. ppiclf_lproj .and. .not. ppiclf_lsubsubbin ) then
                icount(j+1) = 1
                ifac(j+1) = ifac(j+1) - 1
                d2new(j+1) = (ppiclf_binb(2+2*j) -ppiclf_binb(1+2*j))/
@@ -251,10 +250,14 @@
             ifac(j+1) = ifac(j+1) + 1
             d2new(j+1) = (ppiclf_binb(2+2*j) - ppiclf_binb(1+2*j))/
      >                    ifac(j+1)
+
             nbb = ifac(1)*ifac(2)*ifac(3)
          
-            if( nbb .gt. ppiclf_np ) then
-c              icount(j+1) = icount(j+1) + 1
+            if( nbb        .gt. ppiclf_np .or. 
+     >          ((d2new(j+1) .lt. ppiclf_d2chk(j+1)) .and. 
+     >             (.not. ppiclf_lproj) .and. 
+     >             (.not. ppiclf_lsubsubbin)) 
+     >         ) then
                icount(j+1) = 1
                ifac(j+1) = ifac(j+1) - 1
                d2new(j+1) = (ppiclf_binb(2+2*j) -ppiclf_binb(1+2*j))/
@@ -274,11 +277,24 @@ c              icount(j+1) = icount(j+1) + 1
 ! SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 ! -------------------------------------------------------
       ! how many spacings in each direction
-      ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
-      ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
-      ppiclf_ndzgp = 1
-      if (ppiclf_ndim .gt. 2) ppiclf_ndzgp = 
+      rthresh = 1E-12
+      if (abs(d2new(1)) .le. rthresh) then
+       ppiclf_ndxgp = 1
+      else
+       ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
+      endif
+      if (abs(d2new(2)) .le. rthresh) then
+       ppiclf_ndygp = 1
+      else
+       ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
+      endif
+      if (abs(d2new(3)) .le. rthresh) then
+       ppiclf_ndzgp = 1
+      else
+       ppiclf_ndzgp = 1
+       if (ppiclf_ndim .gt. 2) ppiclf_ndzgp = 
      >                floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
+      endif
       
       ! grid spacing for that many spacings
       ppiclf_rdxgp = (ppiclf_binb(2) -ppiclf_binb(1))/real(ppiclf_ndxgp)
