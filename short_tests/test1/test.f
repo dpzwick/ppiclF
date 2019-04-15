@@ -275,7 +275,7 @@ c     call ppiclf_io_WriteSubBinVTU('')
       ifld = PPICLF_P_JTEST
       rint = 0.0d0
       navg = 4
-      if (ndim .eq. 3) navg = 8
+      if (ppiclf_ndim .eq. 3) navg = 8
       nmax = max(1,ppiclf_bz-1)
       do k=1,nmax
       do j=1,ppiclf_by-1
@@ -284,7 +284,7 @@ c     call ppiclf_io_WriteSubBinVTU('')
      >         ppiclf_grid_fld(i+1,j  ,k  ,ifld) +
      >         ppiclf_grid_fld(i  ,j+1,k  ,ifld) +
      >         ppiclf_grid_fld(i+1,j+1,k  ,ifld)
-         if (ndim .eq. 3)
+         if (ppiclf_ndim .eq. 3)
      >   rcc = rcc                               +
      >         ppiclf_grid_fld(i  ,j  ,k+1,ifld) +
      >         ppiclf_grid_fld(i+1,j  ,k+1,ifld) +
@@ -292,7 +292,7 @@ c     call ppiclf_io_WriteSubBinVTU('')
      >         ppiclf_grid_fld(i+1,j+1,k+1,ifld)
          rcc = rcc / real(navg) ! take cell average 
          rvol = ppiclf_rdx*ppiclf_rdy ! mult by volume cell
-         if (ndim .eq. 3)
+         if (ppiclf_ndim .eq. 3)
      >   rvol = rvol*ppiclf_rdz
          rint = rint + rcc*rvol
       enddo
