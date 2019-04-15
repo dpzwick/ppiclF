@@ -11,7 +11,7 @@ import re
 # python -m 'unittest' ppiclfTests.testnamehere.test_Parallel
 ###############################################################################
 
-class stokes_2d(ppiclfTestCase):
+class test1(ppiclfTestCase):
     example_subdir  =  'test1'
     case_name       =  'test1'
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         ut_verbose = 1
 
     testList = (
-               stokes_2d
+               test1
                ) 
 
     suite = unittest.TestSuite([unittest.TestLoader().loadTestsFromTestCase(t) for t in testList])
