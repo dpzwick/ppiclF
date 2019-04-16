@@ -19,6 +19,8 @@ A parallel particle-in-cell library in Fortran.
        
 * Load balances equations based on spatial position of
   particles.
+
+* Links with both Fortran and C++.
        
 * Allows simple user input of external overlapping mesh
   for interactions between particles and external mesh,
