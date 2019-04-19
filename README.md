@@ -14,7 +14,7 @@ A parallel particle-in-cell library in Fortran.
   where y and ydot are vectors that are entirely
   user defined.
        
-* Open MPI parallelization allows millions of equations
+* Open MPI parallelization allows billions of equations
   to be solved.
        
 * Load balances equations based on spatial position of
