@@ -21,7 +21,7 @@ bibliography: paper.bib
 
 Particle-in-cell simulations are ubiquitous in science and engineering. Relevant applications range from explosively driven compressible multiphase gas-solid flow to atomistic modeling. At the core of these diverse applications, a system of differential equations is advanced in time. As a result, the system given by
 
-$$\dfrac{d \mathbf{Y}}{dt} = \dot{\mathbf{Y}}$$,
+$$\dfrac{d \mathbf{Y}}{dt} = \dot{\mathbf{Y}}$$
 
 must be solved subject to appropriate initial conditions and right-hand-side forcing. However, computational constraints make this a daunting task when there are billions of equations which may even depend on other equations. Adding to this difficulty is the fact that the particles are often added as an afterthought when building particle-in-cell software. As a result, particle-in-cell implementations may initially perform below expectations.
 
