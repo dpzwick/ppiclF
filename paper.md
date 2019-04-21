@@ -17,17 +17,19 @@ date: 19 April 2019
 bibliography: paper.bib
 ---
 
-# Summary
+# Statement of Need
 
 Particle-in-cell simulations are ubiquitous in science and engineering. Relevant applications range from explosively driven compressible multiphase gas-solid flow to atomistic modeling. At the core of these diverse applications, a system of differential equations is advanced in time. As a result, the system given by
 
 $$\dfrac{d \mathbf{Y}}{dt} = \dot{\mathbf{Y}}$$
 
-must be solved subject to appropriate initial conditions and right-hand-side forcing. However, computational constraints make this a daunting task when there are billions of equations which may even depend on other equations. Adding to this difficulty is the fact that the particles are often added as an afterthought when building particle-in-cell software. As a result, particle-in-cell implementations may initially perform below expectations.
+must be solved subject to appropriate initial conditions $\mathbf{Y} (t = 0)$ and right-hand-side forcing $\dot{\mathbf{Y}}$. However, computational constraints make this a daunting task when there are billions of equations, whose forcing may even depend on the states of other equations. Adding to this difficulty is the fact that the particles are often added as an afterthought when building particle-in-cell software. As a result, typical particle-in-cell implementations may initially perform below expectations.
 
-ppiclF [@ppiclF] is a parallel particle-in-cell library written in Fortran. Its main purpose is to provide a unified and scalable interface for a user to solve the above general system of differential equations. The library performs on-the-fly load-balancing of the given system of equations across MPI processing ranks based on the coordinates associated with each particle. The library allows simple user input of an external overlapping mesh for interactions between particles and nearby cells. Additionally, ppiclF includes an optional fast binned parallel nearest neighbor search between particles within a user defined distance so that more sophisticated user-implemented right-hand-side forcing models can easily be evaluated. The algorithms have been shown to be scalable to 100,000 processors while solving billions of equations. A more complete description of ppiclF and its use is found on the documentation site [@ppiclf-doc].
+# Summary
 
-ppiclF was originally designed to be used by researchers in the field of compressible multiphase flow. It has largely come about as a result of the dissertation of [@Zwick].
+ppiclF [@ppiclF] is a parallel particle-in-cell library written in Fortran. Its main purpose is to provide a unified and scalable interface for a user to solve the above general system of differential equations. The library performs on-the-fly load-balancing of the given system of equations across MPI processing ranks based on the coordinates associated with each particle. The library allows simple user input of an external overlapping mesh for interactions between particles and their nearby cells. Additionally, ppiclF includes an optional fast binned parallel nearest neighbor search between particles within a user specified distance so that more sophisticated user-implemented right-hand-side forcing models can easily be evaluated. The algorithms have demonstrated scalability to 100,000 processors, allowing billions of equations to be solved simultaneously. A more complete description of ppiclF and its use is found on the documentation site [@ppiclf-doc].
+
+ppiclF was originally designed to be used by researchers in the field of multiphase flow. In fact, it has been used as a discrete element method solver coupled to both the incompressible Navier-Stokes solver Nek5000 [@nek5000] and the compressible Euler equation solver CMT-nek [@cmt-nek] to solve large-scale fluid-particle systems. Examples of these applications include fluidized beds and multiphase shock-tubes, which are detailed in the dissertation of [@Zwick]. However, since the above system of differential equations are also found in many other disciplines, ppiclF's applications are not limited to multiphase flow. As a result, this library is organized such that a user is only required to set the initial conditions and forcing for the system; other details, such as the parallelization strategy, are handled internally. Thus, ppiclF's framework allows a user to easily translate their mathematical system of equations into executable code.
 
 # Acknowledgements
 
