@@ -1,11 +1,8 @@
+[![Build Status](https://travis-ci.org/dpzwick/ppiclF.svg?branch=master)](https://travis-ci.org/dpzwick/ppiclF)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/dpzwick/ppiclF/blob/master/LICENSE)
+
 # ppiclF
 A parallel particle-in-cell library in Fortran.
-
-## Build Status
-[![Build Status](https://travis-ci.org/dpzwick/ppiclF.svg?branch=master)](https://travis-ci.org/dpzwick/ppiclF)
-
-## License
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/dpzwick/ppiclF/blob/master/LICENSE)
 
 ## Capabilities
 * Integration for the system:
