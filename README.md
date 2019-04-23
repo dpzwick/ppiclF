@@ -4,7 +4,6 @@
 # ppiclF
 A parallel particle-in-cell library in Fortran.
 
-## Capabilities
 * Integration for the system:
            
            d y
