@@ -1,4 +1,5 @@
 FC               = mpif77
+CC               = mpicc
 FFLAGS          += -cpp               \
              	   -fbacktrace        \
 #	           -Wall              \
@@ -58,7 +59,7 @@ getObjs: $(SRC)
 
 makeThird: $(SOURCE_ROOT_GSLIB)/install
 	cd $(SOURCE_ROOT_GSLIB); \
-	./install
+	./install $(CC) $(FC)
 	@echo "                       "
 	@echo "***********************"
 	@echo "*** INSTALLED GSLIB ***"

@@ -1,6 +1,21 @@
 #!/bin/bash
 set -e
 
+if [ $# -ne 2 ]; then
+   echo "ERROR: Must specify two input arguements"
+   exit 1
+fi
+
+if [ $1 != "mpicc" ]; then
+   echo "ERROR: mpicc is the only supported C compiler"
+   exit 1
+fi
+
+if [ $2 != "mpif77" -a $2 != "mpif90" ]; then
+   echo "ERROR: mpif77 and mpif90 are the only supported Fortran compilers"
+   exit 1
+fi
+
 VER=1.0.3
 GSLIB_PREFIX="gslib_"
 GSLIB_FPREFIX="fgslib_"
@@ -8,6 +23,7 @@ GSLIB_OPT+=" DESTDIR=.."
 #GSLIB_OPT+=" MPI=$MPI MPIIO=$MPIIO"
 GSLIB_OPT+=" ADDUS=$UNDERSCORE USREXIT=0 BLAS=2"
 GSLIB_OPT+=" PREFIX=$GSLIB_PREFIX FPREFIX=$GSLIB_FPREFIX"
+GSLIB_OPT+=" CC=$1 FC=$2"
 
 if [ "$1" == "clean" ]; then
   rm -rf gslib lib include 2>/dev/null 
@@ -27,5 +43,5 @@ mkdir gslib
 tar -zxf *.tar.gz -C ./gslib --strip-components=1
 cd gslib
 set -x
-make -j4 $GSLIB_OPT
+make -j4 $GSLIB_OPT 
 set +x
