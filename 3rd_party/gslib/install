@@ -6,15 +6,15 @@ if [ $# -ne 2 ]; then
    exit 1
 fi
 
-if [ $1 != "mpicc" ]; then
-   echo "ERROR: mpicc is the only supported C compiler"
-   exit 1
-fi
+#if [ $1 != "mpicc" ]; then
+#   echo "ERROR: mpicc is the only supported C compiler"
+#   exit 1
+#fi
 
-if [ $2 != "mpif77" -a $2 != "mpif90" ]; then
-   echo "ERROR: mpif77 and mpif90 are the only supported Fortran compilers"
-   exit 1
-fi
+#if [ $2 != "mpif77" -a $2 != "mpif90" ]; then
+#   echo "ERROR: mpif77 and mpif90 are the only supported Fortran compilers"
+#   exit 1
+#fi
 
 VER=1.0.3
 GSLIB_PREFIX="gslib_"

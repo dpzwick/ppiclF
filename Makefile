@@ -1,5 +1,5 @@
-FC               = mpif77
-CC               = mpicc
+FC               = mpif77 # Valid MPI Fortran compiler
+CC               = mpicc  # Valid MPI C compiler
 FFLAGS          += -cpp               \
              	   -fbacktrace        \
 #	           -Wall              \
