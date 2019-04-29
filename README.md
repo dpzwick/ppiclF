@@ -2,12 +2,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/dpzwick/ppiclF/blob/master/LICENSE)
 
 # ppiclF
-ppiclF is a parallel particle-in-cell library written in Fortran. Its main purpose is to provide a unified and scalable interface for a user to solve the following system of differential equations
+ppiclF is a parallel particle-in-cell library written in Fortran. 
+
+Applications of ppilcF include element-based particle-in-cell simulations, such as Euler-Lagrange mutliphase flow simulation, immersed boundary methods, and even atomistic-scale modeling. At its essence, ppiclF's main purpose is to provide a unified and scalable interface for a user to solve the following system of differential equations
 
            
            d y
-           ---  =  ydot.
+           ---  =  ydot,
            d t
+
+which are found in all of the previously given particle-in-cell applications.
 
 
 * See [documentation website](https://dpzwick.github.io/ppiclF-doc) for more details, theory, examples, questions, etc.
