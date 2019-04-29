@@ -11,10 +11,9 @@ Applications of ppilcF include element-based particle-in-cell simulations, such 
            ---  =  ydot,
            d t
 
-which are found in all of the previously given particle-in-cell applications.
+which are found in all of the previously given particle-in-cell applications. See [documentation website](https://dpzwick.github.io/ppiclF-doc) for more details, theory, examples, questions, etc.
 
-
-* See [documentation website](https://dpzwick.github.io/ppiclF-doc) for more details, theory, examples, questions, etc.
+# Capabilities
 
 * On-the-fly load-balancing of the system of equations across MPI processing ranks based on the coordinates associated with each particle. 
 
