@@ -35,7 +35,7 @@ In order to remedy these challenges, a parallel dynamic load-balancing approach 
 
 ppiclF is a parallel particle-in-cell library written in Fortran. Its main purpose is to provide a unified and scalable interface for a user to solve the above general system of differential equations in PIC simulations. The library performs on-the-fly load-balancing of the given system of equations across MPI processing ranks based on the coordinates associated with each particle. The library allows simple user input of an external overlapping mesh for interactions between particles and their nearby cells. Additionally, ppiclF includes an optional fast binned parallel nearest neighbor search between particles within a user specified distance so that more sophisticated user-implemented right-hand-side forcing models can easily be evaluated. The algorithms have demonstrated scalability to 100,000 processors, allowing billions of equations to be solved simultaneously. The library can easily be integrated with existing cell-only codes since it does not alter data structures associated with the cells. A more complete description of ppiclF and its use is found on the documentation site [@ppiclf-doc].
 
-ppiclF was originally designed to be used by researchers in the field of multiphase flow. In fact, it has been used as a discrete element method solver coupled to both the incompressible Navier-Stokes solver NEK5000 and the compressible Euler equation solver CMT-nek to solve large-scale fluid-particle systems. Examples of these applications include fluidized beds and multiphase shock-tubes, which are detailed in the dissertation of @Zwick. However, since the above system of differential equations are also found in many other disciplines, ppiclF's applications are not limited to multiphase flow. As a result, this library is organized such that a user is only required to set the initial conditions and forcing for the system; other details, such as the parallelization strategy, are handled internally. Thus, ppiclF's framework allows a user to easily translate their mathematical system of equations into executable code.
+ppiclF was originally designed to be used by researchers in the field of multiphase flow. In fact, it has been used as a discrete element method solver coupled to both the incompressible Navier-Stokes solver Nek5000 [-@nek5000] and the compressible Euler equation solver CMT-nek [-@cmt-nek] to solve large-scale fluid-particle systems. Examples of these applications include fluidized beds and multiphase shock-tubes, which are detailed in the dissertation of @Zwick. However, since the above system of differential equations are also found in many other disciplines, ppiclF's applications are not limited to multiphase flow. As a result, this library is organized such that a user is only required to set the initial conditions and forcing for the system; other details, such as the parallelization strategy, are handled internally. Thus, ppiclF's framework allows a user to easily translate their mathematical system of equations into executable code.
 
 # Acknowledgements
 
@@ -44,8 +44,3 @@ This material is based upon work supported by the National Science Foundation Gr
 There have been numerous suggestions and reworking of ppiclF over the past few years, including valuable input from the NEK5000 team at Argonne National Laboratory and the Center for Compressible Multiphase Turbulence team at the University of Florida.
 
 # References
-
----
-nocite: |
-  @nek5000, @cmt-nek
-...
