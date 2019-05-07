@@ -25,3 +25,8 @@ which are found in all of the previously given particle-in-cell applications. Se
 * Algorithms have demonstrated scalability to 100,000 processors, allowing billions of equations to be solved simultaneously. 
 
 * Links to both Fortran and C++ external code as a library.
+
+# Recommended Citation
+
+| Zwick, D. (2019). ppiclF: A Parallel Particle-In-Cell Library in Fortran. *Journal of Open Source Software.* 4(37), 1400. https://doi.org/10.21105/joss.01400 |
+| --- |
