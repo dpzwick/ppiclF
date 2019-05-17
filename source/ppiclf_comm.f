@@ -230,8 +230,10 @@ c     endif
             nbb = ifac(1)*ifac(2)*ifac(3)
            
             if( nbb        .gt. ppiclf_np .or. 
-     >          d2new(j+1) .lt. ppiclf_d2chk(j+1) .and. 
-     >          .not. ppiclf_lproj .and. .not. ppiclf_lsubsubbin ) then
+     >          ((d2new(j+1) .lt. ppiclf_d2chk(1)) .and. 
+     >             ((ppiclf_lproj) .or. 
+     >             (ppiclf_lsubsubbin)))
+     >         ) then
                icount(j+1) = 1
                ifac(j+1) = ifac(j+1) - 1
                d2new(j+1) = (ppiclf_binb(2+2*j) -ppiclf_binb(1+2*j))/
@@ -254,9 +256,9 @@ c     endif
             nbb = ifac(1)*ifac(2)*ifac(3)
          
             if( nbb        .gt. ppiclf_np .or. 
-     >          ((d2new(j+1) .lt. ppiclf_d2chk(j+1)) .and. 
-     >             (.not. ppiclf_lproj) .and. 
-     >             (.not. ppiclf_lsubsubbin)) 
+     >          ((d2new(j+1) .lt. ppiclf_d2chk(1)) .and. 
+     >             ((ppiclf_lproj) .or. 
+     >             (ppiclf_lsubsubbin)))
      >         ) then
                icount(j+1) = 1
                ifac(j+1) = ifac(j+1) - 1

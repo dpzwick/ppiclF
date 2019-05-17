@@ -88,7 +88,7 @@ c-----------------------------------------------------------------------
       include 'GEOM' 
 
       ux = 0.0
-      uy = 2.0
+      uy = 1.75
       uz = 0.0
 
       return
@@ -379,7 +379,7 @@ c
       
 c     if (icalld .lt. 5) goto 123
 
-      call opgrad(ur,us,ut,phigin)
+      call gradm1(ur,us,ut,phigin)
       call sub3(phig_qtl,phigin,phig_last,nxyze)
       call cmult(phig_qtl,rdt_in,nxyze)
       call vdot3(grad_dot,vx,vy,vz,ur,us,ut,nxyze)

@@ -1,11 +1,12 @@
 import time
 import datetime
+import sys
 
 # Get User Input
 lpart = 100000
-lpart = int(raw_input("Max number of particles per rank [" + str(lpart) + "]: ") or lpart)
+lpartin = int(raw_input("Max number of particles per rank [" + str(lpart) + "]: ") or lpart)
 
-ndim = 1
+ndim = 2
 ndim = int(raw_input("Problem dimensions [" + str(ndim) + "]: ") or ndim)
 
 lrs = ndim
@@ -39,12 +40,13 @@ yes = {'yes','y', 'ye', ''}
 no = {'no','n'}
 
 lrp_int = 0
+lrp_int_name = []
 lrp_pro = 0
 lex = 2
 ley = 2
 lez = 2
 lee = 1
-choiceo = raw_input("Overlap external mesh? (y/n) [n]: ").lower()
+choiceo = raw_input("Overlap external mesh? (y/n) [n]: ").lower() or "n"
 if choiceo in yes:
 
    lex = int(raw_input("Number of overlap points in x [" + str(lex) + "]: ") or lex)
@@ -56,95 +58,54 @@ if choiceo in yes:
 
    lrp_int = int(raw_input("Number of interpolated fields [" + str(lrp_int) + "]: ") or lrp_int)
    lrp_int = max(lrp_int,0)
+   if lrp_int > 0:
+      for i in range(lrp_int):
+         dum_str = raw_input("Interpolated property " + str(i+1) + " name (from previous properties): ") 
+         lrp_int_name.append(dum_str.upper())
+         if lrp_int_name[i] not in lrp_name:
+            sys.exit("ERROR: Interpolated property name must be from list of previous properties");
+
 
    lrp_pro = int(raw_input("Number of projected fields [" + str(lrp_pro) + "]: ") or lrp_pro)
    lrp_pro = max(lrp_pro,0)
 
 
 choices = 'no'
-bx1 = 1
-by1 = 1
-bz1 = 1
 lrp_pro_name = []
 if lrp_pro > 0:
-
-   if lrp_pro > 0:
-      for i in range(lrp_pro):
-         dum_str = "P" + str(i+1)
-         dum_str = raw_input("Projected property " + str(i+1) + " name [" + dum_str + "]: ") or dum_str
-         lrp_pro_name.append(dum_str.upper())
-
-   choices = raw_input("Project to SubBins? (y/n) [n]: ").lower()
-
-   if choices in yes:
-      bx1 = int(raw_input("Max size of SubBin grid in x [" + str(bx1) + "]: ") or bx1)
-      if ndim > 1:
-         by1 = int(raw_input("Max size of SubBin grid in y [" + str(by1) + "]: ") or by1)
-      if ndim > 2:
-         bz1 = int(raw_input("Max size of SubBin grid in z [" + str(bz1) + "]: ") or bz1)
+   for i in range(lrp_pro):
+      dum_str = "P" + str(i+1)
+      dum_str = raw_input("Projected property " + str(i+1) + " name [" + dum_str + "]: ") or dum_str
+      lrp_pro_name.append(dum_str.upper())
 
 # Create Header File
 header_file = "PPICLF_USER.h"
 with open (header_file, "w") as f:
-      f.write ("C Auto-generated ppiclf_user.h file with usergen.py at:\n");
-      f.write ("C    " + str(datetime.datetime.now()) + "\n");
-      f.write ("C \n");
-
-      f.write ("C Max number of particles per rank \n");
-      f.write ("#define PPICLF_LPART " + str(lpart) + "\n");
-      f.write("\n")
-
-      f.write ("C Number of equations solved for each particle \n");
+      if lpartin != lpart:
+         f.write ("#define PPICLF_LPART " + str(lpart) + "\n");
       f.write ("#define PPICLF_LRS " + str(lrs) + "\n");
-      f.write("\n")
-
-      f.write ("C Naming of equations solved for each particle \n");
-      for i in range(lrs):
-         f.write("#define PPICLF_J" + lrs_name[i] + " " + str(i+1) + "\n")
-      f.write("\n")
-
-      f.write ("C Number of additional properties for each particle \n");
       f.write ("#define PPICLF_LRP " + str(lrp) + "\n");
-      f.write("\n")
-
-      f.write ("C Naming of additional properties for each particle \n");
-      for i in range(lrp):
-         f.write("#define PPICLF_R_J" + lrp_name[i] + " " + str(i+1) + "\n")
-      f.write("\n")
-
       if choiceo in yes:
-         f.write ("C Size of external overlap grid \n");
+         f.write ("#define PPICLF_LEE " + str(lee) + "\n");
          f.write ("#define PPICLF_LEX " + str(lex) + "\n");
 	 if ndim > 1:
             f.write ("#define PPICLF_LEY " + str(ley) + "\n");
 	 if ndim > 2:
             f.write ("#define PPICLF_LEZ " + str(lez) + "\n");
-         f.write ("#define PPICLF_LEE " + str(lee) + "\n");
-         f.write("\n")
-
       if lrp_int != 0:
-         f.write ("C Number of interpolated fields \n");
          f.write ("#define PPICLF_LRP_INT " + str(lrp_int) + "\n");
-         f.write("\n")
-
       if lrp_pro != 0:
-         f.write ("C Number of projected fields \n");
          f.write ("#define PPICLF_LRP_PRO " + str(lrp_pro) + "\n");
-         f.write("\n")
 
-         f.write ("C Naming of projected fields \n");
+      f.write("\n")
+
+      for i in range(lrs):
+         f.write("#define PPICLF_J" + lrs_name[i] + " " + str(i+1) + "\n")
+      for i in range(lrp):
+         f.write("#define PPICLF_R_J" + lrp_name[i] + " " + str(i+1) + "\n")
+      if lrp_pro != 0:
          for i in range(lrp_pro):
             f.write("#define PPICLF_P_J" + lrp_pro_name[i] + " " + str(i+1) + "\n")
-         f.write("\n")
-
-      if choices in yes:
-         f.write ("C Max size of SubBin grid \n");
-         f.write ("#define PPICLF_BX1 " + str(bx1) + "\n");
-	 if ndim > 1:
-            f.write ("#define PPICLF_BY1 " + str(by1) + "\n");
-	 if ndim > 2:
-            f.write ("#define PPICLF_BZ1 " + str(bz1) + "\n");
-         f.write("\n")
 
 # Create Fortran File
 fortran_file = "ppiclf_user.f"
@@ -157,47 +118,24 @@ with open (fortran_file, "w") as f:
       f.write ("! Note: REPLACE ANY ? VARIABLES IN THIS FILE WITH DESIRED PROPERTIES\n");
       f.write ("! \n");
       f.write ("! ----------------------------------------------------------------------\n");
-      f.write ("      subroutine ppiclf_user_SetYdot(time,y,ydot)\n");
+      f.write ("      subroutine ppiclf_user_SetYdot\n");
       f.write ("!\n");
       f.write ("      implicit none\n");
       f.write ("!\n");
       f.write ("#include \"PPICLF.h\"\n");
-      f.write ("#include \"PPICLF\"\n");
-      f.write ("!\n");
-      f.write ("! Input:\n");
-      f.write ("!\n");
-      f.write ("      real*8 time\n")
-      f.write ("      real*8 y(*)\n")
-      f.write ("!\n");
-      f.write ("! Output:\n");
-      f.write ("!\n");
-      f.write ("      real*8 ydot(*)\n")
       f.write ("!\n");
       f.write ("! Internal:\n");
       f.write ("!\n");
-      f.write ("      integer*4 i,j\n");
+      f.write ("      integer*4 i\n");
       f.write ("!\n");
-      f.write ("\n")
-      if lrp_int != 0:
-         f.write ("! Interpolate Fields\n")
-         f.write ("      call ppiclf_solve_InitInterp\n")
-	 for i in range(lrp_int):
-            f.write ("         call ppiclf_solve_InterpField(PPICLF_R_J?,field?" + str(i+1) +")\n")
-         f.write ("      call ppiclf_solve_FinalizeInterp\n")
-         f.write ("\n")
 
-      f.write ("! Evaluate Ydot\n")
+      f.write ("! evaluate ydot\n")
       f.write ("      do i=1,ppiclf_npart\n")
-      f.write ("         ! striding in y and ydot\n")
-      f.write ("         j = PPICLF_LRS*(i-1)\n")
       f.write ("\n")
-      f.write ("         ! User may perform a nearest neighbor search to \n")
-      f.write ("         ! activate EvalNearestNeighbor():\n")
-      f.write ("         ! call ppiclf_solve_NearestNeighbor(i)\n")
+      f.write ("         ! Operations done here to eventually evaluate ppiclf_ydot\n")
       f.write ("\n")
-      f.write ("         ! Operations done here to eventually evaluate ydot\n")
       for i in range(lrs):
-         f.write ("         ydot(PPICLF_J" + lrs_name[i] + " +j) = ?\n")
+         f.write ("         ppiclf_ydot(PPICLF_J" + lrs_name[i] + ",i) = ?\n")
       f.write ("      enddo\n")
       f.write ("\n")
       f.write ("      return\n")
@@ -210,14 +148,14 @@ with open (fortran_file, "w") as f:
       f.write ("!\n");
       f.write ("! Input:\n");
       f.write ("!\n");
-      f.write ("      real*8 y(*)\n")
-      f.write ("      real*8 ydot(*)\n")
-      f.write ("      real*8 ydotc(*)\n")
-      f.write ("      real*8 rprop(*)\n")
+      f.write ("      real*8 y    (PPICLF_LRS)\n")
+      f.write ("      real*8 ydot (PPICLF_LRS)\n")
+      f.write ("      real*8 ydotc(PPICLF_LRS)\n")
+      f.write ("      real*8 rprop(PPICLF_LRP)\n")
       f.write ("!\n");
       f.write ("! Output:\n");
       f.write ("!\n");
-      f.write ("      real*8 map(*)\n")
+      f.write ("      real*8 map  (PPICLF_LRP_PRO)\n")
       f.write ("!\n");
       for i in range(lrp_pro):
          f.write ("      map(PPICLF_P_J" + lrp_pro_name[i] + ") = ?\n")
@@ -232,25 +170,16 @@ with open (fortran_file, "w") as f:
       f.write ("      implicit none\n");
       f.write ("!\n");
       f.write ("#include \"PPICLF.h\"\n");
-      f.write ("#include \"PPICLF\"\n");
       f.write ("!\n");
       f.write ("! Input:\n");
       f.write ("!\n");
       f.write ("      integer*4 i\n")
       f.write ("      integer*4 j\n")
-      f.write ("      real*8 yi(*)     ! PPICLF_LRS\n")
-      f.write ("      real*8 rpropi(*) ! PPICLF_LRP\n")
-      f.write ("      real*8 yj(*)     ! PPICLF_LRS\n")
-      f.write ("      real*8 rpropj(*) ! PPICLF_LRP\n")
+      f.write ("      real*8 yi    (PPICLF_LRS)\n")
+      f.write ("      real*8 rpropi(PPICLF_LRP)\n")
+      f.write ("      real*8 yj    (PPICLF_LRS)\n")
+      f.write ("      real*8 rpropj(PPICLF_LRP)\n")
       f.write ("!\n");
-      f.write ("! - Nearest neighbor search is performed for particle i with solution\n")
-      f.write ("!   vector yi and property vector rpropi\n")
-      f.write ("! - Neighbor j particle has solution vector yj and proprty vector rpropj\n")
-      f.write ("! - When j == 0, the j particle is not a particle but a wall with the\n")
-      f.write ("!   first ndim values of yj being the nearest point on the wall\n")
-      f.write ("! - If information needs to be computed for particle i, it can safely\n")
-      f.write ("!   be stored/summed in ppiclf_ydotc(*,i) and evaluated in SetYdot()\n")
-      f.write ("!   since ppiclf_ydotc(*,*) is cleared before each call to SetYdot()\n")
       f.write ("\n")
       f.write ("      return\n")
       f.write ("      end\n")
@@ -267,39 +196,60 @@ with open (external_file, "w") as f:
       f.write ("! Note: REPLACE ANY ? VARIABLES IN THIS FILE WITH DESIRED PROPERTIES\n");
       f.write ("! \n");
       f.write ("! ----------------------------------------------------------------------\n");
-
-      f.write ("! Initialization routine order from external code:\n");
-      f.write ("!     ! Set-up ppiclF MPI:\n");
-      f.write ("!     call ppiclf_comm_InitMPI(int*4 comm?,int*4 nid?,int*4 np?)\n");
-      f.write ("! \n");
-      f.write ("!     ! User sets initial conditions for particle, then calls:\n");
-      f.write ("!     call ppiclf_solve_InitParticle(int*4 method?,int*4 ndim?,int*4 endian?,int*4 npart?,real*8 y?)\n");
-      f.write ("! \n");
-
-      if lrp_pro > 0:
-         f.write ("!     ! User sets up any filter parameters (i.e., Box or Gaussian):\n");
-         f.write ("!     call ppiclf_solve_InitGaussianFilter(real*8 w?,real*8 a?,int*4 n?)\n");
-         f.write ("!     call ppiclf_solve_InitBoxFilter(real*8 w?,int*4 n?)\n");
-         f.write ("! \n");
-      if choiceo in yes:
-         f.write ("!     ! User sets up overlap mesh:\n");
-         f.write ("!     call ppiclf_comm_InitOverlapMesh(int*4 ne?,int*4 lx?,int*4 ly?,int*4 lz?,real*8 x?,real*8 y?,real*8 z?)\n");
-         f.write ("! \n");
-      f.write ("!     ! User may specify distance to do a nearest neighbor search:\n");
-      f.write ("!     call ppiclf_solve_InitNeighborBin(real*8 w?)\n");
-      f.write ("! \n");
-      f.write ("!     ! User may add walls or periodicity below:\n");
       f.write ("! \n");
 
       f.write ("! ----------------------------------------------------------------------\n");
-      f.write ("! Call each time step from external code:\n");
-      f.write ("! #include \"PPICLF.h\"\n");
-      f.write ("! #include \"PPICLF\"\n");
-      f.write ("!     call ppiclf_solve_IntegrateParticle(int*4 istep?\n");
-      f.write ("!    >                                   ,int*4 iostep?\n");
-      f.write ("!    >                                   ,real*8 dt?\n");
-      f.write ("!    >                                   ,real*8 time?\n");
-      f.write ("!    >                                   ,real*8 ppiclf_y\n");
-      f.write ("!    >                                   ,real*8 ppiclf_ydot)\n");
+      f.write ("! Initialization routine order from external code:\n");
+      f.write ("! ----------------------------------------------------------------------\n");
+      f.write ("      ! Set-up ppiclF MPI:\n");
+      f.write ("      call ppiclf_comm_InitMPI(comm?\n");
+      f.write ("     >                        ,id?\n");
+      f.write ("     >                        ,np?\n");
+      f.write ("! \n");
+      f.write ("      ! User sets initial conditions for system, then calls:\n");
+      f.write ("      call ppiclf_solve_InitParticle(imethod?\n");
+      f.write ("     >                              ,ndim?\n");
+      f.write ("     >                              ,iendian?\n");
+      f.write ("     >                              ,npart?\n");
+      f.write ("     >                              ,y?\n");
+      f.write ("     >                              ,rprop?)\n");
+      f.write ("! \n");
+
+      if lrp_pro > 0:
+         f.write ("      ! User sets up any filter parameters (i.e., Box or Gaussian):\n");
+         f.write ("      call ppiclf_solve_InitGaussianFilter(f?,a?,iflg?)\n");
+         f.write ("! \n");
+      if choiceo in yes:
+         f.write ("      ! User sets up overlap mesh:\n");
+         f.write ("      call ppiclf_comm_InitOverlapMesh(ncell?\n");
+         f.write ("     >                                ,lx?\n");
+         f.write ("     >                                ,ly?\n");
+         f.write ("     >                                ,lz?\n");
+         f.write ("     >                                ,xgrid?\n");
+         f.write ("     >                                ,ygrid?\n");
+         f.write ("     >                                ,zgrid?)\n");
+         f.write ("! \n");
+      f.write ("      ! User may specify distance to do a nearest neighbor search:\n");
+      f.write ("      ! call ppiclf_solve_InitNeighborBin(W?)\n");
+      f.write ("! \n");
+      f.write ("      ! User may add boundaries or periodicity below:\n");
+      f.write ("! \n");
+
+      f.write ("! ----------------------------------------------------------------------\n");
+      f.write ("! Solve routine order from external code:\n");
+      f.write ("! ----------------------------------------------------------------------\n");
+      f.write ("#include \"PPICLF.h\"\n");
+
+      if lrp_int != 0:
+         f.write ("! Interpolate Fields\n")
+	 for i in range(lrp_int):
+            f.write ("      call ppiclf_solve_InterpFieldUser(PPICLF_R_J" + lrp_int_name[i] + "," + lrp_int_name[i].lower() + "_fld?)\n")
+         f.write ("! \n");
+
+      f.write ("! Integrate system\n")
+      f.write ("      call ppiclf_solve_IntegrateParticle(istep?\n");
+      f.write ("     >                                   ,iostep?\n");
+      f.write ("     >                                   ,dt?\n");
+      f.write ("     >                                   ,time?)\n");
       f.write ("! ----------------------------------------------------------------------\n");
 
