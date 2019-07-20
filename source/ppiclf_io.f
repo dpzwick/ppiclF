@@ -1,3 +1,5 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 !-----------------------------------------------------------------------
 #ifdef PPICLC
       subroutine ppiclf_io_ReadParticleVTU(filein1)
@@ -8,7 +10,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -196,7 +198,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -286,7 +288,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Input:
@@ -798,7 +800,7 @@ c1511 continue
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Input:
@@ -1339,7 +1341,7 @@ c1511 continue
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Input:
@@ -1451,9 +1453,9 @@ c1511 continue
       nglob = 1 ! unique key to sort by
       nkey  = 1 ! number of keys (just 1 here)
       ndum = 2
-      call fgslib_crystal_ituple_transfer(ppiclf_cr_hndl,prevs,
+      call pfgslib_crystal_ituple_transfer(ppiclf_cr_hndl,prevs,
      >                 ndum,nnp,nnp,nps)
-      call fgslib_crystal_ituple_sort(ppiclf_cr_hndl,prevs,
+      call pfgslib_crystal_ituple_sort(ppiclf_cr_hndl,prevs,
      >                 ndum,nnp,nglob,nkey)
 
       stride_len = 0
@@ -1733,7 +1735,7 @@ c1511 continue
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
       call ppiclf_prints('*********** PPICLF OUTPUT *****************$')
       call ppiclf_io_OutputDiagGen
@@ -1748,7 +1750,7 @@ c1511 continue
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1798,7 +1800,7 @@ c1511 continue
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1833,7 +1835,7 @@ c1511 continue
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1860,7 +1862,7 @@ c1511 continue
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !

@@ -1,3 +1,5 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 c Communication
       COMMON /PPICLF_PARALLEL_COMM_I/ PPICLF_COMM, PPICLF_NP, PPICLF_NID
      >                               ,PPICLF_CR_HNDL, PPICLF_FP_HNDL

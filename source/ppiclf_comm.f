@@ -1,3 +1,5 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 !-----------------------------------------------------------------------
 #ifdef PPICLC
       subroutine ppiclf_comm_InitMPI(comm,id,np)
@@ -8,7 +10,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input: 
 !
@@ -36,7 +38,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -58,7 +60,7 @@
       bb_t    = 0.01
       npt_max = 128
 
-      call fgslib_findpts_setup(ppiclf_fp_hndl
+      call pfgslib_findpts_setup(ppiclf_fp_hndl
      >                         ,ppiclf_comm_nid
      >                         ,1 ! only 1 rank on this comm
      >                         ,ppiclf_ndim
@@ -85,9 +87,9 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
-      call fgslib_crystal_setup(ppiclf_cr_hndl,ppiclf_comm,ppiclf_np)
+      call pfgslib_crystal_setup(ppiclf_cr_hndl,ppiclf_comm,ppiclf_np)
 
       return
       end
@@ -96,7 +98,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -332,7 +334,7 @@ c     endif
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -406,7 +408,7 @@ c     current box coordinates
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Internal:
@@ -512,9 +514,9 @@ c     current box coordinates
       nrr  = nxyz*3
       nkey(1) = 2
       nkey(2) = 1
-      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltb
+      call pfgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltb
      >       ,PPICLF_LEE,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,njj)
-      call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltb
+      call pfgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltb
      >       ,ppiclf_er_map,nii,partl,nl,ppiclf_xm1b,nrr,nkey,2)
 
 
@@ -625,7 +627,7 @@ c     current box coordinates
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -680,7 +682,7 @@ c-----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -717,7 +719,7 @@ c-----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -745,7 +747,7 @@ c-----------------------------------------------------------------------
       enddo
 
       j0 = 4
-      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl
+      call pfgslib_crystal_tuple_transfer(ppiclf_cr_hndl
      >                                  ,ppiclf_npart,PPICLF_LPART
      >                                  ,ppiclf_iprop,PPICLF_LIP
      >                                  ,partl,0
@@ -778,7 +780,7 @@ c-----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1184,7 +1186,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -1246,13 +1248,13 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
       logical partl         
 !
-      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl
+      call pfgslib_crystal_tuple_transfer(ppiclf_cr_hndl
      >                                  ,ppiclf_npart_gp,PPICLF_LPART_GP
      >                                  ,ppiclf_iprop_gp,PPICLF_LIP_GP
      >                                  ,partl,0

@@ -1,3 +1,5 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 !-----------------------------------------------------------------------
 #ifdef PPICLC
       subroutine ppiclf_solve_InitParticle(imethod,ndim,iendian,npart,y,
@@ -10,7 +12,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input: 
 !
@@ -83,7 +85,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -157,7 +159,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -186,7 +188,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -217,7 +219,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -252,7 +254,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -286,7 +288,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input:
 ! 
@@ -501,7 +503,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input:
 ! 
@@ -682,7 +684,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input: 
 ! 
@@ -709,7 +711,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input: 
 ! 
@@ -736,7 +738,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input: 
 ! 
@@ -765,7 +767,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input: 
 ! 
@@ -818,7 +820,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input: 
 ! 
@@ -858,7 +860,7 @@ c     filt = sqrt(1.5d0*filt**2/log(2.0d0) + 1.0d0)
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Internal: 
 ! 
@@ -882,7 +884,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Input: 
 ! 
@@ -928,7 +930,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Internal: 
 ! 
@@ -971,7 +973,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Internal: 
 ! 
@@ -1019,7 +1021,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
       call ppiclf_solve_InitSolve
       call ppiclf_user_SetYdot
@@ -1031,7 +1033,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Internal: 
 ! 
@@ -1070,7 +1072,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1089,7 +1091,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input: 
 !
@@ -1129,7 +1131,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 ! 
 ! Internal: 
 ! 
@@ -1161,7 +1163,7 @@ c     ndum    = ppiclf_neltb*n
       ndum    = ppiclf_neltb+2
 
       ! initiate findpts since mapping can change on next call
-      call fgslib_findpts_setup(ppiclf_fp_hndl
+      call pfgslib_findpts_setup(ppiclf_fp_hndl
      >                         ,ppiclf_comm_nid
      >                         ,np ! only 1 rank on this comm
      >                         ,ppiclf_ndim
@@ -1196,7 +1198,7 @@ c     ndum    = ppiclf_neltb*n
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input: 
 !
@@ -1222,7 +1224,7 @@ c     ndum    = ppiclf_neltb*n
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal: 
 !
@@ -1238,10 +1240,10 @@ c     ndum    = ppiclf_neltb*n
       nrr  = nxyz*PPICLF_LRP_INT
       nkey(1) = 2
       nkey(2) = 1
-      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltbbb
+      call pfgslib_crystal_tuple_transfer(ppiclf_cr_hndl,ppiclf_neltbbb
      >      ,PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,ppiclf_int_fld
      >      ,nrr,njj)
-      call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltbbb
+      call pfgslib_crystal_tuple_sort    (ppiclf_cr_hndl,ppiclf_neltbbb
      >       ,ppiclf_er_mapc,nii,partl,nl,ppiclf_int_fld,nrr,nkey,2)
 
       ! find which cell particle is in locally
@@ -1251,7 +1253,7 @@ c     ndum    = ppiclf_neltb*n
       if (ppiclf_ndim .eq. 3)
      >iz = 3
 
-      call fgslib_findpts(PPICLF_FP_HNDL           !   call fgslib_findpts( ihndl,
+      call pfgslib_findpts(PPICLF_FP_HNDL           !   call pfgslib_findpts( ihndl,
      >        , ppiclf_iprop (1 ,1),PPICLF_LIP        !   $             rcode,1,
      >        , ppiclf_iprop (3 ,1),PPICLF_LIP        !   &             proc,1,
      >        , ppiclf_iprop (2 ,1),PPICLF_LIP        !   &             elid,1,
@@ -1270,7 +1272,7 @@ c     ndum    = ppiclf_neltb*n
          enddo
 
          ! interpolate field locally
-         call fgslib_findpts_eval_local( PPICLF_FP_HNDL
+         call pfgslib_findpts_eval_local( PPICLF_FP_HNDL
      >                                  ,ppiclf_rprop (jp,1)
      >                                  ,PPICLF_LRP
      >                                  ,ppiclf_iprop (2,1)
@@ -1283,7 +1285,7 @@ c     ndum    = ppiclf_neltb*n
       enddo
 
       ! free since mapping can change on next call
-      call fgslib_findpts_free(PPICLF_FP_HNDL)
+      call pfgslib_findpts_free(PPICLF_FP_HNDL)
 
       ! Set interpolated fields to zero again
       PPICLF_INT_ICNT = 0
@@ -1295,7 +1297,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -1319,7 +1321,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1403,7 +1405,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
@@ -1484,7 +1486,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1683,9 +1685,9 @@ c----------------------------------------------------------------------
       nrr = nxyz*PPICLF_LRP_PRO
       nkey(1) = 2
       nkey(2) = 1
-      call fgslib_crystal_tuple_transfer(ppiclf_cr_hndl,neltbc,
+      call pfgslib_crystal_tuple_transfer(ppiclf_cr_hndl,neltbc,
      >   PPICLF_LEE,ppiclf_er_mapc,nii,partl,nl,ppiclf_pro_fldb,nrr,njj)
-      call fgslib_crystal_tuple_sort    (ppiclf_cr_hndl,neltbc
+      call pfgslib_crystal_tuple_sort    (ppiclf_cr_hndl,neltbc
      >       ,ppiclf_er_mapc,nii,partl,nl,ppiclf_pro_fldb,nrr,nkey,2)
 
       ! add the fields from the bins to ptw array
@@ -1717,7 +1719,7 @@ c----------------------------------------------------------------------
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -1879,6 +1881,25 @@ c        do i=il,ir
          enddo
          enddo
       enddo
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_GetProFldIJKEF(i,j,k,e,m,fld)
+!
+      implicit none
+!
+      include "PPICLF"
+!
+! Input:
+!
+      integer*4 i,j,k,e,m
+!
+! Output:
+!
+      real*8 fld
+!
+      fld = ppiclf_pro_fld(i,j,k,e,m)
 
       return
       end

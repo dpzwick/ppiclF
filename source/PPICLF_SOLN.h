@@ -1,3 +1,5 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 c Computational particles
       REAL*8 PPICLF_Y     (PPICLF_LRS ,PPICLF_LPART)  ! Solution
      >      ,PPICLF_YDOT  (PPICLF_LRS ,PPICLF_LPART)  ! Total solution RHS

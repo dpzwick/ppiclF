@@ -1,9 +1,7 @@
 FC               = mpif77 # Valid MPI Fortran compiler
 CC               = mpicc  # Valid MPI C compiler
-FFLAGS          += -cpp               \
-             	   -fbacktrace        \
-#	           -Wall              \
-#                  -fdefault-real-8   
+FFLAGS          += -cpp -fbacktrace        
+CPFLAGS         += -E
 #FFLAGS          += -DPPICLC
  	           
 INSTALL_LOCATION = .
@@ -17,9 +15,6 @@ SOURCE_ROOT_PPICLF=$(INSTALL_LOCATION)/source
 PPICLF_IFLAGS+=-I$(SOURCE_ROOT_PPICLF)
 
 # GSLIB LIBRARY
-GSLIB_IFLAGS = -DPREFIX=gslib_   \
-               -DFPREFIX=fgslib_ \
-	       -DGLOBAL_LONG_LONG
 SOURCE_ROOT_GSLIB=$(INSTALL_LOCATION)/3rd_party/gslib
 SOURCE_ROOT_GSLIB_OBJ=$(SOURCE_ROOT_GSLIB)/gslib/src
 GSLIB_IFLAGS+=-I$(SOURCE_ROOT_GSLIB)/include
@@ -36,9 +31,16 @@ OBJ = $(SOURCE_ROOT_PPICLF)/ppiclf_user.o     \
       $(SOURCE_ROOT_PPICLF)/ppiclf_io.o       \
       $(SOURCE_ROOT_PPICLF)/ppiclf_solve.o    \
       $(SOURCE_ROOT_PPICLF)/ppiclf_mxm.o
+PRE = $(SOURCE_ROOT_PPICLF)/PPICLF_SOLN.h     \
+      $(SOURCE_ROOT_PPICLF)/PPICLF_GRID.h     \
+      $(SOURCE_ROOT_PPICLF)/PPICLF_OPT.h      \
+      $(SOURCE_ROOT_PPICLF)/PPICLF_PARALLEL.h \
+      $(SOURCE_ROOT_PPICLF)/PPICLF_GEOM.h       
+POS = $(SOURCE_ROOT_PPICLF)/PPICLF
+      
 
 # Make commands
-default: makeThird getObjs libObjs 
+default: makeThird preProcess getObjs libObjs 
 
 libObjs: $(OBJ)
 	@ar crv $(SOURCE_ROOT_PPICLF)/libppiclF.a $(OBJ) $(SOURCE_ROOT_GSLIB_OBJ)/*.o
@@ -56,6 +58,17 @@ getObjs: $(SRC)
 	@echo "*** LIBRARY OBJECT SUCCESS ***"
 	@echo "******************************"
 	@echo "                              "
+
+preProcess: $(PRE)
+	$(CC) $(CPFLAGS) $(PRE) > $(POS)_tmp
+	grep "^[^#]" $(POS)_tmp > $(POS)
+	rm $(POS)_tmp
+	@echo "                       "
+	@echo "********************"
+	@echo "*** PREPROCESSED ***"
+	@echo "********************"
+	@echo "                       "
+	
 
 makeThird: $(SOURCE_ROOT_GSLIB)/install
 	cd $(SOURCE_ROOT_GSLIB); \

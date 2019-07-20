@@ -1,9 +1,11 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 c-----------------------------------------------------------------------
       subroutine ppiclf_gop( x, w, op, n)
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Input:
@@ -41,7 +43,7 @@ c-----------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Input:
@@ -279,7 +281,7 @@ c-----------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 ! 
 ! Vars:
@@ -312,7 +314,7 @@ c-----------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
@@ -347,7 +349,7 @@ c-----------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
@@ -380,7 +382,7 @@ c-----------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
@@ -414,7 +416,7 @@ c-----------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
@@ -497,7 +499,7 @@ c-----------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
@@ -526,7 +528,7 @@ C--------------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
@@ -546,7 +548,7 @@ c--------------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
@@ -600,7 +602,7 @@ C--------------------------------------------------------------------------
 ! 
       implicit none
 ! 
-#include "PPICLF.h"
+      include "PPICLF"
       include 'mpif.h'
 !
 ! Vars:
