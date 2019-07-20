@@ -1,5 +1,3 @@
-#include "PPICLF_USER.h"
-#include "PPICLF_STD.h"
 c-----------------------------------------------------------------------
       subroutine pfgslib_mxm(a,n1,b,n2,c,n3)
 !

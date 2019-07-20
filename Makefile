@@ -42,16 +42,16 @@ POS = $(SOURCE_ROOT_PPICLF)/PPICLF
 # Make commands
 default: makeThird preProcess getObjs libObjs 
 
-libObjs: $(OBJ)
-	@ar crv $(SOURCE_ROOT_PPICLF)/libppiclF.a $(OBJ) $(SOURCE_ROOT_GSLIB_OBJ)/*.o
+libObjs: $(SOURCE_ROOT_PPICLF)/ppiclf.o
+	@ar crv $(SOURCE_ROOT_PPICLF)/libppiclF.a $(SOURCE_ROOT_PPICLF)/ppiclf.o $(SOURCE_ROOT_GSLIB_OBJ)/*.o
 	@echo "                       "
 	@echo "***********************"
 	@echo "*** LIBRARY SUCCESS ***"
 	@echo "***********************"
 	@echo "                       "
 
-getObjs: $(SRC)
-	$(FC) $(FFLAGS) -c $(SRC) $(GSLIB_IFLAGS) $(PPICLF_IFLAGS)
+getObjs: $(SOURCE_ROOT_PPICLF)/ppiclf.f
+	$(FC) $(FFLAGS) -c $(SOURCE_ROOT_PPICLF)/ppiclf.f $(GSLIB_IFLAGS) 
 	mv *.o $(SOURCE_ROOT_PPICLF)
 	@echo "                              "
 	@echo "******************************"
@@ -63,6 +63,9 @@ preProcess: $(PRE)
 	$(CC) $(CPFLAGS) $(PRE) > $(POS)_tmp
 	grep "^[^#]" $(POS)_tmp > $(POS)
 	rm $(POS)_tmp
+	echo '#include "PPICLF_USER.h"' > $(SOURCE_ROOT_PPICLF)/ppiclf.f
+	echo '#include "PPICLF_STD.h"' >> $(SOURCE_ROOT_PPICLF)/ppiclf.f
+	cat $(SRC)  >> $(SOURCE_ROOT_PPICLF)/ppiclf.f
 	@echo "                       "
 	@echo "********************"
 	@echo "*** PREPROCESSED ***"
@@ -81,6 +84,8 @@ makeThird: $(SOURCE_ROOT_GSLIB)/install
 
 clean:
 	 rm -r $(SOURCE_ROOT_PPICLF)/*.o                        
+	 rm -r $(SOURCE_ROOT_PPICLF)/ppiclf.f
+	 rm -r $(SOURCE_ROOT_PPICLF)/PPICLF
 	 rm -r $(SOURCE_ROOT_PPICLF)/libppiclF.a                
 	 rm -r $(SOURCE_ROOT_GSLIB)/gslib                       
 	 rm -r $(SOURCE_ROOT_GSLIB)/lib                         

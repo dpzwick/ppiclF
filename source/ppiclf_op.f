@@ -1,5 +1,3 @@
-#include "PPICLF_USER.h"
-#include "PPICLF_STD.h"
 c-----------------------------------------------------------------------
       subroutine ppiclf_gop( x, w, op, n)
 ! 

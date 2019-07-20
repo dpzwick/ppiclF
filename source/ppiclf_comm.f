@@ -1,5 +1,3 @@
-#include "PPICLF_USER.h"
-#include "PPICLF_STD.h"
 !-----------------------------------------------------------------------
 #ifdef PPICLC
       subroutine ppiclf_comm_InitMPI(comm,id,np)

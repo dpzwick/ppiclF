@@ -3,7 +3,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Internal:
 !
@@ -109,7 +109,7 @@
 !
       implicit none
 !
-#include "PPICLF.h"
+      include "PPICLF"
 !
 ! Input:
 !
