@@ -1,4 +1,15 @@
 c-----------------------------------------------------------------------
+      subroutine pfgslib_userExitHandler()
+!
+      implicit none
+!
+! This has been added so when linked with another code that links
+! to gslib, there are no naming conflicts. See USREXIT=1 flag in
+! install script for gslib.
+!
+      return
+      end
+c-----------------------------------------------------------------------
       subroutine pfgslib_mxm(a,n1,b,n2,c,n3)
 !
       implicit none

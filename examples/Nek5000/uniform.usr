@@ -17,15 +17,17 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-#include "PPICLF.h"
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 
       ie = gllel(ieg)
 
-      ffx = ppiclf_pro_fld(ix,iy,iz,ie,PPICLF_P_JFX)
-      ffy = ppiclf_pro_fld(ix,iy,iz,ie,PPICLF_P_JFY)
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFX,ffx)
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFY,ffy)
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIP,rphip)
       
       rdum = 1./vtrans(ix,iy,iz,ie,1)
-      rdum = rdum/(1.-ppiclf_pro_fld(ix,iy,iz,ie,PPICLF_P_JPHIP))
+      rdum = rdum/(1.-rphip)
 
       ffx = ffx*rdum
       ffy = ffy*rdum
@@ -48,17 +50,30 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
-#include "PPICLF.h"
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
+
+      real rphip(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,lelt)
+
+      do ie=1,nelt
+      do iz=1,PPICLF_LEZ
+      do iy=1,PPICLF_LEY
+      do ix=1,PPICLF_LEX
+         call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie
+     >                              ,PPICLF_P_JPHIP,rphip(ix,iy,iz,ie))
+      enddo
+      enddo
+      enddo
+      enddo
 
       ! Set divergence equal to -1/phi_f * D/Dt( phi_f )
-      call qtl_pvol(usrdiv,
-     >              ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP))
+      call qtl_pvol(usrdiv,rphip)
       ! Set divergence at outflow elements so that characteristics go out
       call fill_div(usrdiv)  
 
       ! Interpolate fields to particle positions
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JPHIP
-     >                          ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP))
+     >                          ,rphip(1,1,1,1))
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JUX
      >                          ,vx(1,1,1,1))
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JUY
@@ -71,11 +86,11 @@ c-----------------------------------------------------------------------
      >                                    time  )
 
       if (mod(istep,iostep) .eq. 0)
-     >   call outpost2(ppiclf_pro_fld(1,1,1,1,PPICLF_P_JFX)
-     >                ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JFY)
-     >                ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
-     >                ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP)
-     >                ,ppiclf_pro_fld(1,1,1,1,PPICLF_P_JPHIP),1,'ptw')
+     >   call outpost2(rphip
+     >                ,rphip
+     >                ,rphip
+     >                ,rphip
+     >                ,rphip,1,'ptw')
 
       return
       end
@@ -117,7 +132,8 @@ c-----------------------------------------------------------------------
       subroutine usrdat2
       include 'SIZE'
       include 'TOTAL'
-#include "PPICLF.h"
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 
       real*8 ksp,erest
       common /ucollision/ ksp,erest
@@ -227,7 +243,8 @@ c
 c
       include 'SIZE'
       include 'TOTAL'
-#include "PPICLF.h"
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 c
       integer icalld
       save    icalld

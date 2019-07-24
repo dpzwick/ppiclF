@@ -221,7 +221,7 @@
 !
 ! Internal:
 !
-      integer i
+      integer*4 i
 !
       do i=1,ppiclf_npart
          ppiclf_nb_r(1,i) = floor((ppiclf_cp_map(1,i)-ppiclf_binb(1))/
@@ -256,7 +256,7 @@
 !
 ! Internal:
 !
-      integer i,j,ic
+      integer*4 i,j,ic
 !
       ic = 0
       do i=1,PPICLF_LPART
