@@ -1,3 +1,5 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 c-----------------------------------------------------------------------
       subroutine uservp (ix,iy,iz,eg)
       include 'SIZE'
@@ -17,8 +19,6 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-#include "PPICLF_USER.h"
-#include "PPICLF_STD.h"
 
       ie = gllel(ieg)
 
@@ -50,8 +50,6 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
-#include "PPICLF_USER.h"
-#include "PPICLF_STD.h"
 
       real rphip(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,lelt)
 
@@ -132,8 +130,6 @@ c-----------------------------------------------------------------------
       subroutine usrdat2
       include 'SIZE'
       include 'TOTAL'
-#include "PPICLF_USER.h"
-#include "PPICLF_STD.h"
 
       real*8 ksp,erest
       common /ucollision/ ksp,erest
@@ -243,8 +239,6 @@ c
 c
       include 'SIZE'
       include 'TOTAL'
-#include "PPICLF_USER.h"
-#include "PPICLF_STD.h"
 c
       integer icalld
       save    icalld

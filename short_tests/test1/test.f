@@ -1,6 +1,11 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
+!----------------------------------------------------------------------
+! Note that include 'PPICLF' is not allowed except with multiple defs
+! linker option in make file, which is not supported on newer mac 
+! linkers (-m option, or -z muldefs with gcc)
 !----------------------------------------------------------------------
       program main
-#include "PPICLF.h"
       include 'mpif.h' 
 !
       integer*4 np, nid, icomm, ierr
@@ -44,7 +49,7 @@
       end program
 !----------------------------------------------------------------------
       subroutine testA
-#include "PPICLF.h"
+      include "PPICLF"
 !
       integer*4 imethod, ndim, iendian, npart
       real*8 y(PPICLF_LRS    , PPICLF_LPART) 
@@ -82,7 +87,7 @@
       end
 !----------------------------------------------------------------------
       subroutine testB
-#include "PPICLF.h"
+      include "PPICLF"
 !
       integer*4 imethod, ndim, iendian, npart
       real*8 y(PPICLF_LRS    , PPICLF_LPART) 
@@ -118,7 +123,7 @@
       end
 !----------------------------------------------------------------------
       subroutine testC
-#include "PPICLF.h"
+      include "PPICLF"
 !
       integer*4 imethod, ndim, iendian, npart
       real*8 y(PPICLF_LRS    , PPICLF_LPART) 
@@ -154,7 +159,7 @@
       end
 !----------------------------------------------------------------------
       subroutine testD
-#include "PPICLF.h"
+      include "PPICLF"
 !
       integer*4 imethod, ndim, iendian, npart
       real*8 y(PPICLF_LRS    , PPICLF_LPART) 
@@ -192,7 +197,7 @@
       end
 !----------------------------------------------------------------------
       subroutine testE
-#include "PPICLF.h"
+      include "PPICLF"
 !
       integer*4 imethod, ndim, iendian, npart
       real*8 y(PPICLF_LRS    , PPICLF_LPART) 
@@ -237,7 +242,7 @@
       end
 !----------------------------------------------------------------------
       subroutine test_diagnostic_timeint(casename)
-#include "PPICLF.h"
+      include "PPICLF"
 !
       character*1  casename
       character*4  caseflag
@@ -258,7 +263,7 @@
       end
 !----------------------------------------------------------------------
       subroutine test_diagnostic_projection(casename)
-#include "PPICLF.h"
+      include "PPICLF"
 !
       character*1  casename
       character*4  caseflag
@@ -311,7 +316,7 @@ c     call ppiclf_io_WriteSubBinVTU('')
       end
 !----------------------------------------------------------------------
       subroutine test_diagnostic(casename)
-#include "PPICLF.h"
+      include "PPICLF"
 !
       character*1  casename
       character*4  caseflag

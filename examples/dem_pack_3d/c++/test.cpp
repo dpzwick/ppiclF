@@ -1,8 +1,6 @@
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
-#include <string>
-#include <cstring>
 #include <math.h>
 #include <mpi.h>
 #include <PPICLC.h>
@@ -71,12 +69,8 @@ int main(int argc, char *argv[])
     ppiclc_solve_InitNeighborBin(&dp_max);
 
     // Read file with boundary conditions
-    //    Here, we have to pass in array of chars not a string
-       std::string bndrys = "ppiclf_tank.vtk";
-       int nl = bndrys.length();
-       char bndryc[nl+1];
-       strcpy(bndryc, bndrys.c_str());
-    ppiclc_io_ReadWallVTK(bndryc);
+    char bndry[16+1] = "ppiclf_tank.vtk";
+    ppiclc_io_ReadWallVTK(bndry);
 
     // For user implemented collision model
     ucollision.ksp   = 10000.0;

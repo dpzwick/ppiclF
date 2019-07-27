@@ -1,6 +1,7 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
 !-----------------------------------------------------------------------
       program main
-#include "PPICLF.h"
       include 'mpif.h' 
 !
       integer*4 np, nid, icomm

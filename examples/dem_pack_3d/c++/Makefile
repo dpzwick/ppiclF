@@ -2,7 +2,8 @@ ENAME            = test.out
 CC               = mpiCC
 FC               = mpif77
 PPICLF_LOCATION  = $(HOME)/ppiclF
-CFLAGS          += -z muldefs
+CFLAGS           = 
+FFLAGS           = 
 
 ####################
 # DO NOT TOUCH BELOW
@@ -23,7 +24,7 @@ OBJ = test.o
 default: getObjs linkObjs
 
 linkObjs:  $(OBJ)
-	$(FC) $(CFLAGS) -o $(ENAME) $(OBJ) $(USR_LFLAGS) 
+	$(FC) $(FFLAGS) -o $(ENAME) $(OBJ) $(USR_LFLAGS) 
 	@echo "                         "
 	@echo "*************************"
 	@echo "*** USER LINK SUCCESS ***"

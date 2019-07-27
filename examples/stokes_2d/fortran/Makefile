@@ -1,7 +1,6 @@
 ENAME            = test.out
 FC               = mpif77
-FFLAGS          += -cpp                              \
- 		   -z muldefs
+FFLAGS          += -cpp
 PPICLF_LOCATION  = $(HOME)/ppiclF
 
 ####################
