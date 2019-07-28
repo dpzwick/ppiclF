@@ -22,10 +22,12 @@ c-----------------------------------------------------------------------
 
       ie = gllel(ieg)
 
+      ! First couple hydrodynamic force
       call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFX,ffx)
       call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFY,ffy)
       call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIP,rphip)
       
+      ! Make it an acceleration
       rdum = 1./vtrans(ix,iy,iz,ie,1)
       rdum = rdum/(1.-rphip)
 

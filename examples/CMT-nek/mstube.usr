@@ -1,0 +1,464 @@
+#include "PPICLF_USER.h"
+#include "PPICLF_STD.h"
+c-----------------------------------------------------------------------
+      subroutine uservp (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      include 'CMTDATA'
+
+      integer e,f,eg
+
+      e = gllel(eg)
+
+!-----------------------------------------------------------------------
+! c_E-> \infty. wave speed visco only
+!-----------------------------------------------------------------------
+c     mu=rho*t(ix,iy,iz,e,3)
+
+!-----------------------------------------------------------------------
+! finite c_E. res2 viscosity clipped in subroutin resvisc (or evmsmooth;
+!             I still haven't decided it.
+!-----------------------------------------------------------------------
+      mu=rho*res2(ix,iy,iz,e,1) ! finite c_E;
+!     mu=0.0
+      nu_s=0.75*mu/rho
+
+      mu=0.5*mu ! A factor of
+           ! 2 lurks in agradu's evaluation of strain rate, even in EVM
+      lambda=0.0
+      udiff=0.0
+      utrans=0.
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTBCDATA'
+      include 'CMTDATA'
+      include 'CMTTIMERS'
+      include 'PERFECTGAS'
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTBCDATA'
+      include 'CMTDATA'
+      include 'PERFECTGAS'   
+!
+      real*8 ksp,erest
+      common /ucollision/ ksp,erest
+      data ksp   /100000.0/ ! note: this limits dt, whcih we explicity set in .par file
+      data erest /0.8/
+
+      common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
+
+      real*8 y(PPICLF_LRS    , PPICLF_LPART) ! Normal ordering
+      real*8 rprop(PPICLF_LRP, PPICLF_LPART) ! Normal ordering
+
+      real*8 dp,rhop,rlx,rrx,rly,rry,rspace
+      integer*4 imethod,iendian,nmain,noff,nrow,npart
+
+      real diaph_loc, density_left , velocity_left , pressure_left
+     >              , density_right, velocity_right, pressure_right
+      common /stube_common/ diaph_loc, density_left , velocity_left
+     >                     ,pressure_left, density_right, velocity_right
+     >                     ,pressure_right      
+!
+! BEGIN CMTNEK INIT ---------------------------------------------------
+      call fix_geom
+
+      outflsub  = .true.
+      IFRESTART = .false.
+      IFCNTFILT = .false.
+
+      ! Avoid overstepping bx bounds in nekuic with ldimt>3, lbelt=1
+      ifldmhd   = 9999
+
+      ! Artificial viscosity parameters
+      c_max     = 0.3
+      c_sub_e   = 1000.0
+
+      ! diaph_loc separates left and right states
+      diaph_loc      = 0.32
+
+      density_left   = 1.205 
+      velocity_left  = 0.0
+      pressure_left  = 101325.0
+
+      rat            = 10.0
+      density_right  = density_left/rat
+      velocity_right = 0.0
+      pressure_right = pressure_left/rat
+
+      molmass    = 28.97 ! Air
+      muref      = 0.0
+      coeflambda = -2.0/3.0
+      suthcoef   = 1.0
+      reftemp    = 1.0
+      prlam      = 0.72
+      pinfty     = pressure_right
+      gmaref     = 1.4
+      rgasref    = MixtPerf_R_M(molmass,dum)
+      cvgref     = rgasref/(gmaref-1.0)
+      cpgref     = MixtPerf_Cp_CvR(cvgref,rgasref)
+      gmaref     = MixtPerf_G_CpR(cpgref,rgasref) 
+! END CMTNEK INIT -----------------------------------------------------
+
+
+! BEGIN PPICLF INIT ---------------------------------------------------
+      call ppiclf_comm_InitMPI(nekcomm,nid,np) ! Init MPI
+
+      ! Set initial conditions and parameters for particles
+      dp      = 1.2E-3
+      rhop    = 1000.0D0
+      rlx     = -0.022
+      rrx     =  0.022
+      rly     =  0.35
+      rry     =  0.45
+      rphip   =  0.2
+      npart   = int(rphip*(rrx-rlx)*(rry-rly)*dp/(pi/6.0D0*dp**3)) ! dp in 2d only for z dim
+      if (nid .ne. 0) npart = 0
+      rdum    = ran2(-1-nid)
+      do i=1,npart
+ 1511 continue
+         y(PPICLF_JX,i)  = rlx + (rrx-rlx)*ran2(2)
+         y(PPICLF_JY,i)  = rly + (rry-rly)*ran2(2)
+         y(PPICLF_JVX,i) = 0.0d0
+         y(PPICLF_JVY,i) = 0.0d0
+            
+         ! check if this particle overlaps any others/walls
+         if (i .gt. 1) then
+            kflag = 0
+            do j=1,i-1
+               ! first check placed particles already
+               rdist = (y(PPICLF_JX,i)-y(PPICLF_JX,j))**2
+     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
+               rdist = sqrt(rdist)
+               if (rdist .lt. dp) goto 1511
+            enddo
+         endif
+         ! then check wall overlap
+         rdist = (y(PPICLF_JX,i)-0.022)**2
+         rdist = sqrt(rdist)
+         if (rdist .lt. dp/2.0) goto 1511
+         rdist = (y(PPICLF_JX,i)+0.022)**2
+         rdist = sqrt(rdist)
+         if (rdist .lt. dp/2.0) goto 1511
+
+         rprop(PPICLF_R_JRHOP,i) = rhop
+         rprop(PPICLF_R_JDP  ,i) = dp
+         rprop(PPICLF_R_JVOLP,i) = pi/6.0D0*dp**3
+      enddo
+      imethod = -1
+      iendian = 0
+      call ppiclf_solve_InitParticle(imethod   ,
+     >                               ndim      ,
+     >                               iendian   ,
+     >                               npart     ,
+     >                               y(1,1)    ,
+     >                               rprop(1,1))
+
+      call ppiclf_solve_InitGaussianFilter(4.0*dp,1E-5,1)
+      call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
+      call ppiclf_solve_InitNeighborBin(dp)    ! Neighbor distance
+      call ppiclf_solve_InitPeriodicX(rlx,rrx) ! Periodic in x
+! END PPICLF INIT -----------------------------------------------------
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine usrdat3
+      include 'SIZE'
+      include 'TOTAL'
+c
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine useric (ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      include 'CMTDATA'
+      include 'PERFECTGAS'
+
+      real diaph_loc, density_left , velocity_left , pressure_left
+     >              , density_right, velocity_right, pressure_right
+      common /stube_common/ diaph_loc, density_left , velocity_left
+     >                     ,pressure_left, density_right, velocity_right
+     >                     ,pressure_right      
+
+      ie = gllel(ieg)
+
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIP,rphip)
+      phi= 1.0-rphip
+
+      if (y .le. diaph_loc) then
+         rho  = density_left
+         uy   = velocity_left
+         pres = pressure_left
+         temp = MixtPerf_T_DPR(rho,pres,rgasref)
+      else
+         rho  = density_right
+         uy   = velocity_right
+         pres = pressure_right
+         temp = MixtPerf_T_DPR(rho,pres,rgasref)
+      endif
+
+      ux         = 0.0
+      uz         = 0.0
+      cp         = cpgref
+      cv         = cvgref
+      e_internal = cvgref*temp
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userf(ix,iy,iz,ieg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+
+      COMMON /mycmt_common/ pdphidx, pdphidy, pdphidz
+     >                      dpdx   , dpdy   , dpdz
+      real pdphidx(lx1,ly1,lz1,lelt)
+     >    ,pdphidy(lx1,ly1,lz1,lelt)
+     >    ,pdphidz(lx1,ly1,lz1,lelt)
+     >    ,dpdx   (lx1,ly1,lz1,lelt)
+     >    ,dpdy   (lx1,ly1,lz1,lelt)
+     >    ,dpdz   (lx1,ly1,lz1,lelt)
+
+      ie = gllel(ieg)
+
+! BEGIN PPICLF FORCING ------------------------------------------------
+      ! First couple hydrodynamic force
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFX,ffx)
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFY,ffy)
+      ffz = 0.0
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIP,rphip)
+
+      ! Add p * grad(phig)
+      ffx = ffx + pdphidx(ix,iy,iz,ie)
+      ffy = ffy + pdphidy(ix,iy,iz,ie)
+      ffz = ffz + pdphidz(ix,iy,iz,ie)
+
+      ! Make it an acceleration just as with Nek5000
+      rdum = 1./vtrans(ix,iy,iz,ie,1)
+      rdum = rdum/(1.-rphip)
+
+      ffx = ffx*rdum
+      ffy = ffy*rdum
+      ffz = ffz*rdum
+! END PPICLF FORCING --------------------------------------------------
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine cmtchk
+c Unlike userchk, cmtchk is called at EVERY Runge-Kutta stage. Please do 
+c NOT place executable statements outside of the if-endif block below 
+c unless you know what you are doing. 
+      include 'SIZE'
+      include 'TOTAL'
+      include 'CMTDATA'
+
+      integer icalld
+      save icalld
+      data icalld /-1/
+
+      COMMON /mycmt_common/ pdphidx, pdphidy, pdphidz
+     >                      dpdx   , dpdy   , dpdz
+      real pdphidx(lx1,ly1,lz1,lelt)
+     >    ,pdphidy(lx1,ly1,lz1,lelt)
+     >    ,pdphidz(lx1,ly1,lz1,lelt)
+     >    ,dpdx   (lx1,ly1,lz1,lelt)
+     >    ,dpdy   (lx1,ly1,lz1,lelt)
+     >    ,dpdz   (lx1,ly1,lz1,lelt)
+
+      real rphip(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,lelt)
+
+      do ie=1,nelt
+      do iz=1,PPICLF_LEZ
+      do iy=1,PPICLF_LEY
+      do ix=1,PPICLF_LEX
+         call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie
+     >                              ,PPICLF_P_JPHIP,rphip(ix,iy,iz,ie))
+      enddo
+      enddo
+      enddo
+      enddo
+
+      if (stage.eq.1) then
+         time = time_cmt
+         ifxyo = .true.
+         if (istep.gt.1) ifxyo=.false.
+
+         ! output ppiclf volume fraction field to ptw files
+         if (mod(istep,iostep2) .eq. 0 .or. istep .eq. 1) then
+            call outpost2(rphip
+     >                   ,rphip
+     >                   ,rphip
+     >                   ,rphip
+     >                   ,rphip,1,'ptw')
+         endif
+      endif
+
+! BEGIN PPICLF SOLVE EACH RK STAGE ------------------------------------
+      nxyze = lx1*ly1*lz1*nelt
+
+      ! Compute p * grad(phig) for use in userf
+      call gradm1(pdphidx,pdphidy,pdphidz,phig)
+      call col2(pdphidx,pr,nxyze)
+      call col2(pdphidy,pr,nxyze)
+      call col2(pdphidz,pr,nxyze)
+
+      ! Compute grad(p) to interpolate
+      call gradm1(dpdx,dpdy,dpdz,pr)
+
+      ! Interpolate fields to particle positions
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JPHIP ,rphip)
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JUX   ,vx)
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JUY   ,vy)
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JDPDX ,dpdx)
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JDPDY ,dpdy)
+      call ppiclf_solve_InterpFieldUser(PPICLF_R_JRHOF ,vtrans)
+
+      ! Integrate particles
+      call ppiclf_solve_IntegrateParticle(istep,iostep2,dt,time)
+! END PPICLF SOLVE EACH RK STAGE --------------------------------------
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine cmt_userEOS(ix,iy,iz,eg)
+      include 'SIZE'
+      include 'NEKUSE'
+      include 'PARALLEL'
+      include 'CMTDATA'
+      include 'PERFECTGAS'
+
+      integer e,eg
+      e=gllel(eg)
+
+      cp=cpgref
+      cv=cvgref
+      temp=e_internal/cv
+      asnd=MixtPerf_C_GRT(gmaref,rgasref,temp)
+      pres=MixtPerf_P_DRT(rho,rgasref,temp)
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine userchk
+      include 'SIZE'
+      include 'TOTAL'
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userq  (ix,iy,iz,eg)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'NEKUSE'
+      integer e,f,eg
+      qvol   = 0.0
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine userbc (ix,iy,iz,iside,ieg)
+      include 'SIZE'
+      include 'NEKUSE'
+      include 'CMTDATA'
+     
+      ux        = 0.0
+      uy        = 0.0
+      uz        = 0.0
+      flux      = 0.0
+      molarmass = molmass
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine cmt_usrflt(rmult)
+      include 'SIZE'
+      real rmult(nx1)
+      real alpfilt
+      integer sfilt, kut
+      real eta, etac
+
+      call rone(rmult,nx1)
+
+      alpfilt=36.0 ! H&W 5.3
+
+      kut=max((nx1/2),nx1-2)
+      kut=nx1/2
+
+      sfilt=8
+      etac=real(kut)/real(nx1)
+      do i=kut,nx1
+         eta=real(i)/real(nx1)
+         rmult(i)=exp(-alpfilt*((eta-etac)/(1.0-etac))**sfilt)
+      enddo
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine my_full_restart
+      include 'SIZE'
+      include 'TOTAL'
+      character*80 s80(2)
+
+      call blank(s80,2*80)
+      s80(1) ='rs6pvort0.f00001'
+      s80(2) ='rs6pvort0.f00001'
+      call full_restart(s80,2) 
+
+      iosave = iostep           ! Trigger save based on iostep
+      call full_restart_save(iosave)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      real*8 FUNCTION ran2(idum)
+      INTEGER*4 idum,IM1,IM2,IMM1,IA1,IA2,IQ1,IQ2,IR1,IR2,NTAB,NDIV 
+      REAL*8 AM,EPS,RNMX
+      PARAMETER (IM1=2147483563,IM2=2147483399,AM=1./IM1,IMM1=IM1-1,
+     $        IA1=40014,IA2=40692,IQ1=53668,IQ2=52774,IR1=12211,
+     $        IR2=3791,NTAB=32,NDIV=1+IMM1/NTAB,EPS=1.2e-7,RNMX=1.-EPS)
+! Long period (> 2 ! 1018 ) random number generator of L’Ecuyer with 
+! Bays-Durham shuffle and added safeguards. Returns a uniform random deviate 
+! between 0.0 and 1.0 (exclusive of the endpoint values). 
+! Call with idum a negative integer to initialize; thereafter, do not alter 
+! idum between successive deviates in a sequence. RNMX should approximate the 
+! largest floating value that is less than 1.
+      INTEGER*4 idum2,j,k,iv(NTAB),iy
+      SAVE iv,iy,idum2
+      DATA idum2/123456789/, iv/NTAB*0/, iy/0/
+      if (idum.le.0) then 
+         idum1=max(-idum,1) 
+         idum2=idum1
+         do j=NTAB+8,1,-1
+            k=idum1/IQ1
+            idum1=IA1*(idum1-k*IQ1)-k*IR1 
+            if (idum1.lt.0) idum1=idum1+IM1 
+            if (j.le.NTAB) iv(j)=idum1
+         enddo
+         iy=iv(1) 
+      endif
+      k=idum1/IQ1 
+      idum1=IA1*(idum1-k*IQ1)-k*IR1
+      if (idum1.lt.0) idum1=idum1+IM1 
+      k=idum2/IQ2 
+      idum2=IA2*(idum2-k*IQ2)-k*IR2 
+      if (idum2.lt.0) idum2=idum2+IM2 
+      j=1+iy/NDIV
+      iy=iv(j)-idum2
+      iv(j)=idum1 
+      if(iy.lt.1)iy=iy+IMM1 
+      ran2=min(AM*iy,RNMX)
+      return
+      END
+c----------------------------------------------------------------------
