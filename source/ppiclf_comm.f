@@ -205,7 +205,7 @@ c     endif
       if (ppiclf_ndim .gt. 2) then
       if (ppiclf_xdrange(2,3) .lt. ppiclf_binb(6) .or.
      >    ppiclf_xdrange(1,3) .gt. ppiclf_binb(5) .or. 
-     >    iperiodicy .eq. 0) then
+     >    iperiodicz .eq. 0) then
          ppiclf_binb(5) = ppiclf_xdrange(1,3)
          ppiclf_binb(6) = ppiclf_xdrange(2,3)
       endif
