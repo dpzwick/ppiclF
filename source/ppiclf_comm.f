@@ -189,20 +189,23 @@ c     endif
       if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
 
       if (ppiclf_xdrange(2,1) .lt. ppiclf_binb(2) .or.
-     >    ppiclf_xdrange(1,1) .gt. ppiclf_binb(1)) then
+     >    ppiclf_xdrange(1,1) .gt. ppiclf_binb(1) .or. 
+     >    iperiodicx .eq. 0) then
          ppiclf_binb(1) = ppiclf_xdrange(1,1)
          ppiclf_binb(2) = ppiclf_xdrange(2,1)
       endif
 
       if (ppiclf_xdrange(2,2) .lt. ppiclf_binb(4) .or.
-     >    ppiclf_xdrange(1,2) .gt. ppiclf_binb(3)) then
+     >    ppiclf_xdrange(1,2) .gt. ppiclf_binb(3) .or.
+     >    iperiodicy .eq. 0) then
          ppiclf_binb(3) = ppiclf_xdrange(1,2)
          ppiclf_binb(4) = ppiclf_xdrange(2,2)
       endif
 
       if (ppiclf_ndim .gt. 2) then
       if (ppiclf_xdrange(2,3) .lt. ppiclf_binb(6) .or.
-     >    ppiclf_xdrange(1,3) .gt. ppiclf_binb(5)) then
+     >    ppiclf_xdrange(1,3) .gt. ppiclf_binb(5) .or. 
+     >    iperiodicz .eq. 0) then
          ppiclf_binb(5) = ppiclf_xdrange(1,3)
          ppiclf_binb(6) = ppiclf_xdrange(2,3)
       endif
