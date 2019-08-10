@@ -2,7 +2,7 @@ This example shows a shock tube in CMT-nek (branch 'jason' of
 https://github.com/dpzwick/Nek5000) coupled with the particle
 solver ppiclF (https://github.com/dpzwick/ppiclF).
 
-- This case is 2D.
+- 2D and 3D examples provided.
 - The gas is air (ideal gas).
 - The pressure ratio is 10 (set in usrdat2 and used in usric
   as the initial conditions.

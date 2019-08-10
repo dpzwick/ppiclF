@@ -121,6 +121,7 @@ c-----------------------------------------------------------------------
       rrx     =  0.022
       rly     =  0.35
       rry     =  0.45
+      rdistx  = rrx - rlx
       rphip   =  0.2
       npart   = int(rphip*(rrx-rlx)*(rry-rly)*dp/(pi/6.0D0*dp**3)) ! dp in 2d only for z dim
       if (nid .ne. 0) npart = 0
@@ -141,15 +142,21 @@ c-----------------------------------------------------------------------
      >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
                rdist = sqrt(rdist)
                if (rdist .lt. dp) goto 1511
+
+               ! then check periodic particles in x
+               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)+rdistx))**2
+     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
+     >                +(y(PPICLF_JZ,i)-y(PPICLF_JZ,j))**2
+               rdist = sqrt(rdist)
+               if (rdist .lt. dp) goto 1511
+
+               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)-rdistx))**2
+     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
+     >                +(y(PPICLF_JZ,i)-y(PPICLF_JZ,j))**2
+               rdist = sqrt(rdist)
+               if (rdist .lt. dp) goto 1511
             enddo
          endif
-         ! then check wall overlap
-         rdist = (y(PPICLF_JX,i)-0.022)**2
-         rdist = sqrt(rdist)
-         if (rdist .lt. dp/2.0) goto 1511
-         rdist = (y(PPICLF_JX,i)+0.022)**2
-         rdist = sqrt(rdist)
-         if (rdist .lt. dp/2.0) goto 1511
 
          rprop(PPICLF_R_JRHOP,i) = rhop
          rprop(PPICLF_R_JDP  ,i) = dp
