@@ -30,8 +30,6 @@
       if (PPICLF_OVERLAP)
      >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.0d0
      >                  ,0)
-      if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
-     >   call ppiclf_exittr('Invalid number of particles$',0.0d0,npart)
 
       call ppiclf_prints('*Begin InitParticle$')
 
@@ -40,6 +38,11 @@
          call ppiclf_prints('    End InitParam$')
          
          if (.not. PPICLF_RESTART) then
+
+            if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
+     >        call ppiclf_exittr('Invalid number of particles$',0.0d0
+     >                           ,npart)
+
             call ppiclf_solve_InitZero
             call ppiclf_copy(ppiclf_npart,npart,1                      )
             call ppiclf_copy(ppiclf_y    ,y    ,PPICLF_LPART*PPICLF_LRS)
