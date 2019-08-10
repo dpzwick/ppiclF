@@ -379,8 +379,10 @@ c unless you know what you are doing.
       call gradm1(dpdx,dpdy,dpdz,pr)
 
       dt2 = dt
-      delaystep = 500
-      if (istep.lt.delaystep) dt2 = 0.0
+      ! Uncomment below if you want a delay step but files synced
+      ! with fluid output
+!     delaystep = 500
+!     if (istep.lt.delaystep) dt2 = 0.0
       ! Interpolate fields to particle positions
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JPHIP ,rphip)
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JUX   ,vx)
