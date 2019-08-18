@@ -32,55 +32,6 @@
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_comm_InitFindptsDum
-!
-      implicit none
-!
-      include "PPICLF"
-!
-! Internal:
-!
-      real*8 tol, bb_t, npt_max
-      integer*4 n, ie
-      real*4 xm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
-     >       ym1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE), 
-     >       zm1(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,PPICLF_LEE)
-      common /ppiclf_tmp_grid/ xm1, ym1, zm1
-!
-      n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
-      do ie=1,ppiclf_neltb
-         call ppiclf_copy(xm1(1,1,1,ie),ppiclf_xm1b(1,1,1,1,ie),n)
-         call ppiclf_copy(ym1(1,1,1,ie),ppiclf_xm1b(1,1,1,2,ie),n)
-         call ppiclf_copy(zm1(1,1,1,ie),ppiclf_xm1b(1,1,1,3,ie),n)
-      enddo
-
-      tol     = 5e-13
-      bb_t    = 0.01
-      npt_max = 128
-
-      call pfgslib_findpts_setup(ppiclf_fp_hndl
-     >                         ,ppiclf_comm_nid
-     >                         ,1 ! only 1 rank on this comm
-     >                         ,ppiclf_ndim
-     >                         ,xm1
-     >                         ,ym1
-     >                         ,zm1
-     >                         ,PPICLF_LEX
-     >                         ,PPICLF_LEY
-     >                         ,PPICLF_LEZ
-     >                         ,ppiclf_neltb
-     >                         ,2*PPICLF_LEX
-     >                         ,2*PPICLF_LEY
-     >                         ,2*PPICLF_LEZ
-     >                         ,bb_t
-     >                         ,ppiclf_neltb+2
-     >                         ,ppiclf_neltb+2
-     >                         ,npt_max
-     >                         ,tol)
-
-      return
-      end
-!-----------------------------------------------------------------------
       subroutine ppiclf_comm_InitCrystal
 !
       implicit none
@@ -286,19 +237,30 @@ c     endif
       if (abs(d2new(1)) .le. rthresh) then
        ppiclf_ndxgp = 1
       else
+       if (abs(ppiclf_binb(2)-ppiclf_binb(1)) .lt. rthresh) then
+       ppiclf_ndxgp = 1
+       else
        ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
+       endif
       endif
       if (abs(d2new(2)) .le. rthresh) then
        ppiclf_ndygp = 1
       else
+       if (abs(ppiclf_binb(4)-ppiclf_binb(3)) .lt. rthresh) then
+       ppiclf_ndygp = 1
+       else
        ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
+       endif
       endif
       if (abs(d2new(3)) .le. rthresh) then
        ppiclf_ndzgp = 1
       else
        ppiclf_ndzgp = 1
-       if (ppiclf_ndim .gt. 2) ppiclf_ndzgp = 
-     >                floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
+       if (ppiclf_ndim .gt. 2) then
+       if (abs(ppiclf_binb(6)-ppiclf_binb(5)) .lt. rthresh) then
+       ppiclf_ndzgp = floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
+       endif
+       endif
       endif
       
       ! grid spacing for that many spacings
@@ -307,6 +269,10 @@ c     endif
       ppiclf_rdzgp = 1.0d0
       if (ppiclf_ndim .gt. 2) 
      >ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
+
+      if (ppiclf_rdxgp .lt. rthresh) ppiclf_rdxgp = 1.0
+      if (ppiclf_rdygp .lt. rthresh) ppiclf_rdygp = 1.0
+      if (ppiclf_rdzgp .lt. rthresh) ppiclf_rdzgp = 1.0
 
       nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
 
@@ -424,7 +390,7 @@ c     current box coordinates
       logical partl
       real*8 ppiclf_vlmin, ppiclf_vlmax
       external ppiclf_vlmin, ppiclf_vlmax
-!
+
       ! see which bins are in which elements
       ppiclf_neltb = 0
       do ie=1,ppiclf_nee
@@ -674,7 +640,6 @@ c     current box coordinates
       enddo
 
       call ppiclf_comm_MapOverlapMesh
-
 
       return
       end

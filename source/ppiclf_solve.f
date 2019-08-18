@@ -1,4 +1,69 @@
 !-----------------------------------------------------------------------
+      subroutine ppiclf_solve_AddParticles(npart,y,rprop)
+!
+      implicit none
+!
+      include "PPICLF"
+!
+! Input: 
+!
+      integer*4  npart
+      real*8     y(*)
+      real*8     rprop(*)
+!
+! Internal:
+!
+      integer*4 ppiclf_iglsum,ntotal
+      external ppiclf_iglsum
+!
+
+      call ppiclf_prints('   *Begin AddParticles$')
+
+      if (ppiclf_npart+npart .gt. PPICLF_LPART .or. npart .lt. 0)
+     >   call ppiclf_exittr('Invalid number of particles$',
+     >                      0.0,ppiclf_npart+npart)
+
+      call ppiclf_printsi('      -Begin copy particles$',npart)
+
+      ! First, append arrays onto existing arrays
+      call ppiclf_copy(ppiclf_y(1,ppiclf_npart+1),
+     >                 y,
+     >                 npart*PPICLF_LRS)
+      call ppiclf_copy(ppiclf_rprop(1,ppiclf_npart+1),
+     >                 rprop,
+     >                 npart*PPICLF_LRP)
+      ppiclf_npart = ppiclf_npart + npart
+
+      call ppiclf_printsi('      -Begin copy particles$',ppiclf_npart)
+
+      if (.not. PPICLF_RESTART) then
+         call ppiclf_prints('      -Begin ParticleTag$')
+            call ppiclf_solve_SetParticleTag(npart)
+         call ppiclf_prints('       End ParticleTag$')
+      endif
+
+      if (ppiclf_iglsum(ppiclf_npart,1).gt.0) then
+         call ppiclf_prints('      -Begin RemoveParticle$')
+            call ppiclf_solve_RemoveParticle
+         call ppiclf_prints('       End RemoveParticle$')
+
+         call ppiclf_prints('      -Begin CreateBin$')
+            call ppiclf_comm_CreateBin
+         call ppiclf_prints('       End CreateBin$')
+
+         call ppiclf_prints('      -Begin FindParticle$')
+            call ppiclf_comm_FindParticle
+         call ppiclf_prints('       End FindParticle$')
+
+         call ppiclf_prints('      -Begin MoveParticle$')
+            call ppiclf_comm_MoveParticle
+         call ppiclf_prints('       End MoveParticle$')
+      endif
+
+      call ppiclf_prints('    End AddParticles$')
+
+      end
+!-----------------------------------------------------------------------
 #ifdef PPICLC
       subroutine ppiclf_solve_InitParticle(imethod,ndim,iendian,npart,y,
      >                                     rprop)
@@ -38,41 +103,18 @@
          call ppiclf_prints('    End InitParam$')
          
          if (.not. PPICLF_RESTART) then
-
-            if (npart .gt. PPICLF_LPART .or. npart .lt. 0)
-     >        call ppiclf_exittr('Invalid number of particles$',0.0d0
-     >                           ,npart)
-
             call ppiclf_solve_InitZero
-            call ppiclf_copy(ppiclf_npart,npart,1                      )
-            call ppiclf_copy(ppiclf_y    ,y    ,PPICLF_LPART*PPICLF_LRS)
-            call ppiclf_copy(ppiclf_rprop,rprop,PPICLF_LPART*PPICLF_LRP)
-
-            call ppiclf_prints('   *Begin ParticleTag$')
-                  call ppiclf_solve_SetParticleTag
-            call ppiclf_prints('    End ParticleTag$')
+            call ppiclf_solve_AddParticles(npart,y,rprop)
          endif
 
-         call ppiclf_prints('   *Begin CreateBin$')
-            call ppiclf_comm_CreateBin
-         call ppiclf_prints('    End CreateBin$')
+      call ppiclf_prints('   *Begin WriteParticleVTU$')
+         call ppiclf_io_WriteParticleVTU('')
+      call ppiclf_prints('    End WriteParticleVTU$')
 
-         call ppiclf_prints('   *Begin FindParticle$')
-            call ppiclf_comm_FindParticle
-         call ppiclf_prints('    End FindParticle$')
+!     call ppiclf_prints('   *Begin WriteBinVTU$')
+!        call ppiclf_io_WriteBinVTU('')
+!     call ppiclf_prints('    End WriteBinVTU$')
 
-         call ppiclf_prints('   *Begin MoveParticle$')
-            call ppiclf_comm_MoveParticle
-         call ppiclf_prints('    End MoveParticle$')
-
-         call ppiclf_prints('   *Begin WriteParticleVTU$')
-            call ppiclf_io_WriteParticleVTU('')
-         call ppiclf_prints('    End WriteParticleVTU$')
-
-         call ppiclf_prints('   *Begin WriteBinVTU$')
-            call ppiclf_io_WriteBinVTU('')
-         call ppiclf_prints('    End WriteBinVTU$')
-         
       call ppiclf_prints(' End InitParticle$')
 
             call ppiclf_io_OutputDiagGen
@@ -857,17 +899,21 @@ c     filt = sqrt(1.5d0*filt**2/log(2.0d0) + 1.0d0)
       return
       end
 !-----------------------------------------------------------------------
-      subroutine ppiclf_solve_SetParticleTag
+      subroutine ppiclf_solve_SetParticleTag(npart)
 !
       implicit none
 !
       include "PPICLF"
 ! 
+! Input: 
+! 
+      integer*4 npart
+! 
 ! Internal: 
 ! 
       integer*4 i
 !
-      do i=1,ppiclf_npart
+      do i=ppiclf_npart-npart+1,ppiclf_npart
          ppiclf_iprop(5,i) = ppiclf_nid 
          ppiclf_iprop(6,i) = ppiclf_cycle
          ppiclf_iprop(7,i) = i
@@ -895,7 +941,7 @@ c----------------------------------------------------------------------
       real*8    time
 ! 
 ! Internal:
-! 
+!
       logical iout
 !
       ppiclf_cycle  = istep
@@ -920,7 +966,10 @@ c----------------------------------------------------------------------
 
          if (ppiclf_lsubbin)
      >      call ppiclf_io_WriteSubBinVTU('')
+      endif
 
+      ! Output diagnostics
+      if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0 .and. iout) then
          call ppiclf_io_OutputDiagAll
       endif
 
