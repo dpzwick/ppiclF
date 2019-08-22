@@ -258,6 +258,8 @@ c     endif
        ppiclf_ndzgp = 1
        if (ppiclf_ndim .gt. 2) then
        if (abs(ppiclf_binb(6)-ppiclf_binb(5)) .lt. rthresh) then
+       ppiclf_ndzgp = 1
+       else
        ppiclf_ndzgp = floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
        endif
        endif
@@ -267,8 +269,9 @@ c     endif
       ppiclf_rdxgp = (ppiclf_binb(2) -ppiclf_binb(1))/real(ppiclf_ndxgp)
       ppiclf_rdygp = (ppiclf_binb(4) -ppiclf_binb(3))/real(ppiclf_ndygp)
       ppiclf_rdzgp = 1.0d0
-      if (ppiclf_ndim .gt. 2) 
-     >ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
+      if (ppiclf_ndim .gt. 2) then
+      ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
+      endif
 
       if (ppiclf_rdxgp .lt. rthresh) ppiclf_rdxgp = 1.0
       if (ppiclf_rdygp .lt. rthresh) ppiclf_rdygp = 1.0
