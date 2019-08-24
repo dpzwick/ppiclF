@@ -114,7 +114,7 @@ c-----------------------------------------------------------------------
 ! BEGIN PPICLF INIT ---------------------------------------------------
       call ppiclf_comm_InitMPI(nekcomm,nid,np) ! Init MPI
 
-!     ! Set initial conditions and parameters for particles
+      ! Set initial conditions and parameters for particles
       dp      = 1.2E-3
       rhop    = 1000.0D0
       rlx     = -0.022
@@ -346,10 +346,15 @@ c unless you know what you are doing.
       do ix=1,PPICLF_LEX
          call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie
      >                              ,PPICLF_P_JPHIP,rphip(ix,iy,iz,ie))
+         phig(ix,iy,iz,ie) = 1.0 - rphip(ix,iy,iz,ie)
       enddo
       enddo
       enddo
       enddo
+      ! Filtering may be needed sometimes
+      ! wght = 1
+      ! ncut = 1
+      ! call filter_s0(phig,wght,ncut,'phig')
 
       if (stage.eq.1) then
          time = time_cmt

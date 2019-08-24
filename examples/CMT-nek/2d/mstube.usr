@@ -132,7 +132,7 @@ c-----------------------------------------------------------------------
          y(PPICLF_JY,i)  = rly + (rry-rly)*ran2(2)
          y(PPICLF_JVX,i) = 0.0d0
          y(PPICLF_JVY,i) = 0.0d0
-            
+
          ! check if this particle overlaps any others/walls
          if (i .gt. 1) then
             kflag = 0
@@ -158,10 +158,15 @@ c-----------------------------------------------------------------------
             enddo
          endif
 
+         if (mod(i,500) .eq. 0 .or. i .eq. 1)
+     >      write(6,'(A,I0,A,I0)') "Successfully placed particle "
+     >                           ,i, " of ", npart
+
          rprop(PPICLF_R_JRHOP,i) = rhop
          rprop(PPICLF_R_JDP  ,i) = dp
          rprop(PPICLF_R_JVOLP,i) = pi/6.0D0*dp**3
       enddo
+!     call ppiclf_io_ReadParticleVTU("par99999.vtu")
       imethod = -1
       iendian = 0
       call ppiclf_solve_InitParticle(imethod   ,
@@ -295,10 +300,15 @@ c unless you know what you are doing.
       do ix=1,PPICLF_LEX
          call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie
      >                              ,PPICLF_P_JPHIP,rphip(ix,iy,iz,ie))
+         phig(ix,iy,iz,ie) = 1.0 - rphip(ix,iy,iz,ie)
       enddo
       enddo
       enddo
       enddo
+      ! Filtering may be needed sometimes
+      ! wght = 1
+      ! ncut = 1
+      ! call filter_s0(phig,wght,ncut,'phig')
 
       if (stage.eq.1) then
          time = time_cmt
@@ -327,6 +337,11 @@ c unless you know what you are doing.
       ! Compute grad(p) to interpolate
       call gradm1(dpdx,dpdy,dpdz,pr)
 
+      dt2 = dt
+      ! Uncomment below if you want a delay step but files synced
+      ! with fluid output
+!     delaystep = 500
+!     if (istep.lt.delaystep) dt2 = 0.0
       ! Interpolate fields to particle positions
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JPHIP ,rphip)
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JUX   ,vx)
@@ -336,7 +351,7 @@ c unless you know what you are doing.
       call ppiclf_solve_InterpFieldUser(PPICLF_R_JRHOF ,vtrans)
 
       ! Integrate particles
-      call ppiclf_solve_IntegrateParticle(istep,iostep2,dt,time)
+      call ppiclf_solve_IntegrateParticle(istep,iostep2,dt2,time)
 ! END PPICLF SOLVE EACH RK STAGE --------------------------------------
 
       return
