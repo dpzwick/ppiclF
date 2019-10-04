@@ -1360,7 +1360,10 @@ c     ndum    = ppiclf_neltb*n
       integer*4 ppiclf_iglsum
       integer*4 npt_max, np, ndum
       real*8 tol, bb_t
-      integer*4 copy_back, jp
+      integer*4 copy_back, jp, nxyz, ie
+      real*8 xgrid(PPICLF_LEX, PPICLF_LEY, PPICLF_LEZ, PPICLF_LEE)
+     >      ,ygrid(PPICLF_LEX, PPICLF_LEY, PPICLF_LEZ, PPICLF_LEE)
+     >      ,zgrid(PPICLF_LEX, PPICLF_LEY, PPICLF_LEZ, PPICLF_LEE)
 !
       ! Copy not found particles
       npart = 0
@@ -1377,21 +1380,31 @@ c     ndum    = ppiclf_neltb*n
          return
       endif
 
+      ! Copy grid indexing 
+      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      do ie=1,ppiclf_nee
+      do i=1,nxyz
+         xgrid(i,1,1,ie) = ppiclf_xm1bs(i,1,1,1,ie)
+         ygrid(i,1,1,ie) = ppiclf_xm1bs(i,1,1,2,ie)
+         zgrid(i,1,1,ie) = ppiclf_xm1bs(i,1,1,3,ie)
+      enddo
+      enddo
+
       tol     = 5e-13
       bb_t    = 0.01
       npt_max = 128
       np      = ppiclf_np
-c     ndum    = ppiclf_neltb*n
-      ndum    = ppiclf_neltb+2
+c     ndum    = ppiclf_nee*n
+      ndum    = ppiclf_nee+2
 
       ! initiate findpts since mapping can change on next call
       call pfgslib_findpts_setup(fp_handle
      >                         ,ppiclf_comm
      >                         ,np 
      >                         ,ppiclf_ndim
-     >                         ,ppiclf_xm1bs(1,1,1,1,1)
-     >                         ,ppiclf_xm1bs(1,1,1,1,2)
-     >                         ,ppiclf_xm1bs(1,1,1,1,3)
+     >                         ,xgrid
+     >                         ,ygrid
+     >                         ,zgrid
      >                         ,PPICLF_LEX
      >                         ,PPICLF_LEY
      >                         ,PPICLF_LEZ
@@ -1443,16 +1456,16 @@ c     ndum    = ppiclf_neltb*n
          copy_back = 0
          if (ppiclf_iprop(1,i) .eq. 2) then
             k = k + 1
-            if (flag(2,k) .lt. 2) then
+            if (flag(1,k) .lt. 2) then
                copy_back = 1
             endif
          endif
 
          if (copy_back .eq. 1) then
-            ppiclf_iprop(1,i) = flag(2,k)
+            ppiclf_iprop(1,i) = flag(1,k)
             do j=1,PPICLF_LRP_INT
                jp = PPICLF_INT_MAP(j)
-               ppiclf_y(jp,i) = coord(7+j,k)
+               ppiclf_rprop(jp,i) = coord(7+j,k)
             enddo
          endif
       enddo
