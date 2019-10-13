@@ -43,10 +43,6 @@
       endif
 
       if (ppiclf_iglsum(ppiclf_npart,1).gt.0) then
-         call ppiclf_prints('      -Begin RemoveParticle$')
-            call ppiclf_solve_RemoveParticle
-         call ppiclf_prints('       End RemoveParticle$')
-
          call ppiclf_prints('      -Begin CreateBin$')
             call ppiclf_comm_CreateBin
          call ppiclf_prints('       End CreateBin$')
@@ -58,6 +54,7 @@
          call ppiclf_prints('      -Begin MoveParticle$')
             call ppiclf_comm_MoveParticle
          call ppiclf_prints('       End MoveParticle$')
+
       endif
 
       call ppiclf_prints('    End AddParticles$')
@@ -1094,7 +1091,6 @@ c----------------------------------------------------------------------
 ! 
       integer*4 i, j
 !
-      call ppiclf_solve_RemoveParticle
       call ppiclf_comm_CreateBin
       call ppiclf_comm_FindParticle
       call ppiclf_comm_MoveParticle
@@ -1102,6 +1098,7 @@ c----------------------------------------------------------------------
      >   call ppiclf_comm_MapOverlapMesh
       if (ppiclf_lintp .and. ppiclf_int_icnt .ne. 0) 
      >   call ppiclf_solve_InterpParticleGrid
+      call ppiclf_solve_RemoveParticle
 
       if (ppiclf_lsubsubbin .or. ppiclf_lproj) then
          call ppiclf_comm_CreateGhost
@@ -1138,6 +1135,8 @@ c----------------------------------------------------------------------
          call ppiclf_solve_InterpField(j)
       enddo
       call ppiclf_solve_FinalizeInterp
+
+      call ppiclf_solve_PostInterp
 
       return
       end
@@ -1344,6 +1343,137 @@ c     ndum    = ppiclf_neltb*n
 
       ! Set interpolated fields to zero again
       PPICLF_INT_ICNT = 0
+
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_solve_PostInterp
+!
+      implicit none
+!
+      include "PPICLF"
+!
+! Internal: 
+!
+      integer*4 rstride, istride
+      parameter(rstride = 7 + PPICLF_LRP_INT)
+      parameter(istride = 3)
+      real*8 coord(rstride,PPICLF_LPART)
+      integer*4 flag(istride,PPICLF_LPART)
+      integer*4 fp_handle, i, j, k, npart
+      external ppiclf_iglsum
+      integer*4 ppiclf_iglsum
+      integer*4 npt_max, np, ndum
+      real*8 tol, bb_t
+      integer*4 copy_back, jp, nxyz, ie
+      real*8 xgrid(PPICLF_LEX, PPICLF_LEY, PPICLF_LEZ, PPICLF_LEE)
+     >      ,ygrid(PPICLF_LEX, PPICLF_LEY, PPICLF_LEZ, PPICLF_LEE)
+     >      ,zgrid(PPICLF_LEX, PPICLF_LEY, PPICLF_LEZ, PPICLF_LEE)
+!
+      ! Copy not found particles
+      npart = 0
+      do i=1,ppiclf_npart
+         if (ppiclf_iprop(1,i) .eq. 2) then
+            npart = npart + 1
+            do j=1,ppiclf_ndim
+               coord(j,npart) = ppiclf_y(j,i)
+            enddo
+         endif
+      enddo
+
+      if (ppiclf_iglsum(npart,1) .eq. 0) then
+         return
+      endif
+
+      ! Copy grid indexing 
+      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      do ie=1,ppiclf_nee
+      do i=1,nxyz
+         xgrid(i,1,1,ie) = ppiclf_xm1bs(i,1,1,1,ie)
+         ygrid(i,1,1,ie) = ppiclf_xm1bs(i,1,1,2,ie)
+         zgrid(i,1,1,ie) = ppiclf_xm1bs(i,1,1,3,ie)
+      enddo
+      enddo
+
+      tol     = 5e-13
+      bb_t    = 0.01
+      npt_max = 128
+      np      = ppiclf_np
+c     ndum    = ppiclf_nee*n
+      ndum    = ppiclf_nee+2
+
+      ! initiate findpts since mapping can change on next call
+      call pfgslib_findpts_setup(fp_handle
+     >                         ,ppiclf_comm
+     >                         ,np 
+     >                         ,ppiclf_ndim
+     >                         ,xgrid
+     >                         ,ygrid
+     >                         ,zgrid
+     >                         ,PPICLF_LEX
+     >                         ,PPICLF_LEY
+     >                         ,PPICLF_LEZ
+     >                         ,ppiclf_nee
+     >                         ,2*PPICLF_LEX
+     >                         ,2*PPICLF_LEY
+     >                         ,2*PPICLF_LEZ
+     >                         ,bb_t
+     >                         ,ndum
+     >                         ,ndum
+     >                         ,npt_max
+     >                         ,tol)
+
+      call pfgslib_findpts(fp_handle           !   call pfgslib_findpts( ihndl,
+     >        , flag (1 ,1),istride        !   $             rcode,1,
+     >        , flag (3 ,1),istride        !   &             proc,1,
+     >        , flag (2 ,1),istride        !   &             elid,1,
+     >        , coord(4 ,1),rstride       !   &             rst,ndim,
+     >        , coord(7 ,1),rstride       !   &             dist,1,
+     >        , coord(1,1) ,rstride        !   &             pts(    1),1,
+     >        , coord(2,1) ,rstride        !   &             pts(  n+1),1,
+     >        , coord(3,1) ,rstride ,npart) !   &             pts(2*n+1),1,n)
+
+      do i=1,PPICLF_LRP_INT
+
+         ! interpolate field (non-local)
+         call pfgslib_findpts_eval( fp_handle
+     >                                  ,coord (7+i,1)
+     >                                  ,rstride
+     >                                  ,flag (1,1)
+     >                                  ,istride
+     >                                  ,flag (3,1)
+     >                                  ,istride
+     >                                  ,flag (2,1)
+     >                                  ,istride
+     >                                  ,coord(4,1)
+     >                                  ,rstride
+     >                                  ,npart
+     >                                  ,ppiclf_int_fldu(1,1,1,1,i))
+
+      enddo
+
+      ! free since mapping can change on next call
+      call pfgslib_findpts_free(fp_handle)
+
+      ! Now copy particles back (assumes same ordering)
+      k = 0
+      do i=1,ppiclf_npart
+         copy_back = 0
+         if (ppiclf_iprop(1,i) .eq. 2) then
+            k = k + 1
+            if (flag(1,k) .lt. 2) then
+               copy_back = 1
+            endif
+         endif
+
+         if (copy_back .eq. 1) then
+            ppiclf_iprop(1,i) = flag(1,k)
+            do j=1,PPICLF_LRP_INT
+               jp = PPICLF_INT_MAP(j)
+               ppiclf_rprop(jp,i) = coord(7+j,k)
+            enddo
+         endif
+      enddo
 
       return
       end
