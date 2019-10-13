@@ -341,12 +341,16 @@ c     call ppiclf_io_WriteSubBinVTU('')
          write(6,'(A4,A14,I2)') caseflag, 'nghost total: ', nghost_total
          write(6,'(A4,A14,I2)') caseflag, 'nghost min:   ', nghost_min
          write(6,'(A4,A14,I2)') caseflag, 'nghost max:   ', nghost_max
-         write(6,'(A4,A14,I2)') caseflag, 'nbin x:       ', ppiclf_ndxgp
-         write(6,'(A4,A14,I2)') caseflag, 'nbin y:       ', ppiclf_ndygp
-         write(6,'(A4,A14,I2)') caseflag, 'nbin z:       ', ppiclf_ndzgp
-         write(6,'(A4,A14,I2)') caseflag, 'nbin total:   ', ppiclf_ndxgp
-     >                                                     *ppiclf_ndygp
-     >                                                     *ppiclf_ndzgp
+         write(6,'(A4,A14,I2)') caseflag, 'nbin x:       ',
+     >                                                  ppiclf_n_bins(1)
+         write(6,'(A4,A14,I2)') caseflag, 'nbin y:       ',
+     >                                                  ppiclf_n_bins(2)
+         write(6,'(A4,A14,I2)') caseflag, 'nbin z:       ',
+     >                                                  ppiclf_n_bins(3)
+         write(6,'(A4,A14,I2)') caseflag, 'nbin total:   ', 
+     >                                                  ppiclf_n_bins(1)
+     >                                                 *ppiclf_n_bins(2)
+     >                                                 *ppiclf_n_bins(3)
       endif
 
       return

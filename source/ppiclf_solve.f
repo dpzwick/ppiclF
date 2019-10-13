@@ -181,9 +181,13 @@
       ppiclf_d2chk(2) = 0.0d0
       ppiclf_d2chk(3) = 0.0d0
 
-      ppiclf_nbin_dir(1) = 0
-      ppiclf_nbin_dir(2) = 0
-      ppiclf_nbin_dir(3) = 0
+      ppiclf_n_bins(1) = 1
+      ppiclf_n_bins(2) = 1
+      ppiclf_n_bins(3) = 1
+
+      ppiclf_bins_set(1) = 0
+      ppiclf_bins_set(2) = 0
+      ppiclf_bins_set(3) = 0
 
       ppiclf_nwall    = 0
       ppiclf_iwallm   = 0
@@ -223,10 +227,10 @@
       end
 !-----------------------------------------------------------------------
 #ifdef PPICLC
-      subroutine ppiclf_solve_InitSuggestedDir(str)
+      subroutine ppiclf_solve_InitTargetBins(str,n)
      > bind(C, name="ppiclc_solve_InitSuggestedDir")
 #else
-      subroutine ppiclf_solve_InitSuggestedDir(str)
+      subroutine ppiclf_solve_InitSuggestedDir(str,n)
 #endif
 !
       implicit none
@@ -236,23 +240,24 @@
 ! Input:
 !
       character*1 str
+      integer*4 n
 !
       if (.not.PPICLF_LCOMM)
-     >call ppiclf_exittr('InitMPI must be before InitSuggestedDir$'
+     >call ppiclf_exittr('InitMPI must be before InitTargetBins$'
      >                   ,0.0d0,0)
       if (.not.PPICLF_LINIT)
-     >call ppiclf_exittr('InitParticle must be before InitSuggestedDir$'
+     >call ppiclf_exittr('InitParticle must be before InitTargetBins$'
      >                  ,0.0d0,0)
 
       if (str == 'x' .or. str == 'X') then 
-         ppiclf_nbin_dir(1) = 1
+         ppiclf_nbin_dir(1) = n
       elseif (str == 'y' .or. str == 'Y') then 
-        ppiclf_nbin_dir(2) = 1
+        ppiclf_nbin_dir(2) = n
       elseif (str == 'z' .or. str == 'Z') then 
         if (ppiclf_ndim .lt. 3)
-     >  call ppiclf_exittr('Dim must be 3 to use InitSuggestedDir on z$'
+     >  call ppiclf_exittr('Dim must be 3 to use InitTargetBins on z$'
      >                   ,0.,ppiclf_ndim)
-        ppiclf_nbin_dir(3) = 1
+        ppiclf_nbin_dir(3) = n
       endif
 
       return
