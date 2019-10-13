@@ -225,9 +225,9 @@
 !-----------------------------------------------------------------------
 #ifdef PPICLC
       subroutine ppiclf_solve_InitTargetBins(str,n)
-     > bind(C, name="ppiclc_solve_InitSuggestedDir")
+     > bind(C, name="ppiclc_solve_InitTargetBins")
 #else
-      subroutine ppiclf_solve_InitSuggestedDir(str,n)
+      subroutine ppiclf_solve_InitTargetBins(str,n)
 #endif
 !
       implicit none
@@ -247,14 +247,17 @@
      >                  ,0.0d0,0)
 
       if (str == 'x' .or. str == 'X') then 
-         ppiclf_nbin_dir(1) = n
+         ppiclf_n_bins(1) = n
+         ppiclf_bins_set(1) = 1
       elseif (str == 'y' .or. str == 'Y') then 
-        ppiclf_nbin_dir(2) = n
+         ppiclf_n_bins(2) = n
+         ppiclf_bins_set(1) = 1
       elseif (str == 'z' .or. str == 'Z') then 
         if (ppiclf_ndim .lt. 3)
-     >  call ppiclf_exittr('Dim must be 3 to use InitTargetBins on z$'
+     >   call ppiclf_exittr('Dim must be 3 to use InitTargetBins on z$'
      >                   ,0.,ppiclf_ndim)
-        ppiclf_nbin_dir(3) = n
+         ppiclf_n_bins(3) = n
+         ppiclf_bins_set(1) = 1
       endif
 
       return

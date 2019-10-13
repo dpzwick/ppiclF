@@ -188,7 +188,7 @@ c     endif
 
       ! Make sure exit_1 is not violated by user input
       count = 0
-      while (total_bin > ppiclf_np)
+      do while (total_bin > ppiclf_np)
           count = count + 1;
           i = modulo((ppiclf_ndim-1)+count,ppiclf_ndim)+1
           ppiclf_n_bins(i) = max(ppiclf_n_bins(i)-1,1)
@@ -199,9 +199,7 @@ c     endif
           do j=1,ppiclf_ndim
              total_bin = total_bin*ppiclf_n_bins(j)
           enddo
-          if (total_bin .le. ppiclf_np)
-             exit
-          endif
+          if (total_bin .le. ppiclf_np) exit
        enddo
 
        exit_1 = .false.
@@ -417,7 +415,8 @@ c     current box coordinates
           if (ii .eq. -1) ii = 0
           if (jj .eq. -1) jj = 0
           if (kk .eq. -1) kk = 0
-         ndum  = ii + ppiclf_n_bins(1)*jj + ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
+         ndum  = ii + ppiclf_n_bins(1)*jj + 
+     >                ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
          nrank = ndum
 
          if (ii .lt. 0 .or. ii .gt. ppiclf_n_bins(1)-1) goto 1233
@@ -502,7 +501,8 @@ c     current box coordinates
           if (ii .eq. -1) ii = 0
           if (jj .eq. -1) jj = 0
           if (kk .eq. -1) kk = 0
-         ndum  = ii + ppiclf_n_bins(1)*jj + ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
+          ndum  = ii + ppiclf_n_bins(1)*jj + 
+     >                 ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
 
          ppiclf_modgp(i,j,k,ie,1) = ii
          ppiclf_modgp(i,j,k,ie,2) = jj
@@ -529,26 +529,32 @@ c     current box coordinates
      >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,3,ie),nxyz)
 
          ilow  = 
-     >     floor((ppiclf_xerange(1,1,ie) - ppiclf_binb(1))/ppiclf_bins_dx(1))
+     >     floor((ppiclf_xerange(1,1,ie) - ppiclf_binb(1))/
+     >                                             ppiclf_bins_dx(1))
          ihigh = 
-     >     floor((ppiclf_xerange(2,1,ie) - ppiclf_binb(1))/ppiclf_bins_dx(1))
+     >     floor((ppiclf_xerange(2,1,ie) - ppiclf_binb(1))/
+     >                                             ppiclf_bins_dx(1))
          jlow  = 
-     >     floor((ppiclf_xerange(1,2,ie) - ppiclf_binb(3))/ppiclf_bins_dx(2))
+     >     floor((ppiclf_xerange(1,2,ie) - ppiclf_binb(3))/
+     >                                             ppiclf_bins_dx(2))
          jhigh = 
-     >     floor((ppiclf_xerange(2,2,ie) - ppiclf_binb(3))/ppiclf_bins_dx(2))
+     >     floor((ppiclf_xerange(2,2,ie) - ppiclf_binb(3))/
+     >                                             ppiclf_bins_dx(2))
          klow  = 
-     >     floor((ppiclf_xerange(1,3,ie) - ppiclf_binb(5))/ppiclf_bins_dx(3))
+     >     floor((ppiclf_xerange(1,3,ie) - ppiclf_binb(5))/
+     >                                             ppiclf_bins_dx(3))
          khigh = 
-     >     floor((ppiclf_xerange(2,3,ie) - ppiclf_binb(5))/ppiclf_bins_dx(3))
+     >     floor((ppiclf_xerange(2,3,ie) - ppiclf_binb(5))/
+     >                                             ppiclf_bins_dx(3))
          if (ppiclf_ndim.lt.3) then
             klow = 0
             khigh = 0
          endif
 
          ppiclf_el_map(1,ie) = ilow  + ppiclf_n_bins(1)*jlow  
-     >                            + ppiclf_n_bins(1)*ppiclf_n_bins(2)*klow
+     >                         + ppiclf_n_bins(1)*ppiclf_n_bins(2)*klow
          ppiclf_el_map(2,ie) = ihigh + ppiclf_n_bins(1)*jhigh 
-     >                            + ppiclf_n_bins(1)*ppiclf_n_bins(2)*khigh
+     >                         + ppiclf_n_bins(1)*ppiclf_n_bins(2)*khigh
          ppiclf_el_map(3,ie) = ilow
          ppiclf_el_map(4,ie) = ihigh
          ppiclf_el_map(5,ie) = jlow
@@ -658,11 +664,12 @@ c-----------------------------------------------------------------------
 
       do i=1,ppiclf_npart
          ! check if particles are greater or less than binb bounds....
-         ii    = floor((ppiclf_y(ix,i)-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
-         jj    = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
-         kk    = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
+         ii  = floor((ppiclf_y(ix,i)-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
+         jj  = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
+         kk  = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
          if (ppiclf_ndim .lt. 3) kk = 0
-         ndum  = ii + ppiclf_n_bins(1)*jj + ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
+         ndum  = ii + ppiclf_n_bins(1)*jj + 
+     >                ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
          nrank = ndum
 
          ppiclf_iprop(8,i)  = ii
