@@ -1080,6 +1080,7 @@ c----------------------------------------------------------------------
 ! 
       call ppiclf_solve_InitSolve
       call ppiclf_user_SetYdot
+      call ppiclf_solve_RemoveParticle
 
       return
       end
@@ -1505,6 +1506,21 @@ c----------------------------------------------------------------------
       return
       end
 !-----------------------------------------------------------------------
+      subroutine ppiclf_solve_MarkForRemoval(i)
+!
+      implicit none
+!
+      include "PPICLF"
+!
+! Input:
+!
+      integer*4 i
+!
+      ppiclf_iprop(1,i) = 3
+
+      return
+      end
+!-----------------------------------------------------------------------
       subroutine ppiclf_solve_RemoveParticle
 !
       implicit none
@@ -1529,6 +1545,10 @@ c----------------------------------------------------------------------
       do i=1,ppiclf_npart
          isl = (i -1) * PPICLF_LRS + 1
          in_part(i) = 0
+         if (ppiclf_iprop(1,i) .eq. 3) then
+            in_part(i) = -1 ! User removed particle
+            goto 1513
+         endif
          do j=0,ndim-1
             jchk = jj(j+1)
             if (ppiclf_y(jchk,i).lt.ppiclf_xdrange(1,j+1))then
@@ -1558,6 +1578,7 @@ c----------------------------------------------------------------------
             endif
  1512 continue
          enddo
+ 1513 continue
       enddo
 
       ic = 0
