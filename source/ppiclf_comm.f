@@ -101,8 +101,7 @@
       npt_total = ppiclf_iglsum(ppiclf_npart,1)
 c     if (npt_total .eq. 1) then
       if (.not. ppiclf_lproj .and. .not. ppiclf_lsubsubbin) 
-     >ppiclf_d2chk(1) = 1E-16
-c     endif
+     >   ppiclf_d2chk(1) = 1E-16
 
       ! compute binb
       xmin = 1E10
@@ -161,6 +160,8 @@ c     endif
          ppiclf_binb(6) = ppiclf_xdrange(2,3)
       endif
       endif
+
+      if (npt_total .le. 1) return
 
       finished(1) = 0
       finished(2) = 0
