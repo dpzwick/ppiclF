@@ -253,18 +253,18 @@
 
       if (str == 'x' .or. str == 'X') then 
          ppiclf_n_bins(1) = n
-         ppiclf_bins_set(1) = 1
+         if (n .gt. 1) ppiclf_bins_set(1) = 1
          ppiclf_bins_balance(1) = balance
       elseif (str == 'y' .or. str == 'Y') then 
          ppiclf_n_bins(2) = n
-         ppiclf_bins_set(2) = 1
+         if (n .gt. 1) ppiclf_bins_set(2) = 1
          ppiclf_bins_balance(2) = balance
       elseif (str == 'z' .or. str == 'Z') then 
         if (ppiclf_ndim .lt. 3)
      >   call ppiclf_exittr('Dim must be 3 to use InitTargetBins on z$'
      >                   ,0.,ppiclf_ndim)
          ppiclf_n_bins(3) = n
-         ppiclf_bins_set(3) = 1
+         if (n .gt. 1) ppiclf_bins_set(3) = 1
          ppiclf_bins_balance(3) = balance
       endif
 
