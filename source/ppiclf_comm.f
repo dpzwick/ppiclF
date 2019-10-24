@@ -189,6 +189,7 @@ c     if (npt_total .eq. 1) then
          finished(i) = 0
          exit_1_array(i) = ppiclf_bins_set(i)
          exit_2_array(i) = 0
+         if (ppiclf_bins_set(i) .ne. 1) ppiclf_n_bins(i) = 1
          ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
      >                        ppiclf_binb(2*(i-1)+1)  ) / 
      >                       ppiclf_n_bins(i)
