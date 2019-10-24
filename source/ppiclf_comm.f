@@ -57,12 +57,13 @@
       integer*4 ix, iy, iz, iperiodicx, iperiodicy, iperiodicz, 
      >          npt_total, j, i, idum, jdum, kdum, total_bin, 
      >          sum_value, count
-      real*8 xmin, ymin, zmin, xmax, ymax, zmax, rduml, rdumr, rthresh
+      real*8 xmin, ymin, zmin, xmax, ymax, zmax, rduml, rdumr, rthresh,
+     >       rmiddle, rdiff
       logical exit_1, exit_2
       integer*4 ppiclf_iglsum
       external ppiclf_iglsum
-      real*8 ppiclf_glmin,ppiclf_glmax
-      external ppiclf_glmin,ppiclf_glmax
+      real*8 ppiclf_glmin,ppiclf_glmax,ppiclf_glsum
+      external ppiclf_glmin,ppiclf_glmax,ppiclf_glsum
 !
 
 ! face, edge, and corner number, x,y,z are all inline, so stride=3
@@ -137,6 +138,22 @@ c     if (npt_total .eq. 1) then
       ppiclf_binb(6) = 0.0d0
       if(ppiclf_ndim .gt. 2) ppiclf_binb(5) = ppiclf_glmin(zmin,1)
       if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
+
+      do i=1,ppiclf_ndim
+         if (ppiclf_bins_balance(i) .eq. 1) then
+            rmiddle = 0.0
+            do j=1,ppiclf_npart
+               rmiddle = rmiddle + ppiclf_y(i,j)
+            enddo
+            rmiddle = ppiclf_glsum(rmiddle,1)
+            rmiddle = rmiddle/npt_total
+
+            rdiff =  max(abs(rmiddle-ppiclf_binb(2*(i-1)+1)),
+     >                   abs(ppiclf_binb(2*(i-1)+2)-rmiddle))
+            ppiclf_binb(2*(i-1)+1) = rmiddle - rdiff
+            ppiclf_binb(2*(i-1)+2) = rmiddle + rdiff
+         endif
+      enddo
 
       if (ppiclf_xdrange(2,1) .lt. ppiclf_binb(2) .or.
      >    ppiclf_xdrange(1,1) .gt. ppiclf_binb(1) .or. 

@@ -9,9 +9,11 @@ c Communication
       DATA PPICLF_NID /0/
 
 c Bins
-      INTEGER*4 PPICLF_N_BINS(3), PPICLF_BINS_SET(3)
+      INTEGER*4 PPICLF_N_BINS(3), PPICLF_BINS_SET(3), 
+     >          PPICLF_BINS_BALANCE(3)
       COMMON /PPICLF_PARALLEL_BIN_GLOBAL_N/ PPICLF_N_BINS
      >                                     ,PPICLF_BINS_SET
+     >                                     ,PPICLF_BINS_BALANCE
 
       REAL*8 PPICLF_BINS_DX(3), PPICLF_BINB(6)
       COMMON /PPICLF_PARALLEL_BIN_GLOBAL_R/ PPICLF_BINS_DX, PPICLF_BINB
