@@ -231,7 +231,7 @@
       subroutine ppiclf_solve_InitTargetBins(str,n,balance)
      > bind(C, name="ppiclc_solve_InitTargetBins")
 #else
-      subroutine ppiclf_solve_InitTargetBins(str,n)
+      subroutine ppiclf_solve_InitTargetBins(str,n,balance)
 #endif
 !
       implicit none

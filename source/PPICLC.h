@@ -22,7 +22,8 @@ extern"C" {
     // ppiclf_solve.f
     void ppiclc_solve_InitNeighborBin    (double *width  );
     void ppiclc_solve_InitTargetBins     (char   *dir    ,
-                                          int    *n      );
+                                          int    *n      ,
+                                          int    *balance);
     void ppiclc_solve_InitPeriodicX      (double *xl     , 
                                           double *xr     );
     void ppiclc_solve_InitPeriodicY      (double *yl     , 
