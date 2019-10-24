@@ -54,7 +54,7 @@ class test1(ppiclfTestCase):
          self.run_ppiclf()
 
          # Test A
-	 self.npart_nghost_nbin(cname='A',npt=1.0,npmn=0.0,npmx=1.0,ngt=0.0,ngmn=0.0,ngmx=0.0,nbx=2.0,nby=1.0,nbz=1.0,nbt=2.0)
+	 self.npart_nghost_nbin(cname='A',npt=1.0,npmn=0.0,npmx=1.0,ngt=0.0,ngmn=0.0,ngmx=0.0,nbx=1.0,nby=1.0,nbz=1.0,nbt=1.0)
          my_name = '(A) TimeI error: '
          en = self.get_value_from_log(my_name, column=-1)
          self.assertAlmostEqualDelayed(en, target_val=0.0, delta=1e-7, label=my_name)
