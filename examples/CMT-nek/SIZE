@@ -9,14 +9,14 @@ c
       integer lfdm
 
       ! BASIC
-      parameter (ldim=3)               ! domain dimension (2 or 3)
-      parameter (lx1=4)               ! p-order (avoid uneven and values <6)
-      parameter (lxd=6)               ! p-order for over-integration (dealiasing) 
+      parameter (ldim=2)               ! domain dimension (2 or 3)
+      parameter (lx1=5)               ! p-order (avoid uneven and values <6)
+      parameter (lxd=9)               ! p-order for over-integration (dealiasing) 
       parameter (lx2=lx1)            ! polynomial order for pressure
 
-      parameter (lelg=3000)            ! max total number of elements
-      parameter (lpmin=16)              ! min MPI ranks
-      parameter (lpmax=32)              ! max MPI ranks
+      parameter (lelg=2700)            ! max total number of elements
+      parameter (lpmin=1)              ! min MPI ranks
+      parameter (lpmax=4)              ! max MPI ranks
       parameter (ldimt=3)              ! max auxiliary fields (temperature + scalars)
 
       ! OPTIONAL

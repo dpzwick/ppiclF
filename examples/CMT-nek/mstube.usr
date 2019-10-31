@@ -53,8 +53,8 @@ c-----------------------------------------------------------------------
 !
       real*8 ksp,erest
       common /ucollision/ ksp,erest
-      data ksp   /100000.0/ ! note: this limits dt, whcih we explicity set in .par file
-      data erest /0.8/
+      data ksp   /10000.0/ ! note: this limits dt, whcih we explicity set in .par file
+      data erest /0.9/
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
@@ -69,7 +69,7 @@ c-----------------------------------------------------------------------
       common /stube_common/ diaph_loc, density_left , velocity_left
      >                     ,pressure_left, density_right, velocity_right
      >                     ,pressure_right      
-!
+
 ! BEGIN CMTNEK INIT ---------------------------------------------------
       call fix_geom
 
@@ -82,19 +82,18 @@ c-----------------------------------------------------------------------
 
       ! Artificial viscosity parameters
       c_max     = 0.3
-      c_sub_e   = 1000.0
+      c_sub_e   = 10.0
 
       ! diaph_loc separates left and right states
-      diaph_loc      = 0.32
+      diaph_loc      = 4.0e-3
 
-      density_left   = 1.205 
-      velocity_left  = 0.0
-      pressure_left  = 101325.0
-
-      rat            = 10.0
-      density_right  = density_left/rat
+      pressure_right = 82.7e3
+      density_right  = 0.97217716
       velocity_right = 0.0
-      pressure_right = pressure_left/rat
+
+      pressure_left  = 252086.140
+      density_left   = 2.072513
+      velocity_left  = 304.144
 
       molmass    = 28.97 ! Air
       muref      = 0.0
@@ -115,117 +114,68 @@ c-----------------------------------------------------------------------
       call ppiclf_comm_InitMPI(nekcomm,nid,np) ! Init MPI
 
       ! Set initial conditions and parameters for particles
-      dp      = 1.2E-3
-      rhop    = 1000.0D0
-      rlx     = -0.022
-      rrx     =  0.022
-      rly     =  0.35
-      rry     =  0.45
-      rlz     = -0.022
-      rrz     =  0.022
+      dp      = 115.0e-6
+      rhop    = 2520.0
+      rphip   =  0.21
+      rlx     = 5.0e-3
+      rrx     = 7.0e-3
       rdistx  = rrx - rlx
-      rdistz  = rrz - rlz
-      rphip   =  0.2
-      npart   = int(rphip*(rrx-rlx)*(rry-rly)*(rrz-rlz)
-     >          /(pi/6.0D0*dp**3))
+      rly     = 0.0
+      rry     = 5.0e-3
+      rdisty  = rry - rly
+      npart   = int(rphip*(rrx-rlx)*(rry-rly)*dp/(pi/6.0D0*dp**3))
       if (nid .ne. 0) npart = 0
       rdum    = ran2(-1-nid)
       do i=1,npart
  1511 continue
          y(PPICLF_JX,i)  = rlx + (rrx-rlx)*ran2(2)
          y(PPICLF_JY,i)  = rly + (rry-rly)*ran2(2)
-         y(PPICLF_JZ,i)  = rlz + (rrz-rlz)*ran2(2)
          y(PPICLF_JVX,i) = 0.0d0
          y(PPICLF_JVY,i) = 0.0d0
-         y(PPICLF_JVZ,i) = 0.0d0
+         y(PPICLF_JT,i)  = MixtPerf_T_DPR(density_right,
+     >                                    pressure_right,
+     >                                    rgasref)
 
-         ! check if this particle overlaps any others/walls
+         ! check if this particle overlaps any others (w/periodic)
          if (i .gt. 1) then
-            kflag = 0
             do j=1,i-1
                ! first check placed particles already
                rdist = (y(PPICLF_JX,i)-y(PPICLF_JX,j))**2
      >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-y(PPICLF_JZ,j))**2
                rdist = sqrt(rdist)
                if (rdist .lt. dp) goto 1511
 
-               ! then check periodic particles in x
-               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)+rdistx))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-y(PPICLF_JZ,j))**2
+               ! then check periodic particles in y
+               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)))**2
+     >                +(y(PPICLF_JY,i)-(y(PPICLF_JY,j)+rdisty))**2
                rdist = sqrt(rdist)
                if (rdist .lt. dp) goto 1511
 
-               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)-rdistx))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-y(PPICLF_JZ,j))**2
-               rdist = sqrt(rdist)
-               if (rdist .lt. dp) goto 1511
-
-               ! then check periodic particles in z
-               rdist = (y(PPICLF_JX,i)-y(PPICLF_JX,j))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-(y(PPICLF_JZ,j)+rdistz))**2
-               rdist = sqrt(rdist)
-               if (rdist .lt. dp) goto 1511
-
-               rdist = (y(PPICLF_JX,i)-y(PPICLF_JX,j))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-(y(PPICLF_JZ,j)-rdistz))**2
-               rdist = sqrt(rdist)
-               if (rdist .lt. dp) goto 1511
-
-               ! then check periodic in xz
-               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)+rdistx))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-(y(PPICLF_JZ,j)+rdistz))**2
-               rdist = sqrt(rdist)
-               if (rdist .lt. dp) goto 1511
-
-               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)+rdistx))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-(y(PPICLF_JZ,j)-rdistz))**2
-               rdist = sqrt(rdist)
-               if (rdist .lt. dp) goto 1511
-
-               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)-rdistx))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-(y(PPICLF_JZ,j)+rdistz))**2
-               rdist = sqrt(rdist)
-               if (rdist .lt. dp) goto 1511
-
-               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)-rdistx))**2
-     >                +(y(PPICLF_JY,i)-y(PPICLF_JY,j))**2
-     >                +(y(PPICLF_JZ,i)-(y(PPICLF_JZ,j)-rdistz))**2
+               rdist = (y(PPICLF_JX,i)-(y(PPICLF_JX,j)))**2
+     >                +(y(PPICLF_JY,i)-(y(PPICLF_JY,j)-rdisty))**2
                rdist = sqrt(rdist)
                if (rdist .lt. dp) goto 1511
             enddo
          endif
 
-         if (mod(i,500) .eq. 0 .or. i .eq. 1)
+         if (mod(i,1) .eq. 0 .or. i .eq. 1)
      >      write(6,'(A,I0,A,I0)') "Successfully placed particle "
      >                           ,i, " of ", npart
 
          rprop(PPICLF_R_JRHOP,i) = rhop
          rprop(PPICLF_R_JDP  ,i) = dp
          rprop(PPICLF_R_JVOLP,i) = pi/6.0D0*dp**3
+!        rprop(PPICLF_R_JCS,i)   = sqrt(gmaref*pressure_right
+!    >                                  /density_right)
+!        rprop(PPICLF_R_JT,i)    = y(PPICLF_JT,i)
       enddo
-!     call ppiclf_io_ReadParticleVTU("par99999.vtu")
       imethod = -1
       iendian = 0
-      call ppiclf_solve_InitParticle(imethod   ,
-     >                               ndim      ,
-     >                               iendian   ,
-     >                               npart     ,
-     >                               y(1,1)    ,
-     >                               rprop(1,1))
-
-      call ppiclf_solve_InitGaussianFilter(4.0*dp,1E-5,1)
+      call ppiclf_solve_InitParticle(imethod,ndim,iendian,npart,y,rprop)
+      call ppiclf_solve_InitGaussianFilter(3.0*dp,1E-3,0)
       call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)
       call ppiclf_solve_InitNeighborBin(dp)    ! Neighbor distance
-      call ppiclf_solve_InitPeriodicX(rlx,rrx) ! Periodic in x
-      call ppiclf_solve_InitPeriodicZ(rlz,rrz) ! Periodic in z
+      call ppiclf_solve_InitPeriodicY(rly,rry) ! Periodic in Y
 ! END PPICLF INIT -----------------------------------------------------
 
       return
@@ -251,24 +201,21 @@ c-----------------------------------------------------------------------
      >                     ,pressure_left, density_right, velocity_right
      >                     ,pressure_right      
 
-      ie = gllel(ieg)
+      phi= 1.0
 
-      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIP,rphip)
-      phi= 1.0-rphip
-
-      if (y .le. diaph_loc) then
+      if (x .le. diaph_loc) then
          rho  = density_left
-         uy   = velocity_left
+         ux   = velocity_left
          pres = pressure_left
          temp = MixtPerf_T_DPR(rho,pres,rgasref)
       else
          rho  = density_right
-         uy   = velocity_right
+         ux   = velocity_right
          pres = pressure_right
          temp = MixtPerf_T_DPR(rho,pres,rgasref)
       endif
 
-      ux         = 0.0
+      uy         = 0.0
       uz         = 0.0
       cp         = cpgref
       cv         = cvgref
@@ -281,37 +228,32 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CMTDATA'
 
-      COMMON /mycmt_common/ pdphidx, pdphidy, pdphidz
-     >                      dpdx   , dpdy   , dpdz
-      real pdphidx(lx1,ly1,lz1,lelt)
-     >    ,pdphidy(lx1,ly1,lz1,lelt)
-     >    ,pdphidz(lx1,ly1,lz1,lelt)
-     >    ,dpdx   (lx1,ly1,lz1,lelt)
-     >    ,dpdy   (lx1,ly1,lz1,lelt)
-     >    ,dpdz   (lx1,ly1,lz1,lelt)
+      common /project_common/ e_extra, A_term
+      real e_extra(lx1,ly1,lz1,lelt), A_term(lx1,ly1,lz1,lelt)
 
       ie = gllel(ieg)
 
 ! BEGIN PPICLF FORCING ------------------------------------------------
-      ! First couple hydrodynamic force
-      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFX,ffx)
-      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFY,ffy)
-      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFZ,ffz)
       call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIP,rphip)
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFX  ,ffx)
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JFY  ,ffy)
+      call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JE   ,ener)
+      ffz = 0.0
 
-      ! Add p * grad(phig)
-      ffx = ffx + pdphidx(ix,iy,iz,ie)
-      ffy = ffy + pdphidy(ix,iy,iz,ie)
-      ffz = ffz + pdphidz(ix,iy,iz,ie)
+      rphig = 1.0 - rphip
 
-      ! Make it an acceleration just as with Nek5000
-      rdum = 1./vtrans(ix,iy,iz,ie,1)
-      rdum = rdum/(1.-rphip)
+      ffmass = A_term(ix,iy,iz,ie) / rphig
 
-      ffx = ffx*rdum
-      ffy = ffy*rdum
-      ffz = ffz*rdum
+      ffx = (ffx+A_term(ix,iy,iz,ie)*vx(ix,iy,iz,ie)) / rphig
+      ffy = (ffy+A_term(ix,iy,iz,ie)*vy(ix,iy,iz,ie)) / rphig
+      ffz = (ffz+A_term(ix,iy,iz,ie)*vz(ix,iy,iz,ie)) / rphig
+
+      ffe = (ener + 
+     >       e_extra(ix,iy,iz,ie) +
+     >       A_term(ix,iy,iz,ie)*u(ix,iy,iz,5,ie)/u(ix,iy,iz,1,ie)
+     >      ) / rphig
 ! END PPICLF FORCING --------------------------------------------------
 
       return
@@ -329,32 +271,79 @@ c unless you know what you are doing.
       save icalld
       data icalld /-1/
 
-      COMMON /mycmt_common/ pdphidx, pdphidy, pdphidz
-     >                      dpdx   , dpdy   , dpdz
-      real pdphidx(lx1,ly1,lz1,lelt)
-     >    ,pdphidy(lx1,ly1,lz1,lelt)
-     >    ,pdphidz(lx1,ly1,lz1,lelt)
+      ! Interpolation fields
+      real rphip(lx1,ly1,lz1,lelt)
      >    ,dpdx   (lx1,ly1,lz1,lelt)
      >    ,dpdy   (lx1,ly1,lz1,lelt)
      >    ,dpdz   (lx1,ly1,lz1,lelt)
+      
+      ! Scratch arrays
+!     common /scrns/ uphig, gradx, grady, gradz, phiu, phiv, phiw
+      real upgphi(lx1,ly1,lz1,lelt),
+     >     gradx(lx1,ly1,lz1,lelt),
+     >     grady(lx1,ly1,lz1,lelt),
+     >     gradz(lx1,ly1,lz1,lelt),
+     >     phiu(lx1,ly1,lz1,lelt),
+     >     phiv(lx1,ly1,lz1,lelt),
+     >     phiw(lx1,ly1,lz1,lelt)
 
-      real rphip(PPICLF_LEX,PPICLF_LEY,PPICLF_LEZ,lelt)
+      !
+      common /project_common/ e_extra, A_term
+      real e_extra(lx1,ly1,lz1,lelt), A_term(lx1,ly1,lz1,lelt)
 
-      do ie=1,nelt
-      do iz=1,PPICLF_LEZ
-      do iy=1,PPICLF_LEY
-      do ix=1,PPICLF_LEX
-         call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie
-     >                              ,PPICLF_P_JPHIP,rphip(ix,iy,iz,ie))
-         phig(ix,iy,iz,ie) = 1.0 - rphip(ix,iy,iz,ie)
-      enddo
-      enddo
-      enddo
-      enddo
-      ! Filtering may be needed sometimes
-      ! wght = 1
-      ! ncut = 1
-      ! call filter_s0(phig,wght,ncut,'phig')
+! BEGIN PPICLF SOLVE EACH RK STAGE ------------------------------------
+      icalld = icalld + 1
+      if (icalld .gt. 0) then
+
+         nxyze = lx1*ly1*lz1*nelt
+         do ie=1,nelt
+         do iz=1,lz1
+         do iy=1,ly1
+         do ix=1,lx1
+          call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIP,
+     >                                     rphip(ix,iy,iz,ie))
+          call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIPU,
+     >                                     phiu(ix,iy,iz,ie))
+          call ppiclf_solve_GetProFldIJKEF(ix,iy,iz,ie,PPICLF_P_JPHIPV,
+     >                                     phiv(ix,iy,iz,ie))
+          phiw(ix,iy,iz,ie) = 0.0
+          upgphi(ix,iy,iz,ie) = 1.0 - rphip(ix,iy,iz,ie)
+         enddo
+         enddo
+         enddo
+         enddo
+         
+         ! Compute extra source terms
+         call opdiv(e_extra, phiu, phiv, phiw)
+         call col2(e_extra, pr, nxyze)
+         call chsign(e_extra, nxyze)
+
+         call gradm1(gradx, grady, gradz, upgphi)
+         call vdot3(upgphi, gradx, grady, gradz, vx, vy, vz, nxyze)
+         call copy(A_term, upgphi, nxyze)
+         call col2(upgphi, pr, nxyze)
+         call chsign(upgphi, nxyze)
+         call add2(e_extra, upgphi, nxyze)
+
+         call col2(A_term, vtrans, nxyze)
+         call chsign(A_term, nxyze)
+         
+         ! Interpolate fields to particle positions
+         call gradm1(dpdx,dpdy,dpdz,pr)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JPHIP ,rphip)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JUX   ,vx)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JUY   ,vy)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JDPDX ,dpdx)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JDPDY ,dpdy)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JRHOF ,vtrans)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JCS   ,csound)
+         call ppiclf_solve_InterpFieldUser(PPICLF_R_JT    ,t)
+
+         ! Integrate particles, but cmt-nek calls cmtchk once before solve
+         call ppiclf_solve_IntegrateParticle(istep,iostep2,dt,time)
+      endif
+
+! END PPICLF SOLVE EACH RK STAGE --------------------------------------
 
       if (stage.eq.1) then
          time = time_cmt
@@ -363,44 +352,24 @@ c unless you know what you are doing.
 
          ! output ppiclf volume fraction field to ptw files
          if (mod(istep,iostep2) .eq. 0 .or. istep .eq. 1) then
-            call outpost2(rphip
-     >                   ,rphip
-     >                   ,rphip
-     >                   ,rphip
-     >                   ,rphip,1,'ptw')
+            do i=1,nxyze
+               if (rphip(i,1,1,1) .lt. 1e-12) then
+                  factor = 0.0
+               else
+                  factor = 1.0/rphip(i,1,1,1)
+               endif
+               phiu(i,1,1,1) = phiu(i,1,1,1)*factor
+               phiv(i,1,1,1) = phiv(i,1,1,1)*factor
+               phiw(i,1,1,1) = phiw(i,1,1,1)*factor
+            enddo
+            call outpost2(phiu   ! particle x velocity (x_vel)
+     >                   ,phiv   ! particle y velocity (y_vel)
+     >                   ,phiw   ! particle z velocity (z_vel)
+     >                   ,rphip  ! particle volume fraction (pres)
+     >                   ,rphip  ! particle volume fraction (temp)
+     >                   ,1,'ptw')
          endif
       endif
-
-! BEGIN PPICLF SOLVE EACH RK STAGE ------------------------------------
-      nxyze = lx1*ly1*lz1*nelt
-
-      ! Compute p * grad(phig) for use in userf
-      call gradm1(pdphidx,pdphidy,pdphidz,phig)
-      call col2(pdphidx,pr,nxyze)
-      call col2(pdphidy,pr,nxyze)
-      call col2(pdphidz,pr,nxyze)
-
-      ! Compute grad(p) to interpolate
-      call gradm1(dpdx,dpdy,dpdz,pr)
-
-      dt2 = dt
-      ! Uncomment below if you want a delay step but files synced
-      ! with fluid output
-!     delaystep = 500
-!     if (istep.lt.delaystep) dt2 = 0.0
-      ! Interpolate fields to particle positions
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JPHIP ,rphip)
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JUX   ,vx)
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JUY   ,vy)
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JUZ   ,vz)
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JDPDX ,dpdx)
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JDPDY ,dpdy)
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JDPDZ ,dpdz)
-      call ppiclf_solve_InterpFieldUser(PPICLF_R_JRHOF ,vtrans)
-
-      ! Integrate particles
-      call ppiclf_solve_IntegrateParticle(istep,iostep2,dt2,time)
-! END PPICLF SOLVE EACH RK STAGE --------------------------------------
 
       return
       end
@@ -443,8 +412,14 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'NEKUSE'
       include 'CMTDATA'
+
+      real diaph_loc, density_left , velocity_left , pressure_left
+     >              , density_right, velocity_right, pressure_right
+      common /stube_common/ diaph_loc, density_left , velocity_left
+     >                     ,pressure_left, density_right, velocity_right
+     >                     ,pressure_right      
      
-      ux        = 0.0
+      ux        = velocity_left
       uy        = 0.0
       uz        = 0.0
       flux      = 0.0

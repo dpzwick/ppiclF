@@ -1,0 +1,7 @@
+[GENERAL]
+dt = 2E-8
+writeinterval = 250
+numsteps = 10000
+
+[VELOCITY]
+viscosity = 1.8E-5
