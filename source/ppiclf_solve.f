@@ -739,6 +739,8 @@
       ppiclf_xdrange(1,1) = xl
       ppiclf_xdrange(2,1) = xr
 
+      call ppiclf_solve_InitSolve
+
       return
       end
 !-----------------------------------------------------------------------
@@ -765,6 +767,8 @@
 
       ppiclf_xdrange(1,2) = yl
       ppiclf_xdrange(2,2) = yr
+
+      call ppiclf_solve_InitSolve
 
       return
       end
@@ -794,6 +798,8 @@
 
       ppiclf_xdrange(1,3) = zl
       ppiclf_xdrange(2,3) = zr
+
+      call ppiclf_solve_InitSolve
 
       return
       end
@@ -1035,11 +1041,6 @@ c----------------------------------------------------------------------
 !
       icalld = icalld + 1
 
-      ! save stage 1 solution
-      ndum = PPICLF_NPART*PPICLF_LRS
-      do i=1,ndum
-         ppiclf_y1(i) = ppiclf_y(i,1)
-      enddo
 
       ! get rk3 coeffs
       call ppiclf_solve_SetRK3Coeff(ppiclf_dt)
@@ -1049,6 +1050,14 @@ c----------------------------------------------------------------------
       if (istage .eq. 0) istage = 3
       iout = .false.
       if (istage .eq. nstage) iout = .true.
+
+      ! save stage 1 solution
+      if (istage .eq. 1) then
+      ndum = PPICLF_NPART*PPICLF_LRS
+      do i=1,ndum
+         ppiclf_y1(i) = ppiclf_y(i,1)
+      enddo
+      endif
 
       ! evaluate ydot
       call ppiclf_solve_SetYdot
