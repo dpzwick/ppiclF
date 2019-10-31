@@ -959,6 +959,7 @@ c----------------------------------------------------------------------
      >   call ppiclf_solve_IntegrateRK3s(iout)
 
       ! output files
+      if (ppiclf_iostep .gt.0)then
       if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0 .and. iout) then
 
          ! already wrote initial conditions
@@ -974,6 +975,7 @@ c----------------------------------------------------------------------
       ! Output diagnostics
       if (mod(ppiclf_cycle,ppiclf_iostep) .eq. 0 .and. iout) then
          call ppiclf_io_OutputDiagAll
+      endif
       endif
 
       return
