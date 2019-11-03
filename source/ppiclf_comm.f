@@ -241,7 +241,11 @@ c     if (npt_total .eq. 1) then
                    total_bin = total_bin*ppiclf_n_bins(j)
                 enddo
                 if (total_bin .gt. ppiclf_np) then
+                   ! two exit arrays aren't necessary for now, but
+                   ! to make sure exit_2 doesn't slip through, we
+                   ! set both for now
                    exit_1_array(i) = 1
+                   exit_2_array(i) = 1
                    ppiclf_n_bins(i) = ppiclf_n_bins(i) - 1
                    ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
      >                                  ppiclf_binb(2*(i-1)+1)  ) / 
@@ -251,6 +255,10 @@ c     if (npt_total .eq. 1) then
                 
                 ! exit_2
                 if (ppiclf_bins_dx(i) .lt. ppiclf_d2chk(1)) then
+                   ! two exit arrays aren't necessary for now, but
+                   ! to make sure exit_2 doesn't slip through, we
+                   ! set both for now
+                   exit_1_array(i) = 1
                    exit_2_array(i) = 1
                    ppiclf_n_bins(i) = ppiclf_n_bins(i) - 1
                    ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
