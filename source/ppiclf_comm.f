@@ -53,15 +53,17 @@
 !
       integer*4  el_face_num(18),el_edge_num(36),el_corner_num(24),
      >                            nfacegp, nedgegp, ncornergp
-      integer*4  ifac(3), icount(3)
-      real*8     d2new(3)
-      integer*4 ix, iy, iz, iperiodicx, iperiodicy, iperiodicz, ndim,
-     >          npt_total, j, i, nmax, nbb, idum, jdum, kdum, nbin
-      real*8 xmin, ymin, zmin, xmax, ymax, zmax, rduml, rdumr, rthresh
+      integer*4 exit_1_array(3), exit_2_array(3), finished(3)
+      integer*4 ix, iy, iz, iperiodicx, iperiodicy, iperiodicz, 
+     >          npt_total, j, i, idum, jdum, kdum, total_bin, 
+     >          sum_value, count
+      real*8 xmin, ymin, zmin, xmax, ymax, zmax, rduml, rdumr, rthresh,
+     >       rmiddle, rdiff
+      logical exit_1, exit_2
       integer*4 ppiclf_iglsum
       external ppiclf_iglsum
-      real*8 ppiclf_glmin,ppiclf_glmax
-      external ppiclf_glmin,ppiclf_glmax
+      real*8 ppiclf_glmin,ppiclf_glmax,ppiclf_glsum
+      external ppiclf_glmin,ppiclf_glmax,ppiclf_glsum
 !
 
 ! face, edge, and corner number, x,y,z are all inline, so stride=3
@@ -92,7 +94,6 @@
       iperiodicx = ppiclf_iperiodic(1)
       iperiodicy = ppiclf_iperiodic(2)
       iperiodicz = ppiclf_iperiodic(3)
-      ndim       = ppiclf_ndim
          
       ppiclf_d2chk(1) = max(ppiclf_d2chk(2),ppiclf_d2chk(3))
 
@@ -101,8 +102,7 @@
       npt_total = ppiclf_iglsum(ppiclf_npart,1)
 c     if (npt_total .eq. 1) then
       if (.not. ppiclf_lproj .and. .not. ppiclf_lsubsubbin) 
-     >ppiclf_d2chk(1) = 1E-16
-c     endif
+     >   ppiclf_d2chk(1) = 1E-16
 
       ! compute binb
       xmin = 1E10
@@ -139,6 +139,24 @@ c     endif
       if(ppiclf_ndim .gt. 2) ppiclf_binb(5) = ppiclf_glmin(zmin,1)
       if(ppiclf_ndim .gt. 2) ppiclf_binb(6) = ppiclf_glmax(zmax,1)
 
+      if (npt_total .gt. 0) then
+      do i=1,ppiclf_ndim
+         if (ppiclf_bins_balance(i) .eq. 1) then
+            rmiddle = 0.0
+            do j=1,ppiclf_npart
+               rmiddle = rmiddle + ppiclf_y(i,j)
+            enddo
+            rmiddle = ppiclf_glsum(rmiddle,1)
+            rmiddle = rmiddle/npt_total
+
+            rdiff =  max(abs(rmiddle-ppiclf_binb(2*(i-1)+1)),
+     >                   abs(ppiclf_binb(2*(i-1)+2)-rmiddle))
+            ppiclf_binb(2*(i-1)+1) = rmiddle - rdiff
+            ppiclf_binb(2*(i-1)+2) = rmiddle + rdiff
+         endif
+      enddo
+      endif
+
       if (ppiclf_xdrange(2,1) .lt. ppiclf_binb(2) .or.
      >    ppiclf_xdrange(1,1) .gt. ppiclf_binb(1) .or. 
      >    iperiodicx .eq. 0) then
@@ -162,138 +180,140 @@ c     endif
       endif
       endif
 
-      ifac(1) = 1
-      ifac(2) = 1
-      ifac(3) = 1
-      icount(1) = 0
-      icount(2) = 0
-      icount(3) = 0
+      if (npt_total .le. 1) return
 
-      ! first check if suggested direction 
-      j = -1
-      nmax = int(1E8)
-      if (ppiclf_nbin_dir(1) .eq. 1) j = 0
-      if (ppiclf_nbin_dir(2) .eq. 1) j = 1
-      if (ppiclf_nbin_dir(3) .eq. 1) j = 2
+      finished(1) = 0
+      finished(2) = 0
+      finished(3) = 0
+      total_bin = 1 
 
-      if (j .ge. 0) then
-         do i=1,nmax
-            ifac(j+1) = ifac(j+1) + 1
-            d2new(j+1) = (ppiclf_binb(2+2*j) - ppiclf_binb(1+2*j))/
-     >                    ifac(j+1)
-            nbb = ifac(1)*ifac(2)*ifac(3)
-           
-            if( nbb        .gt. ppiclf_np .or. 
-     >          ((d2new(j+1) .lt. ppiclf_d2chk(1)) .and. 
-     >             ((ppiclf_lproj) .or. 
-     >             (ppiclf_lsubsubbin)))
-     >         ) then
-               icount(j+1) = 1
-               ifac(j+1) = ifac(j+1) - 1
-               d2new(j+1) = (ppiclf_binb(2+2*j) -ppiclf_binb(1+2*j))/
-     >                       ifac(j+1)
-            endif
-            if (icount(j+1) .gt. 0) then
-               exit
-            endif
-         enddo
-      endif
-
-
-      ! then do every direction
-      do i=1,nmax
-         do j=0,ndim-1
-            ifac(j+1) = ifac(j+1) + 1
-            d2new(j+1) = (ppiclf_binb(2+2*j) - ppiclf_binb(1+2*j))/
-     >                    ifac(j+1)
-
-            nbb = ifac(1)*ifac(2)*ifac(3)
-         
-            if( nbb        .gt. ppiclf_np .or. 
-     >          ((d2new(j+1) .lt. ppiclf_d2chk(1)) .and. 
-     >             ((ppiclf_lproj) .or. 
-     >             (ppiclf_lsubsubbin)))
-     >         ) then
-               icount(j+1) = 1
-               ifac(j+1) = ifac(j+1) - 1
-               d2new(j+1) = (ppiclf_binb(2+2*j) -ppiclf_binb(1+2*j))/
-     >                       ifac(j+1)
-            endif
-         enddo
-         if (icount(1) .gt. 0) then
-         if (icount(2) .gt. 0) then
-         if (icount(3) .gt. 0 .or. ndim .lt. 3) then
-            exit
+      do i=1,ppiclf_ndim
+         finished(i) = 0
+         exit_1_array(i) = ppiclf_bins_set(i)
+         exit_2_array(i) = 0
+         if (ppiclf_bins_set(i) .ne. 1) ppiclf_n_bins(i) = 1
+         ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
+     >                        ppiclf_binb(2*(i-1)+1)  ) / 
+     >                       ppiclf_n_bins(i)
+         ! Make sure exit_2 is not violated by user input
+         if (ppiclf_bins_dx(i) .lt. ppiclf_d2chk(1)) then
+            do while (ppiclf_bins_dx(i) .lt. ppiclf_d2chk(1))
+               ppiclf_n_bins(i) = max(1, ppiclf_n_bins(i)-1)
+               ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
+     >                              ppiclf_binb(2*(i-1)+1)  ) / 
+     >                             ppiclf_n_bins(i)
+            enddo
          endif
-         endif
-         endif
+         total_bin = total_bin*ppiclf_n_bins(i)
       enddo
+
+      ! Make sure exit_1 is not violated by user input
+      count = 0
+      do while (total_bin > ppiclf_np)
+          count = count + 1;
+          i = modulo((ppiclf_ndim-1)+count,ppiclf_ndim)+1
+          ppiclf_n_bins(i) = max(ppiclf_n_bins(i)-1,1)
+          ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
+     >                         ppiclf_binb(2*(i-1)+1)  ) / 
+     >                        ppiclf_n_bins(i)
+          total_bin = 1
+          do j=1,ppiclf_ndim
+             total_bin = total_bin*ppiclf_n_bins(j)
+          enddo
+          if (total_bin .le. ppiclf_np) exit
+       enddo
+
+       exit_1 = .false.
+       exit_2 = .false.
+
+       do while (.not. exit_1 .and. .not. exit_2)
+          do i=1,ppiclf_ndim
+             if (exit_1_array(i) .eq. 0) then
+                ppiclf_n_bins(i) = ppiclf_n_bins(i) + 1
+                ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
+     >                               ppiclf_binb(2*(i-1)+1)  ) / 
+     >                              ppiclf_n_bins(i)
+
+                ! Check conditions
+                ! exit_1
+                total_bin = 1
+                do j=1,ppiclf_ndim
+                   total_bin = total_bin*ppiclf_n_bins(j)
+                enddo
+                if (total_bin .gt. ppiclf_np) then
+                   ! two exit arrays aren't necessary for now, but
+                   ! to make sure exit_2 doesn't slip through, we
+                   ! set both for now
+                   exit_1_array(i) = 1
+                   exit_2_array(i) = 1
+                   ppiclf_n_bins(i) = ppiclf_n_bins(i) - 1
+                   ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
+     >                                  ppiclf_binb(2*(i-1)+1)  ) / 
+     >                                 ppiclf_n_bins(i)
+                   exit
+                endif
+                
+                ! exit_2
+                if (ppiclf_bins_dx(i) .lt. ppiclf_d2chk(1)) then
+                   ! two exit arrays aren't necessary for now, but
+                   ! to make sure exit_2 doesn't slip through, we
+                   ! set both for now
+                   exit_1_array(i) = 1
+                   exit_2_array(i) = 1
+                   ppiclf_n_bins(i) = ppiclf_n_bins(i) - 1
+                   ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
+     >                                  ppiclf_binb(2*(i-1)+1)  ) / 
+     >                                 ppiclf_n_bins(i)
+                   exit
+                endif
+             endif
+          enddo
+
+          ! full exit_1
+          sum_value = 0
+          do i=1,ppiclf_ndim
+             sum_value = sum_value + exit_1_array(i)
+          enddo
+          if (sum_value .eq. ppiclf_ndim) then
+             exit_1 = .true.
+          endif
+
+          ! full exit_2
+          sum_value = 0
+          do i=1,ppiclf_ndim
+             sum_value = sum_value + exit_2_array(i)
+          enddo
+          if (sum_value .eq. ppiclf_ndim) then
+             exit_2 = .true.
+          endif
+       enddo
 
 ! -------------------------------------------------------
 ! SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 ! -------------------------------------------------------
-      ! how many spacings in each direction
+      ! Check for too small bins 
       rthresh = 1E-12
-      if (abs(d2new(1)) .le. rthresh) then
-       ppiclf_ndxgp = 1
-      else
-       if (abs(ppiclf_binb(2)-ppiclf_binb(1)) .lt. rthresh) then
-       ppiclf_ndxgp = 1
-       else
-       ppiclf_ndxgp = floor( (ppiclf_binb(2) - ppiclf_binb(1))/d2new(1))
-       endif
-      endif
-      if (abs(d2new(2)) .le. rthresh) then
-       ppiclf_ndygp = 1
-      else
-       if (abs(ppiclf_binb(4)-ppiclf_binb(3)) .lt. rthresh) then
-       ppiclf_ndygp = 1
-       else
-       ppiclf_ndygp = floor( (ppiclf_binb(4) - ppiclf_binb(3))/d2new(2))
-       endif
-      endif
-      if (abs(d2new(3)) .le. rthresh) then
-       ppiclf_ndzgp = 1
-      else
-       ppiclf_ndzgp = 1
-       if (ppiclf_ndim .gt. 2) then
-       if (abs(ppiclf_binb(6)-ppiclf_binb(5)) .lt. rthresh) then
-       ppiclf_ndzgp = 1
-       else
-       ppiclf_ndzgp = floor( (ppiclf_binb(6) - ppiclf_binb(5))/d2new(3))
-       endif
-       endif
-      endif
-      
-      ! grid spacing for that many spacings
-      ppiclf_rdxgp = (ppiclf_binb(2) -ppiclf_binb(1))/real(ppiclf_ndxgp)
-      ppiclf_rdygp = (ppiclf_binb(4) -ppiclf_binb(3))/real(ppiclf_ndygp)
-      ppiclf_rdzgp = 1.0d0
-      if (ppiclf_ndim .gt. 2) then
-      ppiclf_rdzgp = (ppiclf_binb(6) -ppiclf_binb(5))/real(ppiclf_ndzgp)
-      endif
-
-      if (ppiclf_rdxgp .lt. rthresh) ppiclf_rdxgp = 1.0
-      if (ppiclf_rdygp .lt. rthresh) ppiclf_rdygp = 1.0
-      if (ppiclf_rdzgp .lt. rthresh) ppiclf_rdzgp = 1.0
-
-      nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
+      total_bin = 1
+      do i=1,ppiclf_ndim
+         total_bin = total_bin*ppiclf_n_bins(i)
+         if (ppiclf_bins_dx(i) .lt. rthresh) ppiclf_bins_dx(i) = 1.0
+      enddo
 
 !     current box coordinates
-      if (ppiclf_nid .le. nbin-1) then
-         idum = modulo(ppiclf_nid,ppiclf_ndxgp)
-         jdum = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
-         kdum = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
+      if (ppiclf_nid .le. total_bin-1) then
+         idum = modulo(ppiclf_nid,ppiclf_n_bins(1))
+         jdum = modulo(ppiclf_nid/ppiclf_n_bins(1),ppiclf_n_bins(2))
+         kdum = ppiclf_nid/(ppiclf_n_bins(1)*ppiclf_n_bins(2))
          if (ppiclf_ndim .lt. 3) kdum = 0
-         ppiclf_binx(1,1) = ppiclf_binb(1) + idum    *ppiclf_rdxgp
-         ppiclf_binx(2,1) = ppiclf_binb(1) + (idum+1)*ppiclf_rdxgp
-         ppiclf_biny(1,1) = ppiclf_binb(3) + jdum    *ppiclf_rdygp
-         ppiclf_biny(2,1) = ppiclf_binb(3) + (jdum+1)*ppiclf_rdygp
+         ppiclf_binx(1,1) = ppiclf_binb(1) + idum    *ppiclf_bins_dx(1)
+         ppiclf_binx(2,1) = ppiclf_binb(1) + (idum+1)*ppiclf_bins_dx(1)
+         ppiclf_biny(1,1) = ppiclf_binb(3) + jdum    *ppiclf_bins_dx(2)
+         ppiclf_biny(2,1) = ppiclf_binb(3) + (jdum+1)*ppiclf_bins_dx(2)
          ppiclf_binz(1,1) = 0.0d0
          ppiclf_binz(2,1) = 0.0d0
          if (ppiclf_ndim .gt. 2) then
-            ppiclf_binz(1,1) = ppiclf_binb(5) + kdum    *ppiclf_rdzgp
-            ppiclf_binz(2,1) = ppiclf_binb(5) + (kdum+1)*ppiclf_rdzgp
+            ppiclf_binz(1,1) = ppiclf_binb(5)+kdum    *ppiclf_bins_dx(3)
+            ppiclf_binz(2,1) = ppiclf_binb(5)+(kdum+1)*ppiclf_bins_dx(3)
          endif
       endif
 
@@ -312,21 +332,21 @@ c     endif
      >          i, j, k
 !
 
-      nbin = ppiclf_ndxgp*ppiclf_ndygp*ppiclf_ndzgp
+      nbin = ppiclf_n_bins(1)*ppiclf_n_bins(2)*ppiclf_n_bins(3)
 
 c     current box coordinates
       if (ppiclf_nid .le. nbin-1) then
-         idum = modulo(ppiclf_nid,ppiclf_ndxgp)
-         jdum = modulo(ppiclf_nid/ppiclf_ndxgp,ppiclf_ndygp)
-         kdum = ppiclf_nid/(ppiclf_ndxgp*ppiclf_ndygp)
+         idum = modulo(ppiclf_nid,ppiclf_n_bins(1))
+         jdum = modulo(ppiclf_nid/ppiclf_n_bins(1),ppiclf_n_bins(2))
+         kdum = ppiclf_nid/(ppiclf_n_bins(1)*ppiclf_n_bins(2))
          if (ppiclf_ndim .lt. 3) kdum = 0
          ! interior grid of each bin
          ! +1 for making mesh smaller and +1 since these are vertice counts
-         ppiclf_bx = floor(ppiclf_rdxgp/ppiclf_filter) + 1 + 1
-         ppiclf_by = floor(ppiclf_rdygp/ppiclf_filter) + 1 + 1
+         ppiclf_bx = floor(ppiclf_bins_dx(1)/ppiclf_filter) + 1 + 1
+         ppiclf_by = floor(ppiclf_bins_dx(2)/ppiclf_filter) + 1 + 1
          ppiclf_bz = 1
          if (ppiclf_ndim .gt. 2) 
-     >      ppiclf_bz = floor(ppiclf_rdzgp/ppiclf_filter) + 1 + 1
+     >      ppiclf_bz = floor(ppiclf_bins_dx(3)/ppiclf_filter) + 1 + 1
 
          ppiclf_bx = ppiclf_bx*ppiclf_ngrids
          ppiclf_by = ppiclf_by*ppiclf_ngrids
@@ -340,14 +360,14 @@ c     current box coordinates
          if (ppiclf_bz .gt. PPICLF_BZ1)
      >      call ppiclf_exittr('Increase PPICLF_BZ1$',0.,ppiclf_bz)
 
-         ppiclf_rdx = ppiclf_rdxgp/(ppiclf_bx-1)
-         ppiclf_rdy = ppiclf_rdygp/(ppiclf_by-1)
+         ppiclf_rdx = ppiclf_bins_dx(1)/(ppiclf_bx-1)
+         ppiclf_rdy = ppiclf_bins_dx(2)/(ppiclf_by-1)
          ppiclf_rdz = 0
          if (ppiclf_ndim .gt. 2) 
-     >      ppiclf_rdz = ppiclf_rdzgp/(ppiclf_bz-1)
+     >      ppiclf_rdz = ppiclf_bins_dx(3)/(ppiclf_bz-1)
 
-         ndumx = ppiclf_ndxgp*(ppiclf_bx-1) + 1
-         ndumy = ppiclf_ndygp*(ppiclf_by-1) + 1
+         ndumx = ppiclf_n_bins(1)*(ppiclf_bx-1) + 1
+         ndumy = ppiclf_n_bins(2)*(ppiclf_by-1) + 1
     
          do k=1,ppiclf_bz
          do j=1,ppiclf_by
@@ -414,22 +434,23 @@ c     current box coordinates
          if (ppiclf_ndim.gt.2 .and. rzval .lt. ppiclf_binb(5))
      >      goto 1233
 
-         ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
-         jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
-         kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
+         ii    = floor((rxval-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
+         jj    = floor((ryval-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
+         kk    = floor((rzval-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
          if (ppiclf_ndim.lt.3) kk = 0
-          if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-          if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-          if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+          if (ii .eq. ppiclf_n_bins(1)) ii = ppiclf_n_bins(1) - 1
+          if (jj .eq. ppiclf_n_bins(2)) jj = ppiclf_n_bins(2) - 1
+          if (kk .eq. ppiclf_n_bins(3)) kk = ppiclf_n_bins(3) - 1
           if (ii .eq. -1) ii = 0
           if (jj .eq. -1) jj = 0
           if (kk .eq. -1) kk = 0
-         ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
+         ndum  = ii + ppiclf_n_bins(1)*jj + 
+     >                ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
          nrank = ndum
 
-         if (ii .lt. 0 .or. ii .gt. ppiclf_ndxgp-1) goto 1233
-         if (jj .lt. 0 .or. jj .gt. ppiclf_ndygp-1) goto 1233
-         if (kk .lt. 0 .or. kk .gt. ppiclf_ndzgp-1) goto 1233
+         if (ii .lt. 0 .or. ii .gt. ppiclf_n_bins(1)-1) goto 1233
+         if (jj .lt. 0 .or. jj .gt. ppiclf_n_bins(2)-1) goto 1233
+         if (kk .lt. 0 .or. kk .gt. ppiclf_n_bins(3)-1) goto 1233
 
          ppiclf_neltb = ppiclf_neltb + 1
          if(ppiclf_neltb .gt. PPICLF_LEE) then
@@ -499,17 +520,18 @@ c     current box coordinates
          rzval = 0.0d0
          if(ppiclf_ndim.gt.2) rzval = ppiclf_xm1b(i,j,k,3,ie)
          
-         ii    = floor((rxval-ppiclf_binb(1))/ppiclf_rdxgp) 
-         jj    = floor((ryval-ppiclf_binb(3))/ppiclf_rdygp) 
-         kk    = floor((rzval-ppiclf_binb(5))/ppiclf_rdzgp) 
+         ii    = floor((rxval-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
+         jj    = floor((ryval-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
+         kk    = floor((rzval-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
          if (ppiclf_ndim.eq.2) kk = 0
-          if (ii .eq. ppiclf_ndxgp) ii = ppiclf_ndxgp - 1
-          if (jj .eq. ppiclf_ndygp) jj = ppiclf_ndygp - 1
-          if (kk .eq. ppiclf_ndzgp) kk = ppiclf_ndzgp - 1
+          if (ii .eq. ppiclf_n_bins(1)) ii = ppiclf_n_bins(1) - 1
+          if (jj .eq. ppiclf_n_bins(2)) jj = ppiclf_n_bins(2) - 1
+          if (kk .eq. ppiclf_n_bins(3)) kk = ppiclf_n_bins(3) - 1
           if (ii .eq. -1) ii = 0
           if (jj .eq. -1) jj = 0
           if (kk .eq. -1) kk = 0
-         ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
+          ndum  = ii + ppiclf_n_bins(1)*jj + 
+     >                 ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
 
          ppiclf_modgp(i,j,k,ie,1) = ii
          ppiclf_modgp(i,j,k,ie,2) = jj
@@ -536,26 +558,32 @@ c     current box coordinates
      >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,3,ie),nxyz)
 
          ilow  = 
-     >     floor((ppiclf_xerange(1,1,ie) - ppiclf_binb(1))/ppiclf_rdxgp)
+     >     floor((ppiclf_xerange(1,1,ie) - ppiclf_binb(1))/
+     >                                             ppiclf_bins_dx(1))
          ihigh = 
-     >     floor((ppiclf_xerange(2,1,ie) - ppiclf_binb(1))/ppiclf_rdxgp)
+     >     floor((ppiclf_xerange(2,1,ie) - ppiclf_binb(1))/
+     >                                             ppiclf_bins_dx(1))
          jlow  = 
-     >     floor((ppiclf_xerange(1,2,ie) - ppiclf_binb(3))/ppiclf_rdygp)
+     >     floor((ppiclf_xerange(1,2,ie) - ppiclf_binb(3))/
+     >                                             ppiclf_bins_dx(2))
          jhigh = 
-     >     floor((ppiclf_xerange(2,2,ie) - ppiclf_binb(3))/ppiclf_rdygp)
+     >     floor((ppiclf_xerange(2,2,ie) - ppiclf_binb(3))/
+     >                                             ppiclf_bins_dx(2))
          klow  = 
-     >     floor((ppiclf_xerange(1,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
+     >     floor((ppiclf_xerange(1,3,ie) - ppiclf_binb(5))/
+     >                                             ppiclf_bins_dx(3))
          khigh = 
-     >     floor((ppiclf_xerange(2,3,ie) - ppiclf_binb(5))/ppiclf_rdzgp)
+     >     floor((ppiclf_xerange(2,3,ie) - ppiclf_binb(5))/
+     >                                             ppiclf_bins_dx(3))
          if (ppiclf_ndim.lt.3) then
             klow = 0
             khigh = 0
          endif
 
-         ppiclf_el_map(1,ie) = ilow  + ppiclf_ndxgp*jlow  
-     >                            + ppiclf_ndxgp*ppiclf_ndygp*klow
-         ppiclf_el_map(2,ie) = ihigh + ppiclf_ndxgp*jhigh 
-     >                            + ppiclf_ndxgp*ppiclf_ndygp*khigh
+         ppiclf_el_map(1,ie) = ilow  + ppiclf_n_bins(1)*jlow  
+     >                         + ppiclf_n_bins(1)*ppiclf_n_bins(2)*klow
+         ppiclf_el_map(2,ie) = ihigh + ppiclf_n_bins(1)*jhigh 
+     >                         + ppiclf_n_bins(1)*ppiclf_n_bins(2)*khigh
          ppiclf_el_map(3,ie) = ilow
          ppiclf_el_map(4,ie) = ihigh
          ppiclf_el_map(5,ie) = jlow
@@ -665,11 +693,12 @@ c-----------------------------------------------------------------------
 
       do i=1,ppiclf_npart
          ! check if particles are greater or less than binb bounds....
-         ii    = floor((ppiclf_y(ix,i)-ppiclf_binb(1))/ppiclf_rdxgp) 
-         jj    = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_rdygp) 
-         kk    = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_rdzgp) 
+         ii  = floor((ppiclf_y(ix,i)-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
+         jj  = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
+         kk  = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
          if (ppiclf_ndim .lt. 3) kk = 0
-         ndum  = ii + ppiclf_ndxgp*jj + ppiclf_ndxgp*ppiclf_ndygp*kk
+         ndum  = ii + ppiclf_n_bins(1)*jj + 
+     >                ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
          nrank = ndum
 
          ppiclf_iprop(8,i)  = ii
@@ -848,15 +877,15 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
          jjp    = ppiclf_iprop(9,ip)
          kkp    = ppiclf_iprop(10,ip)
 
-         rxl = ppiclf_binb(1) + ppiclf_rdxgp*iip
-         rxr = rxl + ppiclf_rdxgp
-         ryl = ppiclf_binb(3) + ppiclf_rdygp*jjp
-         ryr = ryl + ppiclf_rdygp
+         rxl = ppiclf_binb(1) + ppiclf_bins_dx(1)*iip
+         rxr = rxl + ppiclf_bins_dx(1)
+         ryl = ppiclf_binb(3) + ppiclf_bins_dx(2)*jjp
+         ryr = ryl + ppiclf_bins_dx(2)
          rzl = 0.0d0
          rzr = 0.0d0
          if (ppiclf_ndim .gt. 2) then
-            rzl = ppiclf_binb(5) + ppiclf_rdzgp*kkp
-            rzr = rzl + ppiclf_rdzgp
+            rzl = ppiclf_binb(5) + ppiclf_bins_dx(3)*kkp
+            rzr = rzl + ppiclf_bins_dx(3)
          endif
 
          isave = 0
@@ -899,25 +928,25 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
             iflgy = 0
             iflgz = 0
             ! periodic if out of domain - add some ifsss
-            if (iig .lt. 0 .or. iig .gt. ppiclf_ndxgp-1) then
+            if (iig .lt. 0 .or. iig .gt. ppiclf_n_bins(1)-1) then
                iflgx = 1
-               iig =modulo(iig,ppiclf_ndxgp)
+               iig =modulo(iig,ppiclf_n_bins(1))
                if (iperiodicx .ne. 0) cycle
             endif
-            if (jjg .lt. 0 .or. jjg .gt. ppiclf_ndygp-1) then
+            if (jjg .lt. 0 .or. jjg .gt. ppiclf_n_bins(2)-1) then
                iflgy = 1
-               jjg =modulo(jjg,ppiclf_ndygp)
+               jjg =modulo(jjg,ppiclf_n_bins(2))
                if (iperiodicy .ne. 0) cycle
             endif
-            if (kkg .lt. 0 .or. kkg .gt. ppiclf_ndzgp-1) then
+            if (kkg .lt. 0 .or. kkg .gt. ppiclf_n_bins(3)-1) then
                iflgz = 1  
-               kkg =modulo(kkg,ppiclf_ndzgp)
+               kkg =modulo(kkg,ppiclf_n_bins(3))
                if (iperiodicz .ne. 0) cycle
             endif
 
             iflgsum = iflgx + iflgy + iflgz
-            ndumn = iig + ppiclf_ndxgp*jjg 
-     >                  + ppiclf_ndxgp*ppiclf_ndygp*kkg
+            ndumn = iig + ppiclf_n_bins(1)*jjg 
+     >                  + ppiclf_n_bins(1)*ppiclf_n_bins(2)*kkg
             nrank = ndumn
 
             if (nrank .eq. ppiclf_nid .and. iflgsum .eq. 0) cycle
@@ -994,25 +1023,25 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
             iflgy = 0
             iflgz = 0
             ! periodic if out of domain - add some ifsss
-            if (iig .lt. 0 .or. iig .gt. ppiclf_ndxgp-1) then
+            if (iig .lt. 0 .or. iig .gt. ppiclf_n_bins(1)-1) then
                iflgx = 1
-               iig =modulo(iig,ppiclf_ndxgp)
+               iig =modulo(iig,ppiclf_n_bins(1))
                if (iperiodicx .ne. 0) cycle
             endif
-            if (jjg .lt. 0 .or. jjg .gt. ppiclf_ndygp-1) then
+            if (jjg .lt. 0 .or. jjg .gt. ppiclf_n_bins(2)-1) then
                iflgy = 1
-               jjg =modulo(jjg,ppiclf_ndygp)
+               jjg =modulo(jjg,ppiclf_n_bins(2))
                if (iperiodicy .ne. 0) cycle
             endif
-            if (kkg .lt. 0 .or. kkg .gt. ppiclf_ndzgp-1) then
+            if (kkg .lt. 0 .or. kkg .gt. ppiclf_n_bins(3)-1) then
                iflgz = 1  
-               kkg =modulo(kkg,ppiclf_ndzgp)
+               kkg =modulo(kkg,ppiclf_n_bins(3))
                if (iperiodicz .ne. 0) cycle
             endif
 
             iflgsum = iflgx + iflgy + iflgz
-            ndumn = iig + ppiclf_ndxgp*jjg 
-     >                  + ppiclf_ndxgp*ppiclf_ndygp*kkg
+            ndumn = iig + ppiclf_n_bins(1)*jjg 
+     >                  + ppiclf_n_bins(1)*ppiclf_n_bins(2)*kkg
             nrank = ndumn
 
             if (nrank .eq. ppiclf_nid .and. iflgsum .eq. 0) cycle
@@ -1089,25 +1118,25 @@ c        ppiclf_cp_map(idum,ip) = ppiclf_y(idum,ip)
             iflgy = 0
             iflgz = 0
             ! periodic if out of domain - add some ifsss
-            if (iig .lt. 0 .or. iig .gt. ppiclf_ndxgp-1) then
+            if (iig .lt. 0 .or. iig .gt. ppiclf_n_bins(1)-1) then
                iflgx = 1
-               iig =modulo(iig,ppiclf_ndxgp)
+               iig =modulo(iig,ppiclf_n_bins(1))
                if (iperiodicx .ne. 0) cycle
             endif
-            if (jjg .lt. 0 .or. jjg .gt. ppiclf_ndygp-1) then
+            if (jjg .lt. 0 .or. jjg .gt. ppiclf_n_bins(2)-1) then
                iflgy = 1
-               jjg =modulo(jjg,ppiclf_ndygp)
+               jjg =modulo(jjg,ppiclf_n_bins(2))
                if (iperiodicy .ne. 0) cycle
             endif
-            if (kkg .lt. 0 .or. kkg .gt. ppiclf_ndzgp-1) then
+            if (kkg .lt. 0 .or. kkg .gt. ppiclf_n_bins(3)-1) then
                iflgz = 1  
-               kkg =modulo(kkg,ppiclf_ndzgp)
+               kkg =modulo(kkg,ppiclf_n_bins(3))
                if (iperiodicz .ne. 0) cycle
             endif
 
             iflgsum = iflgx + iflgy + iflgz
-            ndumn = iig + ppiclf_ndxgp*jjg 
-     >                  + ppiclf_ndxgp*ppiclf_ndygp*kkg
+            ndumn = iig + ppiclf_n_bins(1)*jjg 
+     >                  + ppiclf_n_bins(1)*ppiclf_n_bins(2)*kkg
             nrank = ndumn
 
             if (nrank .eq. ppiclf_nid .and. iflgsum .eq. 0) cycle
@@ -1167,7 +1196,7 @@ c----------------------------------------------------------------------
       real*8 rxnew(3)
 !
       if (rxdrng(1) .gt. 0 ) then
-      if (iadd(1) .ge. ppiclf_ndxgp) then
+      if (iadd(1) .ge. ppiclf_n_bins(1)) then
          rxnew(1) = rxnew(1) - rxdrng(1)
          goto 123
       endif
@@ -1181,7 +1210,7 @@ c----------------------------------------------------------------------
 
   123 continue    
       if (rxdrng(2) .gt. 0 ) then
-      if (iadd(2) .ge. ppiclf_ndygp) then
+      if (iadd(2) .ge. ppiclf_n_bins(2)) then
          rxnew(2) = rxnew(2) - rxdrng(2)
          goto 124
       endif
@@ -1196,7 +1225,7 @@ c----------------------------------------------------------------------
 
       if (ppiclf_ndim .gt. 2) then
          if (rxdrng(3) .gt. 0 ) then
-         if (iadd(3) .ge. ppiclf_ndzgp) then
+         if (iadd(3) .ge. ppiclf_n_bins(3)) then
             rxnew(3) = rxnew(3) - rxdrng(3)
             goto 125
          endif
