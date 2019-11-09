@@ -1,5 +1,10 @@
 !-----------------------------------------------------------------------
+#ifdef PPICLC
       subroutine ppiclf_solve_AddParticles(npart,y,rprop)
+     > bind(C, name="ppiclc_solve_AddParticles")
+#else
+      subroutine ppiclf_solve_AddParticles(npart,y,rprop)
+#endif
 !
       implicit none
 !

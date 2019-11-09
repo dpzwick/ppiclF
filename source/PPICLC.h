@@ -41,6 +41,9 @@ extern"C" {
 					  int    *npart  , 
 					  double *y      , 
 					  double *rprop  );
+    void ppiclc_solve_AddParticles       (int    *npart  , 
+					  double *y      , 
+					  double *rprop  );
     void ppiclc_solve_IntegrateParticle  (int    *istep  , 
                                           int    *iostep , 
 					  double *dt     , 
