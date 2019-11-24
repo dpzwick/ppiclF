@@ -17,7 +17,7 @@ c
       parameter (lelg=2700)            ! max total number of elements
       parameter (lpmin=1)              ! min MPI ranks
       parameter (lpmax=4)              ! max MPI ranks
-      parameter (ldimt=3)              ! max auxiliary fields (temperature + scalars)
+      parameter (ldimt=4)              ! max auxiliary fields (temperature + scalars)
 
       ! OPTIONAL
       parameter (lhis=1000)            ! max history points
