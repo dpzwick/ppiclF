@@ -180,7 +180,7 @@ c     if (npt_total .eq. 1) then
       endif
       endif
 
-      if (npt_total .le. 1) return
+      if (npt_total .lt. 1) return
 
       finished(1) = 0
       finished(2) = 0
