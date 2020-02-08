@@ -104,6 +104,48 @@
       return
       end
 !-----------------------------------------------------------------------
+      subroutine ppiclf_user_SetFilter(x,y,z,filter)
+!
+      implicit none
+!
+! Input:
+!
+      real*8 x, y, z
+!
+! Output:
+!
+      real*8 filter(PPICLF_LRP_PRO)
+!
+! Internal:
+!
+      real*8 filter_width_x, filter_width_y
+      common /ufilter/ filter_width_x, filter_width_y
+
+      real*8 rpi, rdum, rsigx, rsigy, rbotx, rboty, rdistx2, rdisty2,
+     >       rfilt
+!
+      rpi = 3.14159265359
+      ! filter params compute
+      rdum = 1.0/(2.0d0*sqrt(2.0d0*log(2.0d0)))
+      rsigx = filter_width_x*rdum
+      rsigy = filter_width_y*rdum
+      ! This is for a 2d filter below but can easily extend to 3d
+      rdum = 1.0d0/(sqrt(2.0d0*rpi)) 
+      rbotx = rdum/rsigx
+      rboty = rdum/rsigy
+      rdistx2 = x**2
+      rdisty2 = y**2
+      ! compute full filter for each projected field
+      rfilt = rbotx*exp(-rdistx2/(2.*rsigx**2))
+     >          *rboty*exp(-rdisty2/(2.*rsigy**2))
+      ! Must set filter for all PPICLF_LRP_PRO fields
+      filter(PPICLF_P_JPHIP) = rfilt
+      filter(PPICLF_P_JFX) = rfilt
+      filter(PPICLF_P_JFY) = rfilt
+
+      return
+      end
+!-----------------------------------------------------------------------
       subroutine ppiclf_user_EvalNearestNeighbor
      >                                        (i,j,yi,rpropi,yj,rpropj)
 !

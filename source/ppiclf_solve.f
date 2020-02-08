@@ -165,6 +165,7 @@
       ppiclf_lfilt      = .false.
       ppiclf_lfiltgauss = .false.
       ppiclf_lfiltbox   = .false.
+      ppiclf_lfiltgen   = .false.
       ppiclf_lintp      = .false.
       ppiclf_lproj      = .false.
       ppiclf_lsubbin    = .false.
@@ -821,6 +822,55 @@
       ppiclf_xdrange(2,3) = zr
 
       call ppiclf_solve_InitSolve
+
+      return
+      end
+!-----------------------------------------------------------------------
+#ifdef PPICLC
+      subroutine ppiclf_solve_InitGeneralFilter(cutoff,iwallm)
+     > bind(C, name="ppiclc_solve_InitGeneralFilter")
+#else
+      subroutine ppiclf_solve_InitGeneralFilter(cutoff,iwallm)
+#endif
+!
+      implicit none
+!
+      include "PPICLF"
+! 
+! Input: 
+! 
+      real*8 cutoff
+      integer*4 iwallm
+! 
+#ifndef PPICLF_FILTER_USER
+      call ppiclf_exittr('Add #define PPICLF_FILTER_USER to H-File$'
+     >                   ,0.0d0,0)
+#endif
+      if (.not.PPICLF_LCOMM)
+     >call ppiclf_exittr('InitMPI must be before InitFilter$',0.0d0,0)
+      if (.not.PPICLF_LINIT)
+     >call ppiclf_exittr('InitParticle must be before InitFilter$',0.0d0
+     >                  ,0)
+      if (PPICLF_OVERLAP)
+     >call ppiclf_exittr('InitFilter must be before InitOverlap$',0.0d0
+     >                  ,0)
+      if (PPICLF_LFILT)
+     >call ppiclf_exittr('InitFilter can only be called once$',0.0d0,0)
+      if (iwallm .lt. 0 .or. iwallm .gt. 1)
+     >call ppiclf_exittr('0 or 1 must be used to specify filter mirror$'
+     >                  ,0.0d0,iwallm)
+
+
+      ppiclf_d2chk(2)  = cutoff
+      ppiclf_iwallm = iwallm
+
+      PPICLF_LSUBBIN = .true.
+      if (ppiclf_ngrids .eq. 0) PPICLF_LSUBBIN = .false.
+
+      PPICLF_LFILT    = .true.
+      PPICLF_LFILTGEN = .true.
+
+      ppiclf_ngrids = 0 ! for now leave sub bin off
 
       return
       end
@@ -1729,9 +1779,12 @@ c----------------------------------------------------------------------
       logical partl, if3d
       integer*4 nkey(2), nxyz, nxyzdum, i, j, k, idum, ic, ip, iip, jjp,
      >          kkp, ilow, ihigh, jlow, jhigh, klow, khigh, ie, jj, j1,
-     >          neltbc, ndum, nl, nii, njj, nrr, nlxyzep, iee, ndumdum
+     >          neltbc, ndum, nl, nii, njj, nrr, nlxyzep, iee, ndumdum,
+     >          kk
       real*8 pi, d2chk2_sq, rdum, multfci, rsig, rdist2, rexp, rx2(3),
-     >       rx22, ry22, rz22, rtmp2
+     >       rx22, ry22, rz22, rtmp2, rdistx, rdisty, rdistz
+      real*8 user_filter(PPICLF_LRP_PRO),
+     >       user_filter_wall(PPICLF_LRP_PRO)
 !
       if3d = .false.
       if (ppiclf_ndim .eq. 3) if3d = .true.
@@ -1765,6 +1818,11 @@ c----------------------------------------------------------------------
          multfci = 1.0d0/(PI/4.0d0*ppiclf_filter**2)
          if (if3d) multfci = multfci/(1.0d0/1.5d0*ppiclf_filter)
          rdum = multfci
+      endif
+
+      if (ppiclf_lfiltgen) then
+         multfci = 1.0
+         rdum = 1.0
       endif
 
       ! real particles
@@ -1858,10 +1916,12 @@ c----------------------------------------------------------------------
          do i=1,PPICLF_LEX
             if (ppiclf_modgp(i,j,k,ie,4).ne.ndumdum) cycle
 
-            rdist2  = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))**2 +
-     >                (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))**2
-            if(if3d) rdist2 = rdist2 +
-     >                (ppiclf_xm1b(i,j,k,3,ie) - rproj(4,ip))**2
+            rdistx = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))
+            rdisty = (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))
+            rdistz = 0.0
+            if(if3d) 
+     >      rdistz = (ppiclf_xm1b(i,j,k,3,ie) - rproj(4,ip))
+            rdist2 = rdistx**2 + rdisty**2 + rdistz**2
 
             if (rdist2 .gt. d2chk2_sq) cycle
 
@@ -1869,33 +1929,50 @@ c----------------------------------------------------------------------
             if (ppiclf_lfiltgauss)
      >         rexp = exp(rdist2*rproj(1,ip))
 
+#ifdef PPICLF_FILTER_USER
+            if (ppiclf_lfiltgen)
+     >      call ppiclf_user_SetFilter(rdistx,rdisty,rdistz,user_filter)
+#endif
+
             ! add wall effects
             if (ppiclf_iwallm .eq. 1) then
                do jj=1,ppiclf_nwall_m
-                  rx22 = (ppiclf_xm1b(i,j,k,1,ie) 
-     >                   -ppiclf_xyz_mirror(1,jj))**2
-                  ry22 = (ppiclf_xm1b(i,j,k,2,ie)
-     >                   -ppiclf_xyz_mirror(2,jj))**2
-                  rtmp2 = rx22 + ry22
-                  if (if3d) then
-                     rz22 = (ppiclf_xm1b(i,j,k,3,ie)
-     >                      -ppiclf_xyz_mirror(3,jj))**2
-                     rtmp2 = rtmp2 + rz22
-                  endif
+                  rdistx = (ppiclf_xm1b(i,j,k,1,ie) 
+     >                     -ppiclf_xyz_mirror(1,jj))
+                  rdisty = (ppiclf_xm1b(i,j,k,2,ie)
+     >                     -ppiclf_xyz_mirror(2,jj))
+                  rdistz = 0.0
+                  if (if3d) 
+     >            rdistz = (ppiclf_xm1b(i,j,k,3,ie)
+     >                     -ppiclf_xyz_mirror(3,jj))
                   if (ppiclf_lfiltgauss) then
+                     rtmp2 = rdistx**2 + rdisty**2 + rdistz**2
                      rexp = rexp + exp(rtmp2*rproj(1,ip))
-                  else
+                  elseif (ppiclf_lfiltbox) then
                      rexp = rexp + 1.0d0
+                  elseif (ppiclf_lfiltgen) then
+#ifdef PPICLF_FILTER_USER
+                     call ppiclf_user_SetFilter(rdistx,rdisty,rdistz,
+     >                                          user_filter_wall)
+#endif
+                     do kk=1,PPICLF_LRP_PRO
+                        user_filter(kk) = user_filter(kk)
+     >                                   +user_filter_wall(kk)
+                     enddo
                   endif
                enddo
             endif
-
+            if (.not. ppiclf_lfiltgen) then
+               do jj=1,PPICLF_LRP_PRO
+                  user_filter(jj) = rexp
+               enddo
+            endif
             
             do jj=1,PPICLF_LRP_PRO
                j1 = jj+4
                ppiclf_pro_fldb(i,j,k,jj,ie) = 
      >                         ppiclf_pro_fldb(i,j,k,jj,ie) 
-     >                       + rproj(j1,ip)*rexp
+     >                       + rproj(j1,ip)*user_filter(jj)
             enddo
          enddo
          enddo

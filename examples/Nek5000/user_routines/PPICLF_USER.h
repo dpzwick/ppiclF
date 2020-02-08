@@ -19,3 +19,5 @@
 #define PPICLF_P_JPHIP 1
 #define PPICLF_P_JFX 2
 #define PPICLF_P_JFY 3
+
+#define PPICLF_FILTER_USER

@@ -137,6 +137,8 @@ c-----------------------------------------------------------------------
       common /ucollision/ ksp,erest
       data ksp   /10.0/ ! note: this limits dt, whcih we explicity set in .par file
       data erest /0.8/
+      real*8 filter_width_x, filter_width_y
+      common /ufilter/ filter_width_x, filter_width_y
 
       common /nekmpi/ mid,mp,nekcomm,nekgroup,nekreal
 
@@ -208,9 +210,18 @@ c-----------------------------------------------------------------------
      >                               y(1,1)    ,
      >                               rprop(1,1))
 
-
-      ! Specify Gaussian filter
-      call ppiclf_solve_InitGaussianFilter(2.0*dp,1E-3,1)
+      ! Specify a general filter, which is in this case
+      ! an anisotropic Gaussian function. If
+      ! filter_width = filter_width_x = filter_width_y,
+      ! we could have instead called:
+      ! call ppiclf_solve_InitGaussianFilter(filter_width,ralpha,1)
+      filter_width_x = 2.0*dp
+      filter_width_y = 2.0*dp
+      ralpha         = 1.0e-3
+      rcut_x         = filter_width_x/2.0*sqrt(-log(ralpha)/log(2.0))
+      rcut_y         = filter_width_y/2.0*sqrt(-log(ralpha)/log(2.0))
+      rcut_max       = max(rcut_x, rcut_y)
+      call ppiclf_solve_InitGeneralFilter(rcut_max,1)
 
       ! Specify Overlap Mesh
       call ppiclf_comm_InitOverlapMesh(nelt,lx1,ly1,lz1,xm1,ym1,zm1)

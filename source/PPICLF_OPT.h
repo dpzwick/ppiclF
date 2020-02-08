@@ -4,13 +4,14 @@ c Particle options
       LOGICAL PPICLF_RESTART, PPICLF_OVERLAP, PPICLF_LCOMM
      >       ,PPICLF_LINIT, PPICLF_LFILT, PPICLF_LINTP, PPICLF_LPROJ
      >       ,PPICLF_LSUBBIN, PPICLF_LSUBSUBBIN
-     >       ,PPICLF_LFILTGAUSS, PPICLF_LFILTBOX
+     >       ,PPICLF_LFILTGAUSS, PPICLF_LFILTBOX, PPICLF_LFILTGEN
       COMMON /PPICLF_OPT_PARAM_L/ PPICLF_RESTART, PPICLF_OVERLAP
      >                           ,PPICLF_LCOMM, PPICLF_LINIT
      >                           ,PPICLF_LFILT, PPICLF_LINTP
      >                           ,PPICLF_LPROJ, PPICLF_LSUBBIN
      >                           ,PPICLF_LSUBSUBBIN
      >                           ,PPICLF_LFILTGAUSS, PPICLF_LFILTBOX
+     >                           ,PPICLF_LFILTGEN
       DATA PPICLF_LCOMM /.false./
       DATA PPICLF_RESTART /.false./
 
