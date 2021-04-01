@@ -34,7 +34,8 @@ extern"C" {
                                           double *alpha  , 
 					  int    *ngrid  );
     void ppiclc_solve_InitBoxFilter      (double *filt   , 
-                                          int    *ngrid  );
+                                          int    *ngrid  ,
+					  int    *sngl_elem);
     void ppiclc_solve_InitParticle       (int    *imethod, 
                                           int    *ndim   , 
 					  int    *iendian, 

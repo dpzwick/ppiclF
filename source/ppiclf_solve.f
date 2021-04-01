@@ -319,7 +319,7 @@
 !
 ! Internal:
 !
-      integer*4 i,j,ic
+      integer*4 i,j,ic,k,ie
 !
       ic = 0
       do i=1,PPICLF_LPART
@@ -341,6 +341,18 @@
       enddo
       enddo
       ppiclf_npart = 0
+
+      do ie=1,PPICLF_LEE
+      do ic=1,PPICLF_LRP_INT
+      do k=1,PPICLF_LEZ
+      do j=1,PPICLF_LEY
+      do i=1,PPICLF_LEX
+        ppiclf_int_fld(i,j,k,ic,ie) = 0.0d0
+      enddo
+      enddo
+      enddo
+      enddo
+      enddo
 
       return
       end
@@ -879,10 +891,10 @@
       end
 !-----------------------------------------------------------------------
 #ifdef PPICLC
-      subroutine ppiclf_solve_InitBoxFilter(filt,iwallm)
+      subroutine ppiclf_solve_InitBoxFilter(filt,iwallm,sngl_elem)
      > bind(C, name="ppiclc_solve_InitBoxFilter")
 #else
-      subroutine ppiclf_solve_InitBoxFilter(filt,iwallm)
+      subroutine ppiclf_solve_InitBoxFilter(filt,iwallm,sngl_elem)
 #endif
 !
       implicit none
@@ -893,6 +905,7 @@
 ! 
       real*8    filt
       integer*4 iwallm
+      integer*4 sngl_elem
 ! 
       if (.not.PPICLF_LCOMM)
      >call ppiclf_exittr('InitMPI must be before InitFilter$',0.0d0,0)
@@ -917,6 +930,13 @@ c     filt = sqrt(1.5d0*filt**2/log(2.0d0) + 1.0d0)
 
       PPICLF_LFILT    = .true.
       PPICLF_LFILTBOX = .true.
+
+      ! option to only use the current element (filter width will be 
+      ! ignored)
+      ! Note that this assumes the element volume is that of
+      ! a cuboid... will need to get a better way for general
+      ! hexahedral element eventually
+      if ( sngl_elem == 1 ) PPICLF_SNGL_ELEM = .true.
 
       ppiclf_ngrids = 0 ! for now leave sub bin off
 
@@ -1731,7 +1751,7 @@ c----------------------------------------------------------------------
      >          kkp, ilow, ihigh, jlow, jhigh, klow, khigh, ie, jj, j1,
      >          neltbc, ndum, nl, nii, njj, nrr, nlxyzep, iee, ndumdum
       real*8 pi, d2chk2_sq, rdum, multfci, rsig, rdist2, rexp, rx2(3),
-     >       rx22, ry22, rz22, rtmp2
+     >       rx22, ry22, rz22, rtmp2, evol
 !
       if3d = .false.
       if (ppiclf_ndim .eq. 3) if3d = .true.
@@ -1762,9 +1782,14 @@ c----------------------------------------------------------------------
       endif
 
       if (ppiclf_lfiltbox) then
-         multfci = 1.0d0/(PI/4.0d0*ppiclf_filter**2)
-         if (if3d) multfci = multfci/(1.0d0/1.5d0*ppiclf_filter)
-         rdum = multfci
+         if (ppiclf_sngl_elem) then
+           multfci = 1.0d0
+           rdum = multfci
+         else
+           multfci = 1.0d0/(PI/4.0d0*ppiclf_filter**2)
+           if (if3d) multfci = multfci/(1.0d0/1.5d0*ppiclf_filter)
+           rdum = multfci
+         endif
       endif
 
       ! real particles
@@ -1790,118 +1815,155 @@ c----------------------------------------------------------------------
          iproj(4,ip)  = ppiclf_iprop(11,ip)
       enddo
 
-      ! ghost particles
-      do ip=1,ppiclf_npart_gp
-
-         rproj(1 ,ip+ppiclf_npart) = rdum
-         rproj(2 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jxgp,ip)
-         rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
-         if (if3d) 
-     >   rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
-
-         idum = PPICLF_LRS+PPICLF_LRP
-         ic = 4
-         do j=idum+1,idum+PPICLF_LRP_GP
-            ic = ic + 1
-            rproj(ic,ip+ppiclf_npart) = ppiclf_rprop_gp(j,ip)*multfci
-         enddo
-                    
-         iproj(1,ip+ppiclf_npart)  = ppiclf_iprop_gp(2,ip)
-         iproj(2,ip+ppiclf_npart)  = ppiclf_iprop_gp(3,ip)
-         if (if3d)
-     >   iproj(3,ip+ppiclf_npart)  = ppiclf_iprop_gp(4,ip)
-         iproj(4,ip+ppiclf_npart)  = ppiclf_iprop_gp(5,ip)
-      enddo
-
-      ndum = ppiclf_npart+ppiclf_npart_gp
-
-      do ip=1,ndum
-         iip      = iproj(1,ip)
-         jjp      = iproj(2,ip)
-         if (if3d)
-     >   kkp      = iproj(3,ip)
-         ndumdum  = iproj(4,ip)
-
-         ilow  = iip-1
-         ihigh = iip+1
-         jlow  = jjp-1
-         jhigh = jjp+1
-         if (if3d) then
-            klow  = kkp-1
-            khigh = kkp+1
-         endif
-
-         ! Find if particle near wall and should mirror itself
-         if (ppiclf_iwallm .eq. 1) then
-            rx2(1) = rproj(2,ip)
-            rx2(2) = rproj(3,ip)
-            rx2(3) = rproj(4,ip)
-            call ppiclf_solve_FindWallProject(rx2)
-         endif
-
-         do ie=1,ppiclf_neltb
-
-               if (ppiclf_el_map(1,ie) .gt. ndumdum) exit
-               if (ppiclf_el_map(2,ie) .lt. ndumdum) cycle 
-         
-               if (ppiclf_el_map(3,ie) .gt. ihigh) cycle
-               if (ppiclf_el_map(4,ie) .lt. ilow)  cycle
-               if (ppiclf_el_map(5,ie) .gt. jhigh) cycle
-               if (ppiclf_el_map(6,ie) .lt. jlow)  cycle
-               if (if3d) then
-               if (ppiclf_el_map(7,ie) .gt. khigh) cycle
-               if (ppiclf_el_map(8,ie) .lt. klow)  cycle
-               endif
-
-         do k=1,PPICLF_LEZ
-         do j=1,PPICLF_LEY
-         do i=1,PPICLF_LEX
-            if (ppiclf_modgp(i,j,k,ie,4).ne.ndumdum) cycle
-
-            rdist2  = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))**2 +
-     >                (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))**2
-            if(if3d) rdist2 = rdist2 +
-     >                (ppiclf_xm1b(i,j,k,3,ie) - rproj(4,ip))**2
-
-            if (rdist2 .gt. d2chk2_sq) cycle
-
-            rexp = 1.0d0
-            if (ppiclf_lfiltgauss)
-     >         rexp = exp(rdist2*rproj(1,ip))
-
-            ! add wall effects
-            if (ppiclf_iwallm .eq. 1) then
-               do jj=1,ppiclf_nwall_m
-                  rx22 = (ppiclf_xm1b(i,j,k,1,ie) 
-     >                   -ppiclf_xyz_mirror(1,jj))**2
-                  ry22 = (ppiclf_xm1b(i,j,k,2,ie)
-     >                   -ppiclf_xyz_mirror(2,jj))**2
-                  rtmp2 = rx22 + ry22
-                  if (if3d) then
-                     rz22 = (ppiclf_xm1b(i,j,k,3,ie)
-     >                      -ppiclf_xyz_mirror(3,jj))**2
-                     rtmp2 = rtmp2 + rz22
-                  endif
-                  if (ppiclf_lfiltgauss) then
-                     rexp = rexp + exp(rtmp2*rproj(1,ip))
-                  else
-                     rexp = rexp + 1.0d0
-                  endif
-               enddo
-            endif
-
-            
-            do jj=1,PPICLF_LRP_PRO
-               j1 = jj+4
-               ppiclf_pro_fldb(i,j,k,jj,ie) = 
-     >                         ppiclf_pro_fldb(i,j,k,jj,ie) 
-     >                       + rproj(j1,ip)*rexp
-            enddo
-         enddo
-         enddo
-         enddo
-         enddo
-      enddo
+      if (.not. ppiclf_sngl_elem) then
+  
+        ! ghost particles
+        do ip=1,ppiclf_npart_gp
+  
+           rproj(1 ,ip+ppiclf_npart) = rdum
+           rproj(2 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jxgp,ip)
+           rproj(3 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jygp,ip)
+           if (if3d) 
+     >     rproj(4 ,ip+ppiclf_npart) = ppiclf_rprop_gp(ppiclf_jzgp,ip)
+  
+           idum = PPICLF_LRS+PPICLF_LRP
+           ic = 4
+           do j=idum+1,idum+PPICLF_LRP_GP
+              ic = ic + 1
+              rproj(ic,ip+ppiclf_npart) = ppiclf_rprop_gp(j,ip)*multfci
+           enddo
+                      
+           iproj(1,ip+ppiclf_npart)  = ppiclf_iprop_gp(2,ip)
+           iproj(2,ip+ppiclf_npart)  = ppiclf_iprop_gp(3,ip)
+           if (if3d)
+     >     iproj(3,ip+ppiclf_npart)  = ppiclf_iprop_gp(4,ip)
+           iproj(4,ip+ppiclf_npart)  = ppiclf_iprop_gp(5,ip)
+        enddo
+  
+        ndum = ppiclf_npart+ppiclf_npart_gp
+  
+        do ip=1,ndum
+           iip      = iproj(1,ip)
+           jjp      = iproj(2,ip)
+           if (if3d)
+     >     kkp      = iproj(3,ip)
+           ndumdum  = iproj(4,ip)
+  
+           ilow  = iip-1
+           ihigh = iip+1
+           jlow  = jjp-1
+           jhigh = jjp+1
+           if (if3d) then
+              klow  = kkp-1
+              khigh = kkp+1
+           endif
+  
+           ! Find if particle near wall and should mirror itself
+           if (ppiclf_iwallm .eq. 1) then
+              rx2(1) = rproj(2,ip)
+              rx2(2) = rproj(3,ip)
+              rx2(3) = rproj(4,ip)
+              call ppiclf_solve_FindWallProject(rx2)
+           endif
+  
+           do ie=1,ppiclf_neltb
+  
+                 if (ppiclf_el_map(1,ie) .gt. ndumdum) exit
+                 if (ppiclf_el_map(2,ie) .lt. ndumdum) cycle 
+           
+                 if (ppiclf_el_map(3,ie) .gt. ihigh) cycle
+                 if (ppiclf_el_map(4,ie) .lt. ilow)  cycle
+                 if (ppiclf_el_map(5,ie) .gt. jhigh) cycle
+                 if (ppiclf_el_map(6,ie) .lt. jlow)  cycle
+                 if (if3d) then
+                 if (ppiclf_el_map(7,ie) .gt. khigh) cycle
+                 if (ppiclf_el_map(8,ie) .lt. klow)  cycle
+                 endif
+  
+           do k=1,PPICLF_LEZ
+           do j=1,PPICLF_LEY
+           do i=1,PPICLF_LEX
+              if (ppiclf_modgp(i,j,k,ie,4).ne.ndumdum) cycle
+  
+              rdist2  = (ppiclf_xm1b(i,j,k,1,ie) - rproj(2,ip))**2 +
+     >                  (ppiclf_xm1b(i,j,k,2,ie) - rproj(3,ip))**2
+              if(if3d) rdist2 = rdist2 +
+     >                  (ppiclf_xm1b(i,j,k,3,ie) - rproj(4,ip))**2
+  
+              if (rdist2 .gt. d2chk2_sq) cycle
+  
+              rexp = 1.0d0
+              if (ppiclf_lfiltgauss)
+     >           rexp = exp(rdist2*rproj(1,ip))
+  
+              ! add wall effects
+              if (ppiclf_iwallm .eq. 1) then
+                 do jj=1,ppiclf_nwall_m
+                    rx22 = (ppiclf_xm1b(i,j,k,1,ie) 
+     >                     -ppiclf_xyz_mirror(1,jj))**2
+                    ry22 = (ppiclf_xm1b(i,j,k,2,ie)
+     >                     -ppiclf_xyz_mirror(2,jj))**2
+                    rtmp2 = rx22 + ry22
+                    if (if3d) then
+                       rz22 = (ppiclf_xm1b(i,j,k,3,ie)
+     >                        -ppiclf_xyz_mirror(3,jj))**2
+                       rtmp2 = rtmp2 + rz22
+                    endif
+                    if (ppiclf_lfiltgauss) then
+                       rexp = rexp + exp(rtmp2*rproj(1,ip))
+                    else
+                       rexp = rexp + 1.0d0
+                    endif
+                 enddo
+              endif
+  
+              
+              do jj=1,PPICLF_LRP_PRO
+                 j1 = jj+4
+                 ppiclf_pro_fldb(i,j,k,jj,ie) = 
+     >                           ppiclf_pro_fldb(i,j,k,jj,ie) 
+     >                         + rproj(j1,ip)*rexp
+              enddo
+           enddo
+           enddo
+           enddo
+           enddo
+        enddo
+      ! sngl elem
+      else
+        do ip=1,ppiclf_npart
+           do ie=1,ppiclf_neltb
+  
+             ! Only use the current (single) element from findpts
+             ! Note that this assumes the element volume is that of
+             ! a cuboid... will need to get a better way for general
+             ! hexahedral element eventually
+             if (ie .ne. ppiclf_iprop(2,ip)+1) cycle
+             evol = (ppiclf_xm1b(PPICLF_LEX,1,1,1,ie) 
+     >             - ppiclf_xm1b(1,1,1,1,ie))
+             evol = evol
+     >            * (ppiclf_xm1b(1,PPICLF_LEY,1,2,ie) 
+     >             - ppiclf_xm1b(1,1,1,2,ie))
+             if (if3d)
+     >       evol = evol
+     >            * (ppiclf_xm1b(1,1,PPICLF_LEZ,3,ie) 
+     >             - ppiclf_xm1b(1,1,1,3,ie))
+             rexp = 1.0 / evol
+           do k=1,PPICLF_LEZ
+           do j=1,PPICLF_LEY
+           do i=1,PPICLF_LEX
+              do jj=1,PPICLF_LRP_PRO
+                 j1 = jj+4
+                 ppiclf_pro_fldb(i,j,k,jj,ie) = 
+     >                           ppiclf_pro_fldb(i,j,k,jj,ie) 
+     >                         + rproj(j1,ip)*rexp
+              enddo
+           enddo
+           enddo
+           enddo
+           enddo
+        enddo
+      endif
 
       ! now send xm1b to the processors in nek that hold xm1
 
