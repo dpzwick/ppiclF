@@ -670,11 +670,7 @@ c     current box coordinates
       enddo
       enddo
 
-      call ppiclf_comm_MapOverlapMesh
-
-      ! This gets the local element number
-      if (ppiclf_lintp .or. (ppiclf_lproj .and. ppiclf_sngl_elem))
-     >  call ppiclf_solve_InterpParticleGrid
+      call ppiclf_solve_InitSolve
 
       return
       end

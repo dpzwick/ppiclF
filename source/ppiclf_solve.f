@@ -1144,7 +1144,8 @@ c----------------------------------------------------------------------
       call ppiclf_comm_MoveParticle
       if (ppiclf_overlap) 
      >   call ppiclf_comm_MapOverlapMesh
-      if (ppiclf_lintp .and. ppiclf_int_icnt .ne. 0) 
+      if ((ppiclf_lintp .and. ppiclf_int_icnt .ne. 0) .or.
+     >    (ppiclf_lproj .and. ppiclf_sngl_elem)) 
      >   call ppiclf_solve_InterpParticleGrid
       call ppiclf_solve_RemoveParticle
 
