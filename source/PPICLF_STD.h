@@ -80,3 +80,8 @@
 #define PPICLF_LWALL 20
 #endif
 
+#ifndef PPICLF_PREV_MAX_TIMES
+#define PPICLF_PREV_MAX_TIMES 10000
+#endif
+
+

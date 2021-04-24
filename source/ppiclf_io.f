@@ -282,6 +282,80 @@
       return
       end
 !-----------------------------------------------------------------------
+      subroutine ppiclf_io_WriteDataSetInfo(fid,filein,iout)
+!
+      implicit none
+!
+      include "PPICLF"
+      include 'mpif.h'
+!
+! Input:
+!
+      integer*4 fid, iout
+      character*3 filein
+!
+      write(fid,'(A)',advance='no') '  <DataSet timestep="'
+      write(fid,'(E14.7)',advance='no') ppiclf_prev_times(iout)
+      write(fid,'(A)',advance='no') '" group="" part="0" file="'
+      write(fid,'(A3)',advance='no') filein
+      write(fid,'(I5.5)',advance='no') iout
+      write(fid,'(A)',advance='yes') '.vtu"/>'
+      return
+      end
+!-----------------------------------------------------------------------
+      subroutine ppiclf_io_WritePVD(filein1)
+!
+      implicit none
+!
+      include "PPICLF"
+      include 'mpif.h'
+!
+! Input:
+!
+      character (len = *) filein1
+!
+! Internal:
+!
+      integer*4 if_sz, pvd, i
+      character*3 filein
+      character*12 pvdfile
+!
+      if_sz = len(filein1)
+      if (if_sz .lt. 3) then
+         filein = 'par'
+      else 
+         write(filein,'(A3)') filein1
+      endif
+
+      write(pvdfile,'(A3,A4)') filein,'.pvd'
+
+      if (ppiclf_nid .eq. 0) then
+
+      pvd=872+ppiclf_nid
+      open(unit=pvd,file=pvdfile,status='replace')
+      write(pvd,'(A)',advance='yes') '<?xml version="1.0"?>'
+      write(pvd,'(A)',advance='no') '<VTKFile '
+      write(pvd,'(A)',advance='no') 'type="Collection" version="0.1" '
+      if (ppiclf_iendian .eq. 0) then
+         write(pvd,'(A)',advance='yes') 'byte_order="LittleEndian">'
+      elseif (ppiclf_iendian .eq. 1) then
+         write(pvd,'(A)',advance='yes') 'byte_order="BigEndian">'
+      endif
+      write(pvd,'(A)',advance='yes') ' <Collection>'
+      if (ppiclf_iocalld .gt. PPICLF_PREV_MAX_TIMES) then
+        call ppiclf_exittr('Increase PPICLF_PREV_MAX_TIMES to at least$'
+     >    ,0.0d0,ppiclf_iocalld)
+      endif
+      do i=1,ppiclf_iocalld
+        call ppiclf_io_WriteDataSetInfo(pvd,filein,i)
+      enddo
+      write(pvd,'(A)',advance='yes') ' </Collection>'
+      write(pvd,'(A)',advance='yes') '</VTKFile>'
+      close(pvd)
+      endif
+      return
+      end
+!-----------------------------------------------------------------------
       subroutine ppiclf_io_WriteSubBinVTU(filein1)
 !
       implicit none
@@ -298,9 +372,6 @@
       character*3 filein
       character*12 vtufile
       character*6  prostr
-      integer*4 icalld1
-      save      icalld1
-      data      icalld1 /0/
       integer*4 vtu,pth, nvtx_total, ncll_total
       integer*8 idisp_pos
       integer*8 stride_lenv
@@ -327,8 +398,6 @@
       call ppiclf_prints(' *Begin ProjectParticleSubBin$')
          call ppiclf_solve_ProjectParticleSubBin
       call ppiclf_prints('  End ProjectParticleSubBin$')
-
-      icalld1 = icalld1+1
 
       nnp   = ppiclf_np
       nxx   = PPICLF_NPART
@@ -365,7 +434,7 @@
 ! ----------------------------------------------------
 ! WRITE EACH INDIVIDUAL COMPONENT OF A BINARY VTU FILE
 ! ----------------------------------------------------
-      write(vtufile,'(A3,I5.5,A4)') filein,icalld1,'.vtu'
+      write(vtufile,'(A3,I5.5,A4)') filein,ppiclf_iocalld,'.vtu'
 
 ! test skip
 c     goto 1511
@@ -810,9 +879,6 @@ c1511 continue
 !
       character*3 filein
       character*12 vtufile
-      integer*4 icalld1
-      save      icalld1
-      data      icalld1 /0/
       integer*4 vtu,pth, nvtx_total, ncll_total
       integer*8 idisp_pos,idisp_cll,stride_lenv(8),stride_lenc
       integer*4 iint, nnp, nxx, ndxgpp1, ndygpp1, ndxygpp1, if_sz, ibin,
@@ -825,8 +891,6 @@ c1511 continue
 !
 
       call ppiclf_printsi(' *Begin WriteBinVTU$',ppiclf_cycle)
-
-      icalld1 = icalld1+1
 
       nnp   = ppiclf_np
       nxx   = PPICLF_NPART
@@ -908,7 +972,7 @@ c1511 continue
 ! ----------------------------------------------------
 ! WRITE EACH INDIVIDUAL COMPONENT OF A BINARY VTU FILE
 ! ----------------------------------------------------
-      write(vtufile,'(A3,I5.5,A4)') filein,icalld1,'.vtu'
+      write(vtufile,'(A3,I5.5,A4)') filein,ppiclf_iocalld,'.vtu'
 
 ! test skip
 c     goto 1511
@@ -1333,6 +1397,7 @@ c1511 continue
       close(vtu)
       endif
 
+      call ppiclf_io_WritePVD(filein1)
       call ppiclf_printsi('  End WriteBinVTU$',ppiclf_cycle)
 
       return
@@ -1358,9 +1423,6 @@ c1511 continue
       character*3 filein
       character*12 vtufile
       character*6  prostr
-      integer*4 icalld1
-      save      icalld1
-      data      icalld1 /0/
       integer*4 vtu,pth,prevs(2,ppiclf_np)
       integer*8 idisp_pos,idisp_sln,idisp_lrp,idisp_lip,stride_len
       integer*4 iint, nnp, nxx, npt_total, jx, jy, jz, if_sz, isize,
@@ -1373,8 +1435,6 @@ c1511 continue
 !
 
       call ppiclf_printsi(' *Begin WriteParticleVTU$',ppiclf_cycle)
-
-      icalld1 = icalld1+1
 
       nnp   = ppiclf_np
       nxx   = PPICLF_NPART
@@ -1469,7 +1529,7 @@ c1511 continue
 ! ----------------------------------------------------
 ! WRITE EACH INDIVIDUAL COMPONENT OF A BINARY VTU FILE
 ! ----------------------------------------------------
-      write(vtufile,'(A3,I5.5,A4)') filein,icalld1,'.vtu'
+      write(vtufile,'(A3,I5.5,A4)') filein,ppiclf_iocalld,'.vtu'
 
       if (ppiclf_nid .eq. 0) then
 
@@ -1703,6 +1763,7 @@ c1511 continue
       close(vtu)
       endif
 
+      call ppiclf_io_WritePVD(filein1)
       call ppiclf_printsi(' *End WriteParticleVTU$',ppiclf_cycle)
 
       return

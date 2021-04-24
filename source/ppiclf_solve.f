@@ -110,6 +110,8 @@
          endif
 
       call ppiclf_prints('   *Begin WriteParticleVTU$')
+         ppiclf_iocalld = ppiclf_iocalld + 1
+         ppiclf_prev_times(ppiclf_iocalld) = ppiclf_time
          call ppiclf_io_WriteParticleVTU('')
       call ppiclf_prints('    End WriteParticleVTU$')
 
@@ -155,10 +157,11 @@
       ppiclf_iperiodic(2) = 1    ! periodic in y (==0)
       ppiclf_iperiodic(3) = 1    ! periodic in z (==0)
 
-      ppiclf_cycle  = 0
-      ppiclf_iostep = 1
-      ppiclf_dt     = 0.0d0
-      ppiclf_time   = 0.0d0
+      ppiclf_cycle   = 0
+      ppiclf_iostep  = 1
+      ppiclf_iocalld = 0
+      ppiclf_dt      = 0.0d0
+      ppiclf_time    = 0.0d0
 
       ppiclf_overlap    = .false.
       ppiclf_linit      = .false.
@@ -985,6 +988,8 @@ c----------------------------------------------------------------------
 
          ! already wrote initial conditions
          if (ppiclf_cycle .ne. 0) then
+            ppiclf_iocalld = ppiclf_iocalld + 1
+            ppiclf_prev_times(ppiclf_iocalld) = ppiclf_time
             call ppiclf_io_WriteParticleVTU('')
             call ppiclf_io_WriteBinVTU('')
          endif
