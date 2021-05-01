@@ -48,6 +48,8 @@
       endif
 
       if (ppiclf_iglsum(ppiclf_npart,1).gt.0) then
+       if (PPICLF_STORE_LOCAL .ne. 1) then ! Find Particle may not work
+                                           ! since overlap mesh not set
          call ppiclf_prints('      -Begin CreateBin$')
             call ppiclf_comm_CreateBin
          call ppiclf_prints('       End CreateBin$')
@@ -59,7 +61,7 @@
          call ppiclf_prints('      -Begin MoveParticle$')
             call ppiclf_comm_MoveParticle
          call ppiclf_prints('       End MoveParticle$')
-
+       endif
       endif
 
       call ppiclf_prints('    End AddParticles$')
@@ -171,6 +173,9 @@
       ppiclf_lsubsubbin = .false.
       if (PPICLF_INTERP .eq. 1)  ppiclf_lintp = .true.
       if (PPICLF_PROJECT .eq. 1) ppiclf_lproj = .true.
+      if (PPICLF_STORE_LOCAL .eq. 1 .and. ppiclf_lproj)
+     >call ppiclf_exittr('STORE_LOCAL does not support project$',
+     >                    0.0d0,0)
 
       ppiclf_xdrange(1,1) = -1E20
       ppiclf_xdrange(2,1) =  1E20
@@ -224,6 +229,9 @@
       if (.not.PPICLF_LINIT)
      >call ppiclf_exittr('InitParticle must be before InitNeighborBin$'
      >                  ,0.0d0,0)
+      if (PPICLF_STORE_LOCAL .eq. 1)
+     >call ppiclf_exittr('STORE_LOCAL does not support neighbors$',
+     >                    0.0d0,0)
 
       ppiclf_lsubsubbin = .true.
 
@@ -367,6 +375,10 @@
      >       ab_dot_ac, ab_mag, ac_mag, zdist2
       integer*4 istride, k, kmax, kp, kkp, kk
 ! 
+      if (PPICLF_STORE_LOCAL .eq. 1)
+     >call ppiclf_exittr('STORE_LOCAL does not support neighbors$',
+     >                    0.0d0,0)
+!
       i_iim = ppiclf_nb_r(1,i) - 1
       i_iip = ppiclf_nb_r(1,i) + 1
       i_jjm = ppiclf_nb_r(2,i) - 1
@@ -859,6 +871,8 @@
       if (iwallm .lt. 0 .or. iwallm .gt. 1)
      >call ppiclf_exittr('0 or 1 must be used to specify filter mirror$'
      >                  ,0.0d0,iwallm)
+      if (PPICLF_STORE_LOCAL .eq. 1)
+     >call ppiclf_exittr('STORE_LOCAL does not support filter$',0.0d0,0)
 
       ppiclf_filter = filt
       ppiclf_alpha  = alpha 
@@ -904,6 +918,8 @@
      >                   ,0)
       if (PPICLF_LFILT)
      >call ppiclf_exittr('InitFilter can only be called once$',0.0d0,0)
+      if (PPICLF_STORE_LOCAL .eq. 1)
+     >call ppiclf_exittr('STORE_LOCAL does not support filter$',0.0d0,0)
 
 c     filt = sqrt(1.5d0*filt**2/log(2.0d0) + 1.0d0)
 
@@ -1220,11 +1236,11 @@ c----------------------------------------------------------------------
       integer*4 n, ie, npt_max, np, ndum
       real*8 tol, bb_t
 !
-      if (.not.ppiclf_overlap)
+      if (.not.ppiclf_overlap .and. PPICLF_STORE_LOCAL .ne. 1)
      >call ppiclf_exittr('Cannot interpolate unless overlap grid$',0.0d0
      >                   ,0)
       if (.not.ppiclf_lintp) 
-     >call ppiclf_exittr('To interpolate, set PPICLF_LRP_PRO to ~= 0$'
+     >call ppiclf_exittr('To interpolate, set PPICLF_LRP_INT to ~= 0$'
      >                   ,0.0d0,0)
 
       n = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
@@ -1240,7 +1256,11 @@ c----------------------------------------------------------------------
       tol     = 5e-13
       bb_t    = 0.01
       npt_max = 128
-      np      = 1
+      if (PPICLF_STORE_LOCAL .ne. 1) then
+        np    = 1
+      else
+        np    = ppiclf_np
+      endif
 c     ndum    = ppiclf_neltb*n
       ndum    = ppiclf_neltb+2
 
@@ -2132,6 +2152,10 @@ c        do i=il,ir
 !
       real*8 fld
 !
+      if (PPICLF_STORE_LOCAL .eq. 1)
+     >call ppiclf_exittr('STORE_LOCAL does not support projection$',
+     >                    0.0d0,0)
+
       fld = ppiclf_pro_fld(i,j,k,e,m)
 
       return

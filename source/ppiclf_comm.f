@@ -414,6 +414,11 @@ c     current box coordinates
       real*8 ppiclf_vlmin, ppiclf_vlmax
       external ppiclf_vlmin, ppiclf_vlmax
 
+      if (PPICLF_STORE_LOCAL .eq. 1) then
+        call ppiclf_comm_KeepOverlapMesh
+        return
+      endif
+
       ! see which bins are in which elements
       ppiclf_neltb = 0
       do ie=1,ppiclf_nee
@@ -614,6 +619,92 @@ c     current box coordinates
       return
       end
 !-----------------------------------------------------------------------
+      subroutine ppiclf_comm_KeepOverlapMesh
+!
+      implicit none
+!
+      include "PPICLF"
+      include 'mpif.h'
+!
+! Internal:
+!
+      integer*4 icalld
+      save      icalld
+      data      icalld /0/
+      integer*4 nkey(2), i, j, k, ie, iee, ii, jj, kk, ndum, nrank,
+     >          nl, nii, njj, nrr, ilow, jlow, klow, nxyz, il,
+     >          ihigh, jhigh, khigh, ierr
+      real*8 rxval, ryval, rzval
+      logical partl
+      real*8 ppiclf_vlmin, ppiclf_vlmax
+      external ppiclf_vlmin, ppiclf_vlmax
+
+      ! see which bins are in which elements
+      ppiclf_neltb = 0
+      do ie=1,ppiclf_nee
+         ppiclf_neltb = ppiclf_neltb + 1
+         if(ppiclf_neltb .gt. PPICLF_LEE) then
+           call ppiclf_exittr('Increase PPICLF_LEE$',0.0d0,ppiclf_neltb)
+         endif
+
+         ppiclf_er_map(1,ppiclf_neltb) = ie
+         ppiclf_er_map(2,ppiclf_neltb) = ppiclf_nid
+         ppiclf_er_map(3,ppiclf_neltb) = ppiclf_nid
+         ppiclf_er_map(4,ppiclf_neltb) = ppiclf_nid
+         ppiclf_er_map(5,ppiclf_neltb) = ppiclf_nid
+         ppiclf_er_map(6,ppiclf_neltb) = ppiclf_nid
+      enddo
+
+      nxyz = PPICLF_LEX*PPICLF_LEY*PPICLF_LEZ
+      do ie=1,ppiclf_neltb
+       iee = ppiclf_er_map(1,ie)
+       call ppiclf_copy(ppiclf_xm1b(1,1,1,1,ie)
+     >                 ,ppiclf_xm1bs(1,1,1,1,iee),nxyz)
+       call ppiclf_copy(ppiclf_xm1b(1,1,1,2,ie)
+     >                 ,ppiclf_xm1bs(1,1,1,2,iee),nxyz)
+       call ppiclf_copy(ppiclf_xm1b(1,1,1,3,ie)
+     >                 ,ppiclf_xm1bs(1,1,1,3,iee),nxyz)
+      enddo
+
+      ppiclf_neltbb = ppiclf_neltb
+      do ie=1,ppiclf_neltbb
+         call ppiclf_icopy(ppiclf_er_maps(1,ie),ppiclf_er_map(1,ie)
+     >             ,PPICLF_LRMAX)
+      enddo
+
+      do ie=1,ppiclf_neltb
+         ppiclf_xerange(1,1,ie) = 
+     >      ppiclf_vlmin(ppiclf_xm1b(1,1,1,1,ie),nxyz)
+         ppiclf_xerange(2,1,ie) = 
+     >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,1,ie),nxyz)
+         ppiclf_xerange(1,2,ie) = 
+     >      ppiclf_vlmin(ppiclf_xm1b(1,1,1,2,ie),nxyz)
+         ppiclf_xerange(2,2,ie) = 
+     >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,2,ie),nxyz)
+         ppiclf_xerange(1,3,ie) = 
+     >      ppiclf_vlmin(ppiclf_xm1b(1,1,1,3,ie),nxyz)
+         ppiclf_xerange(2,3,ie) = 
+     >      ppiclf_vlmax(ppiclf_xm1b(1,1,1,3,ie),nxyz)
+      enddo
+
+      if (icalld .eq. 0) then 
+
+         icalld = icalld + 1
+
+         call ppiclf_prints('   *Begin mpi_comm_dup$')
+           call mpi_comm_dup(ppiclf_comm, ppiclf_comm_nid, ierr)
+         call ppiclf_prints('    End mpi_comm_dup$')
+
+         call ppiclf_prints('   *Begin InitSolve$')
+            call ppiclf_solve_InitSolve
+         call ppiclf_prints('    End InitSolve$')
+
+         call ppiclf_io_OutputDiagGrid
+      endif
+
+      return
+      end
+!-----------------------------------------------------------------------
 #ifdef PPICLC
       subroutine ppiclf_comm_InitOverlapMesh(ncell,lx1,ly1,lz1,
      >                                       xgrid,ygrid,zgrid)
@@ -688,27 +779,44 @@ c-----------------------------------------------------------------------
       ix = 1
       iy = 2
       iz = 1
-      if (ppiclf_ndim.eq.3)
-     >iz = 3
+      if (ppiclf_ndim.eq.3) iz = 3
 
-      do i=1,ppiclf_npart
+      if (PPICLF_STORE_LOCAL .ne. 1) then
+
+       do i=1,ppiclf_npart
          ! check if particles are greater or less than binb bounds....
-         ii  = floor((ppiclf_y(ix,i)-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
-         jj  = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
-         kk  = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
+         ii = floor((ppiclf_y(ix,i)-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
+         jj = floor((ppiclf_y(iy,i)-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
+         kk = floor((ppiclf_y(iz,i)-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
          if (ppiclf_ndim .lt. 3) kk = 0
          ndum  = ii + ppiclf_n_bins(1)*jj + 
      >                ppiclf_n_bins(1)*ppiclf_n_bins(2)*kk
          nrank = ndum
-
+        
          ppiclf_iprop(8,i)  = ii
          ppiclf_iprop(9,i)  = jj
          ppiclf_iprop(10,i) = kk
          ppiclf_iprop(11,i) = ndum
-
+        
          ppiclf_iprop(3,i)  = nrank ! where particle is actually moved
          ppiclf_iprop(4,i)  = nrank ! where particle is actually moved
-      enddo
+       enddo
+      else
+         call ppiclf_solve_InitInterp
+         call pfgslib_findpts(PPICLF_FP_HNDL           !   call pfgslib_findpts( ihndl,
+     >        , ppiclf_iprop (1 ,1),PPICLF_LIP        !   $             rcode,1,
+     >        , ppiclf_iprop (3 ,1),PPICLF_LIP        !   &             proc,1,
+     >        , ppiclf_iprop (2 ,1),PPICLF_LIP        !   &             elid,1,
+     >        , ppiclf_rprop2(1 ,1),PPICLF_LRP2       !   &             rst,ndim,
+     >        , ppiclf_rprop2(4 ,1),PPICLF_LRP2       !   &             dist,1,
+     >        , ppiclf_y     (ix,1),PPICLF_LRS        !   &             pts(    1),1,
+     >        , ppiclf_y     (iy,1),PPICLF_LRS        !   &             pts(  n+1),1,
+     >        , ppiclf_y     (iz,1),PPICLF_LRS ,PPICLF_NPART) !   &             pts(2*n+1),1,n)
+         call pfgslib_findpts_free(PPICLF_FP_HNDL)
+         do i=1,ppiclf_npart
+           ppiclf_iprop(4,i) = ppiclf_iprop(3,i)
+         enddo
+      endif
 
       return
       end

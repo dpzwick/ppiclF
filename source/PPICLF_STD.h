@@ -32,6 +32,10 @@
 #define PPICLF_LRP_PRO 1
 #endif
 
+#ifndef PPICLF_STORE_LOCAL
+#define PPICLF_STORE_LOCAL 0
+#endif
+
 #ifndef PPICLF_LRP_GP
 #define PPICLF_LRP_GP PPICLF_LRS+PPICLF_LRP+PPICLF_LRP_PRO
 #endif
