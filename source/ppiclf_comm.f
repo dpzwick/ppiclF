@@ -65,7 +65,6 @@
       real*8 ppiclf_glmin,ppiclf_glmax,ppiclf_glsum
       external ppiclf_glmin,ppiclf_glmax,ppiclf_glsum
 !
-
 ! face, edge, and corner number, x,y,z are all inline, so stride=3
       el_face_num = (/ -1,0,0, 1,0,0, 0,-1,0, 0,1,0, 0,0,-1, 0,0,1 /)
       el_edge_num = (/ -1,-1,0 , 1,-1,0, 1,1,0 , -1,1,0 ,
@@ -74,6 +73,7 @@
       el_corner_num = (/
      >                 -1,-1,-1, 1,-1,-1, 1,1,-1, -1,1,-1,
      >                 -1,-1,1,  1,-1,1,  1,1,1,  -1,1,1 /)
+
 
       nfacegp   = 4  ! number of faces
       nedgegp   = 4  ! number of edges
@@ -157,6 +157,7 @@ c     if (npt_total .eq. 1) then
       enddo
       endif
 
+!       write(*,*) "BADF xdrange gets invoked"
       if (ppiclf_xdrange(2,1) .lt. ppiclf_binb(2) .or.
      >    ppiclf_xdrange(1,1) .gt. ppiclf_binb(1) .or. 
      >    iperiodicx .eq. 0) then
@@ -186,7 +187,8 @@ c     if (npt_total .eq. 1) then
       finished(2) = 0
       finished(3) = 0
       total_bin = 1 
-
+!      write(*,*) "BADF Init total_bin"
+!       write(*,*) "BADF binbZ",ppiclf_binb(5),ppiclf_binb(6)
       do i=1,ppiclf_ndim
          finished(i) = 0
          exit_1_array(i) = ppiclf_bins_set(i)
@@ -196,6 +198,14 @@ c     if (npt_total .eq. 1) then
      >                        ppiclf_binb(2*(i-1)+1)  ) / 
      >                       ppiclf_n_bins(i)
          ! Make sure exit_2 is not violated by user input
+
+
+!        Dim 3 i.e. z is freezing in this coming do loop,
+!        seems that dz of grid can't be smaller than
+!        nearist neighbor param. So for now this is a constraint
+!         write(*,*) "BADF dim, b_dx(i), d2chk",
+!     >        i,ppiclf_bins_dx(i),ppiclf_d2chk(1)
+         
          if (ppiclf_bins_dx(i) .lt. ppiclf_d2chk(1)) then
             do while (ppiclf_bins_dx(i) .lt. ppiclf_d2chk(1))
                ppiclf_n_bins(i) = max(1, ppiclf_n_bins(i)-1)
@@ -209,6 +219,7 @@ c     if (npt_total .eq. 1) then
 
       ! Make sure exit_1 is not violated by user input
       count = 0
+!      write(*,*) "BADF t_bin ppiclf_np", total_bin, ppiclf_np
       do while (total_bin > ppiclf_np)
           count = count + 1;
           i = modulo((ppiclf_ndim-1)+count,ppiclf_ndim)+1
@@ -222,7 +233,7 @@ c     if (npt_total .eq. 1) then
           enddo
           if (total_bin .le. ppiclf_np) exit
        enddo
-
+!       write(*,*) "BADF DOWhile total_bin passed"       
        exit_1 = .false.
        exit_2 = .false.
 
@@ -268,7 +279,7 @@ c     if (npt_total .eq. 1) then
                 endif
              endif
           enddo
-
+                
           ! full exit_1
           sum_value = 0
           do i=1,ppiclf_ndim
@@ -287,7 +298,7 @@ c     if (npt_total .eq. 1) then
              exit_2 = .true.
           endif
        enddo
-
+!        write(*,*) "BADF DOWhile Exit flags passed"
 ! -------------------------------------------------------
 ! SETUP 3D BACKGROUND GRID PARAMETERS FOR GHOST PARTICLES
 ! -------------------------------------------------------
@@ -414,6 +425,8 @@ c     current box coordinates
       real*8 ppiclf_vlmin, ppiclf_vlmax
       external ppiclf_vlmin, ppiclf_vlmax
 
+!      write(*,*) "BD:Overlap called"  
+
       ! see which bins are in which elements
       ppiclf_neltb = 0
       do ie=1,ppiclf_nee
@@ -434,6 +447,10 @@ c     current box coordinates
          if (ppiclf_ndim.gt.2 .and. rzval .lt. ppiclf_binb(5))
      >      goto 1233
 
+
+
+!        write(*,*) " BD:First goto passed pt in bin bound"
+
          ii    = floor((rxval-ppiclf_binb(1))/ppiclf_bins_dx(1)) 
          jj    = floor((ryval-ppiclf_binb(3))/ppiclf_bins_dx(2)) 
          kk    = floor((rzval-ppiclf_binb(5))/ppiclf_bins_dx(3)) 
@@ -451,8 +468,10 @@ c     current box coordinates
          if (ii .lt. 0 .or. ii .gt. ppiclf_n_bins(1)-1) goto 1233
          if (jj .lt. 0 .or. jj .gt. ppiclf_n_bins(2)-1) goto 1233
          if (kk .lt. 0 .or. kk .gt. ppiclf_n_bins(3)-1) goto 1233
-
+        
          ppiclf_neltb = ppiclf_neltb + 1
+!         write(*,*) "BD; inc neltb",ppiclf_neltb
+         
          if(ppiclf_neltb .gt. PPICLF_LEE) then
            call ppiclf_exittr('Increase PPICLF_LEE$',0.0d0,ppiclf_neltb)
          endif
@@ -469,6 +488,7 @@ c     current box coordinates
             if (ppiclf_er_map(1,il) .eq. ie) then
             if (ppiclf_er_map(4,il) .eq. nrank) then
                ppiclf_neltb = ppiclf_neltb - 1
+!               write(*,*) "BD; dec neltb",ppiclf_neltb 
                goto 1233
             endif
             endif
@@ -670,8 +690,12 @@ c     current box coordinates
       enddo
       enddo
 
-      call ppiclf_solve_InitSolve
+!      call ppiclf_comm_MapOverlapMesh
 
+!      ! This gets the local element number
+!      if (ppiclf_lintp .or. (ppiclf_lproj .and. ppiclf_sngl_elem))
+!     >  call ppiclf_solve_InterpParticleGrid
+        call ppiclf_solve_InitSolve 
       return
       end
 c-----------------------------------------------------------------------
