@@ -229,9 +229,6 @@
 
       ppiclf_d2chk(3) = rwidth
 
-!BD:Testing passsing to picle
-!      write(*,*) "Neigbor",rwidth     
-
       return
       end
 !-----------------------------------------------------------------------
@@ -624,11 +621,6 @@
          ppiclf_wall_c(8,ppiclf_nwall) = xp3(2)
          ppiclf_wall_c(9,ppiclf_nwall) = xp3(3)
 
-!TEMP Dump statments BAD
-!        write(*,*) "PPWALL ", xp1(1),xp1(2),xp1(3)
-!        write(*,*) "PPWALL ", xp2(1),xp2(2),xp2(3)
-!        write(*,*) "PPWALL ", xp3(1),xp3(2),xp3(3)
-
          A(1) = (xp1(1) + xp2(1) + xp3(1))/3.0d0
          A(2) = (xp1(2) + xp2(2) + xp3(2))/3.0d0
          A(3) = (xp1(3) + xp2(3) + xp3(3))/3.0d0
@@ -829,35 +821,19 @@
 ! 
       real*8 zl
       real*8 zr
-      real*8 zzr
-      real*8 zzl    
 ! 
-       !write(*,*) "BIG Z 1" 
-      !zl = 0.0d0
-      zzl = 0.0  
-       !write(*,*) "BIG Z L" 
-      !zr = 0.0001d0   
-       zzr = 0.000125!0.0002 !0.0006  
-        !write(*,*) "BIG Z R"
-      if (1.eq.2) then ! (zl .ge. zr) then
-      !write(*,*) zl,zr
-       !write(*,*) "BIG Z BAD IF"     
-      call ppiclf_exittr('PeriodicZ must have zl < zr$',zl,0)
-      endif  
+      if (zl .ge. zr)
+     >call ppiclf_exittr('PeriodicZ must have zl < zr$',zl,0)
       if (ppiclf_ndim .lt. 3)
-     > call ppiclf_exittr('Cannot do PeriodicZ if not 3D$',zl,0)
+     >call ppiclf_exittr('Cannot do PeriodicZ if not 3D$',zl,0)
 
-      !write(*,*) "BIG Z 2",zzl,zzr  
       ppiclf_iperiodic(3) = 0
-      !write(*,*) "BIG Z 3"  
+
       ppiclf_xdrange(1,3) = zl
-      !write(*,*) "BIG Z 4"  
       ppiclf_xdrange(2,3) = zr
-        
-      !write(*,*) "Per Z calling Init"  
+
       call ppiclf_solve_InitSolve
 
-      !write(*,*) "End of PZ"  
       return
       end
 !-----------------------------------------------------------------------
@@ -1022,6 +998,8 @@ c----------------------------------------------------------------------
      >   call ppiclf_solve_IntegrateRK3(iout)
       if (ppiclf_imethod .eq. -1) 
      >   call ppiclf_solve_IntegrateRK3s(iout)
+      if (ppiclf_imethod .eq. 2)
+     >   call ppiclf_solve_IntegrateRK3s_Rocflu(iout)
 
       ! output files
       if (ppiclf_iostep .gt.0)then
@@ -1118,8 +1096,55 @@ c----------------------------------------------------------------------
       iout = .false.
       if (istage .eq. nstage) iout = .true.
 
-!BD: CHanged RK3 to match Rocflu's
-!Check negative on third component
+      ! save stage 1 solution
+      if (istage .eq. 1) then
+      ndum = PPICLF_NPART*PPICLF_LRS
+      do i=1,ndum
+         ppiclf_y1(i) = ppiclf_y(i,1)
+      enddo
+      endif
+
+      ! evaluate ydot
+      call ppiclf_solve_SetYdot
+
+      ! rk3 integrate
+      ndum = PPICLF_NPART*PPICLF_LRS
+      do i=1,ndum
+         ppiclf_y(i,1) =  ppiclf_rk3coef(1,istage)*ppiclf_y1   (i)
+     >                  + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
+     >                  + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
+      enddo
+
+      return
+      end
+c----------------------------------------------------------------------
+      subroutine ppiclf_solve_IntegrateRK3s_Rocflu(iout)
+!
+      implicit none
+!
+      include "PPICLF"
+! 
+! Internal: 
+! 
+      integer*4 i, ndum, nstage, istage
+      integer*4 icalld
+      save      icalld
+      data      icalld /0/
+!
+! Output:
+!
+      logical iout
+!
+      icalld = icalld + 1
+
+      ! get rk3 coeffs
+      call ppiclf_solve_SetRK3Coeff(ppiclf_dt)
+
+      nstage = 3
+      istage = mod(icalld,nstage)
+      if (istage .eq. 0) istage = 3
+      iout = .false.
+      if (istage .eq. nstage) iout = .true.
 
 !Zero out for first stage
       if (istage .eq. 1) then
@@ -1149,27 +1174,6 @@ c----------------------------------------------------------------------
 !          storage
         call ppiclf_solve_RemoveParticle      
 !End Experimental fix
-
-!BD: Original CODE Follows CMT-nek rk3 setup
-      ! save stage 1 solution
-!      if (istage .eq. 1) then
-!      ndum = PPICLF_NPART*PPICLF_LRS
-!      do i=1,ndum
-!         ppiclf_y1(i) = ppiclf_y(i,1)
-!      enddo
-!      endif
-
-      ! evaluate ydot
-!      call ppiclf_solve_SetYdot
-
-      ! rk3 integrate
-!      ndum = PPICLF_NPART*PPICLF_LRS
-!      do i=1,ndum
-!         ppiclf_y(i,1) =  ppiclf_rk3coef(1,istage)*ppiclf_y1   (i)
-!     >                  + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
-!     >                  + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
-!      enddo
-!BD: original code END
       return
       end
 c----------------------------------------------------------------------
@@ -1196,43 +1200,30 @@ c----------------------------------------------------------------------
 ! 
       integer*4 i, j
 !
-!      write(*,*) "1 Initsolve Start"  
       call ppiclf_comm_CreateBin
-!        write(*,*) "2 Createbin" 
       call ppiclf_comm_FindParticle
-!        write(*,*) "3 FineParticle" 
       call ppiclf_comm_MoveParticle
-!        write(*,*) "4 MoveParticle" 
       if (ppiclf_overlap) 
      >   call ppiclf_comm_MapOverlapMesh
-!        write(*,*) "5 MapOverlapMesh" 
-!      if (ppiclf_lintp .and. ppiclf_int_icnt .ne. 0) 
       if ((ppiclf_lintp .and. ppiclf_int_icnt .ne. 0) .or.
-     >    (ppiclf_lproj .and. ppiclf_sngl_elem))     
+     >    (ppiclf_lproj .and. ppiclf_sngl_elem))
      >   call ppiclf_solve_InterpParticleGrid
-!        write(*,*) "6 InterpPartGrid" 
       call ppiclf_solve_RemoveParticle
-!        write(*,*) "7 RemovePart" 
       if (ppiclf_lsubsubbin .or. ppiclf_lproj) then
          call ppiclf_comm_CreateGhost
-!        write(*,*) "8 CreateGhost" 
          call ppiclf_comm_MoveGhost
-!        write(*,*) "9 MoveGhost" 
       endif
 
       if (ppiclf_lproj .and. ppiclf_overlap) 
      >   call ppiclf_solve_ProjectParticleGrid
-!        write(*,*) "10 ProjectPart" 
       if (ppiclf_lsubsubbin) 
      >   call ppiclf_solve_SetNeighborBin
-!        write(*,*) "11 SetNeighborBin" 
       ! Zero 
       do i=1,PPICLF_LPART
       do j=1,PPICLF_LRS
          ppiclf_ydotc(j,i) = 0.0d0
       enddo
       enddo
-!        write(*,*) "12 InitSolve Done" 
       return
       end
 !-----------------------------------------------------------------------
@@ -1606,33 +1597,37 @@ c----------------------------------------------------------------------
 !
 
 
-!BD:Rocflu's rk3 scheme
+      if (ppiclf_imethod .eq. 2) then
+        !BD:Rocflu's rk3 scheme
 
-!Folowing form
+        !Folowing form
         !rk3(1,:) = Temp storage i.e. Previous Stage RHS
         !rk3(2,:) = Temp storage i.e. Current Stage iteration
         !rk3(3,:) = Temp storage i.e. Current Stage RHS
-      ppiclf_rk3coef(1,1) = 0.d00
-      ppiclf_rk3coef(2,1) = 1.0d0
-      ppiclf_rk3coef(3,1) = dt*8.0d0/15.0d0
-      ppiclf_rk3coef(1,2) = dt*17.0d0/60.0d0
-      ppiclf_rk3coef(2,2) = 1.0d0
-      ppiclf_rk3coef(3,2) = dt*5.0d0/12.0d0
-      ppiclf_rk3coef(1,3) = dt*5.0d0/12.0d0
-      ppiclf_rk3coef(2,3) = 1.0d0
-      ppiclf_rk3coef(3,3) = dt*3.0d0/4.0d0
 
-!BD:Original Code This follows CMT-nek's rk 3 scheme
-!      ppiclf_rk3coef(1,1) = 0.d00
-!      ppiclf_rk3coef(2,1) = 1.0d0 
-!      ppiclf_rk3coef(3,1) = dt
-!      ppiclf_rk3coef(1,2) = 3.0d0/4.0d0
-!      ppiclf_rk3coef(2,2) = 1.0d0/4.0d0 
-!      ppiclf_rk3coef(3,2) = dt/4.0d0
-!      ppiclf_rk3coef(1,3) = 1.0d0/3.0d0
-!      ppiclf_rk3coef(2,3) = 2.0d0/3.0d0
-!      ppiclf_rk3coef(3,3) = dt*2.0d0/3.0d0
-!BD: Original Code END
+        ppiclf_rk3coef(1,1) = 0.d00
+        ppiclf_rk3coef(2,1) = 1.0d0
+        ppiclf_rk3coef(3,1) = dt*8.0d0/15.0d0
+        ppiclf_rk3coef(1,2) = dt*17.0d0/60.0d0
+        ppiclf_rk3coef(2,2) = 1.0d0
+        ppiclf_rk3coef(3,2) = dt*5.0d0/12.0d0
+        ppiclf_rk3coef(1,3) = dt*5.0d0/12.0d0
+        ppiclf_rk3coef(2,3) = 1.0d0
+        ppiclf_rk3coef(3,3) = dt*3.0d0/4.0d0
+      else
+        !BD:Original Code This follows CMT-nek's rk 3 scheme
+        ppiclf_rk3coef(1,1) = 0.d00
+        ppiclf_rk3coef(2,1) = 1.0d0 
+        ppiclf_rk3coef(3,1) = dt
+        ppiclf_rk3coef(1,2) = 3.0d0/4.0d0
+        ppiclf_rk3coef(2,2) = 1.0d0/4.0d0 
+        ppiclf_rk3coef(3,2) = dt/4.0d0
+        ppiclf_rk3coef(1,3) = 1.0d0/3.0d0
+        ppiclf_rk3coef(2,3) = 2.0d0/3.0d0
+        ppiclf_rk3coef(3,3) = dt*2.0d0/3.0d0
+        !BD: Original Code END
+      end if
+
       return
       end
 !-----------------------------------------------------------------------
@@ -1676,7 +1671,6 @@ c----------------------------------------------------------------------
          isl = (i -1) * PPICLF_LRS + 1
          in_part(i) = 0
          if (ppiclf_iprop(1,i) .eq. 3) then
-             write(*,*) "USER DP, should not be happening"   
             in_part(i) = -1 ! User removed particle
             goto 1513
          endif
@@ -1705,10 +1699,7 @@ c----------------------------------------------------------------------
                 endif
             endif
             if (ppiclf_iprop(1,i) .eq. 2) then
-               in_part(i) = -1 ! only if periodic check fails it will get herea
-!              PCF dim xd1,xd2,val         
-               write(*,*) "PCF", j+1,ppiclf_xdrange(1,j+1),
-     >          ppiclf_xdrange(2,j+1),ppiclf_y(jchk,i)  
+               in_part(i) = -1 ! only if periodic check fails it will get here
                
                   
             endif
@@ -1719,12 +1710,6 @@ c----------------------------------------------------------------------
 
       ic = 0
       do i=1,ppiclf_npart
-!BAD DEBUG LOG for particles getting deleted
-        if (in_part(i) .ne. 0) then
-        write(*,*) "DelP in x y z, u v w", in_part(i), ppiclf_y(1,i),
-     >   ppiclf_y(2,i) ,ppiclf_y(3,i),ppiclf_y(4,i),ppiclf_y(5,i),
-     >   ppiclf_y(6,i)
-        end if
          if (in_part(i).eq.0) then
             ic = ic + 1 
             if (i .ne. ic) then
@@ -1747,8 +1732,6 @@ c----------------------------------------------------------------------
             endif
          endif
       enddo
-      if (ppiclf_npart .ne. ic) 
-     >   write(*,*) "Tot DelP old, new",ppiclf_npart, ic  
       ppiclf_npart = ic
 
       return
@@ -1852,6 +1835,12 @@ c----------------------------------------------------------------------
      >          neltbc, ndum, nl, nii, njj, nrr, nlxyzep, iee, ndumdum
       real*8 pi, d2chk2_sq, rdum, multfci, rsig, rdist2, rexp, rx2(3),
      >       rx22, ry22, rz22, rtmp2, evol
+
+      ! Sam - variables for general hex volume calculation
+      real*8 v1(3), v2(3), v3(3), cross(3), centroid(3), voltet
+      real*8 face(2,2,3) ! ifacex, ifacey, xyz
+      integer*4 face_map(3,2,2,2,3) ! xyz,front/back,ifacex,ifacey,ixyz
+      integer*4 ix,ix2,iface,inode,ia,ib
 !
       if3d = .false.
       if (ppiclf_ndim .eq. 3) if3d = .true.
@@ -2034,31 +2023,99 @@ c----------------------------------------------------------------------
 
 !BD: This is where rproj gets stored in fld, this is one of the steps
 !that should be tracked
- 
+
+        ! Sam - build map to face coordinates for 3D general hex volume
+        ! calculation
+        do ix=1,3
+          ia = max(3-ix,1)
+          ib = min(5-ix,3)
+          do iface=1,2
+            do j=1,2
+            do i=1,2
+              face_map(ix,iface,i,j,ix) = iface ! constant
+              face_map(ix,iface,i,j,ia) = i ! ix
+              face_map(ix,iface,i,j,ib) = j ! iy
+            end do
+            end do
+          end do
+        end do
 
         do ip=1,ppiclf_npart
-!         write(*,*) "BD:Proj; ip,ipTot,elem+1,ElemTOT",
-!     >    ip,ppiclf_npart,ppiclf_iprop(2,ip)+1,ppiclf_neltb
-        
            do ie=1,ppiclf_neltb
   
-             ! Only use the current (single) element from findpts
-             ! Note that this assumes the element volume is that of
-             ! a cuboid... will need to get a better way for general
-             ! hexahedral element eventually
              if (ie .ne. ppiclf_iprop(2,ip)+1) cycle
-!BD: Check if paricles are being found for projection!
-!             write(*,*) "Part found in sngl_elm for proj",ip,ie   
 
-             evol = (ppiclf_xm1b(PPICLF_LEX,1,1,1,ie) 
-     >             - ppiclf_xm1b(1,1,1,1,ie))
-             evol = evol
-     >            * (ppiclf_xm1b(1,PPICLF_LEY,1,2,ie) 
-     >             - ppiclf_xm1b(1,1,1,2,ie))
-             if (if3d)
-     >       evol = evol
-     >            * (ppiclf_xm1b(1,1,PPICLF_LEZ,3,ie) 
-     >             - ppiclf_xm1b(1,1,1,3,ie))
+             ! Sam - general hexahedron volume calculation
+             if (if3d) then
+               ! get centroid of hexahedron
+               do ix=1,3
+                 centroid(ix) = 0.0
+               end do
+
+               do ix=1,3
+               do k=1,PPICLF_LEZ
+               do j=1,PPICLF_LEY
+               do i=1,PPICLF_LEX
+                 centroid(ix) = centroid(ix) + ppiclf_xm1b(i,j,k,ix,ie)
+               end do
+               end do
+               end do
+               end do
+
+               do ix=1,3
+                 centroid(ix) = centroid(ix) / 8.0
+               end do
+
+
+               ! calculate volume based on two contributions from each
+               ! face as tetrahedrons
+               evol = 0.0
+               do ix=1,3
+                 do iface=1,2
+
+                   ! get face coordinates
+                   do j=1,2
+                   do i=1,2
+                   do ix2=1,3
+                     face(i,j,ix2) = ppiclf_xm1b(
+     >                                 face_map(ix,iface,i,j,1),
+     >                                 face_map(ix,iface,i,j,2),
+     >                                 face_map(ix,iface,i,j,3),
+     >                                 ix2,ie)
+                   end do
+                   end do
+                   end do
+
+                   do ix2=1,3
+                     v1(ix2) = face(1,2,ix2) - face(2,1,ix2)
+                     v2(ix2) = centroid(ix2) - face(2,1,ix2)
+                   end do ! ix2
+
+                   ! take cross product
+                   cross(1) = v1(2)*v2(3) - v1(3)*v2(2)
+                   cross(2) = v1(3)*v2(1) - v1(1)*v2(3)
+                   cross(3) = v1(1)*v2(2) - v1(2)*v2(1)
+
+                   ! get contriubtions to volume from each tetrahedron
+                   do inode=1,2
+                   do ix2=1,3
+                     v3(ix2) = face(inode,inode,ix2) - face(2,1,ix2)
+                   end do ! ix2
+
+                   ! really 6 times the volume of the tet, but we can
+                   ! save an operation by dividing at the end
+                   voltet = 0.0
+                   do ix2=1,3
+                     voltet = voltet + v3(ix2)*cross(ix2)
+                   end do ! ix2
+                   evol = evol + abs(voltet)
+                   end do ! inode
+                   
+                 end do ! iface
+               end do ! ix
+               evol = evol / 6.0
+             end if ! if3d
+
              rexp = 1.0 / evol
            do k=1,PPICLF_LEZ
            do j=1,PPICLF_LEY
