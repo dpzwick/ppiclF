@@ -1,9 +1,9 @@
 !-----------------------------------------------------------------------
 #ifdef PPICLC
-      subroutine ppiclf_io_ReadParticleVTU(filein1)
+      subroutine ppiclf_io_ReadParticleVTU(filein1,istartoutin)
      > bind(C, name="ppiclc_io_ReadParticleVTU")
 #else
-      subroutine ppiclf_io_ReadParticleVTU(filein1)
+      subroutine ppiclf_io_ReadParticleVTU(filein1,istartoutin)
 #endif
 !
       implicit none
@@ -31,11 +31,23 @@
       external ppiclf_indx1
       character*132 PPICLF_CHSTR
       EXTERNAL PPICLF_CHSTR
+      ! Sam - this modifies the interface for ppiclC. Will now need to
+      ! include NULL for optional arguments
+      integer*4, optional :: istartoutin
+      integer*4 istartout
+      common /ppiclf_io_restart/ istartout
 !
       call ppiclf_prints(' *Begin ReadParticleVTU$')
       
       call ppiclf_solve_InitZero
       PPICLF_RESTART = .true.
+
+      if (present(istartoutin)) then
+        istartout = istartoutin
+      else
+        istartout = 0
+      end if
+
 
       indx1 = ppiclf_indx1(filein1,'.')
       indx1 = indx1 + 3 ! v (1) t (2) u (3)
@@ -1370,9 +1382,13 @@ c1511 continue
      >          ierr, ivtu_size
       integer*4 ppiclf_iglsum
       external ppiclf_iglsum
+      integer*4 istartout
+      common /ppiclf_io_restart/ istartout
 !
 
       call ppiclf_printsi(' *Begin WriteParticleVTU$',ppiclf_cycle)
+
+      if (icalld1 .eq. 0) icalld1 = istartout
 
       icalld1 = icalld1+1
 

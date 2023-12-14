@@ -107,11 +107,12 @@
          if (.not. PPICLF_RESTART) then
             call ppiclf_solve_InitZero
             call ppiclf_solve_AddParticles(npart,y,rprop)
+
+            call ppiclf_prints('   *Begin WriteParticleVTU$')
+               call ppiclf_io_WriteParticleVTU('')
+            call ppiclf_prints('    End WriteParticleVTU$')
          endif
 
-      call ppiclf_prints('   *Begin WriteParticleVTU$')
-         call ppiclf_io_WriteParticleVTU('')
-      call ppiclf_prints('    End WriteParticleVTU$')
 
 !     call ppiclf_prints('   *Begin WriteBinVTU$')
 !        call ppiclf_io_WriteBinVTU('')
