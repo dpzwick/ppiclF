@@ -2114,6 +2114,21 @@ c----------------------------------------------------------------------
                  end do ! iface
                end do ! ix
                evol = evol / 6.0
+             else
+               ! Sam - default to naive solution for 2D. ASSUMES
+               ! rectangular elements. This will
+               ! probably never get used, but if it does throw an error
+               ! so the user is absolutely sure of what they're doing.
+               call ppiclf_exittr('Single element projection only
+     >          supported in 3D for general hex elements. Comment and
+     >          ignore this error if your elements are perfect
+     >          rectangles. $',0.0d0,0)
+
+               evol = (ppiclf_xm1b(PPICLF_LEX,1,1,1,ie) 
+     >               - ppiclf_xm1b(1,1,1,1,ie))
+               evol = evol
+     >              * (ppiclf_xm1b(1,PPICLF_LEY,1,2,ie) 
+     >               - ppiclf_xm1b(1,1,1,2,ie))
              end if ! if3d
 
              rexp = 1.0 / evol
