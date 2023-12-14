@@ -834,9 +834,16 @@ c1511 continue
      >          ioff_dum, itype, iorank, if_cll, if_pos, icount_pos, 
      >          icount_cll, ierr, isize, ivtu_size
       real*4 rpoint(3)
+      integer*4 istartout
+      common /ppiclf_io_restart/ istartout
 !
 
       call ppiclf_printsi(' *Begin WriteBinVTU$',ppiclf_cycle)
+
+      if (icalld1 .eq. 0) then
+          icalld1 = istartout
+          if (istartout .eq. 0) icalld1 = 1
+      end if
 
       icalld1 = icalld1+1
 
