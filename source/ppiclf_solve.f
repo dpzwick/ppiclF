@@ -138,7 +138,7 @@
       integer*4  ndim
       integer*4  iendian
 !
-      if (imethod .eq. 0 .or. abs(imethod) .ge. 2)
+      if (imethod .eq. 0 .or. imethod .ge. 3 .or. imethod .le. -2)
      >   call ppiclf_exittr('Invalid integration method$',0.0d0,imethod)
       if (ndim .le. 1 .or. ndim .ge. 4)
      >   call ppiclf_exittr('Invalid problem dimension$',0.0d0,ndim)
