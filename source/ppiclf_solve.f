@@ -1131,6 +1131,7 @@ c----------------------------------------------------------------------
       integer*4 icalld
       save      icalld
       data      icalld /0/
+
 !
 ! Output:
 !
@@ -1148,22 +1149,29 @@ c----------------------------------------------------------------------
       if (istage .eq. nstage) iout = .true.
 
 !Zero out for first stage
-      if (istage .eq. 1) then
-      ndum = PPICLF_NPART*PPICLF_LRS
-      do i=1,ndum
-         ppiclf_y1(i) = 0.0d0 
-      enddo
-      endif
-
       ! evaluate ydot
       call ppiclf_solve_SetYdot
+      if (istage .eq. 1) then
+        ndum = PPICLF_NPART*PPICLF_LRS
+        do i=1,ndum
+          ppiclf_y1(i) = 0.0d0 
+        enddo
+      endif
+
+      ! TLJ comment Dec 7, 2023
+      ! The Rocflu RK3 can be found in equation (7) of:
+      ! S. Yu. "Runge-Kutta Methods Combined with Compact
+      !   Difference Schemes for the Unsteady Euler Equations".
+      !   Center for Modeling of Turbulence and Transition.
+      !   Research Briefs, 1991.
+
 
       ! rk3 integrate CHECK SIGNS
       ndum = PPICLF_NPART*PPICLF_LRS
       do i=1,ndum
          ppiclf_y(i,1) =  -ppiclf_rk3coef(1,istage)*ppiclf_y1   (i)
-     >                  + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
-     >                  + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
+     >                   + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
+     >                   + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
       enddo
 !Store Current stage RHS for next stage's use
         do i=1,ndum
@@ -1605,6 +1613,9 @@ c----------------------------------------------------------------------
         !rk3(1,:) = Temp storage i.e. Previous Stage RHS
         !rk3(2,:) = Temp storage i.e. Current Stage iteration
         !rk3(3,:) = Temp storage i.e. Current Stage RHS
+        ppiclf_rk3ark(1) = 8.0d0/15.0d0
+        ppiclf_rk3ark(2) = 5.0d0/12.0d0
+        ppiclf_rk3ark(3) = 0.75d0
 
         ppiclf_rk3coef(1,1) = 0.d00
         ppiclf_rk3coef(2,1) = 1.0d0

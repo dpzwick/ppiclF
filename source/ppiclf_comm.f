@@ -202,6 +202,8 @@ c     if (npt_total .eq. 1) then
                ppiclf_bins_dx(i) = (ppiclf_binb(2*(i-1)+2) -
      >                              ppiclf_binb(2*(i-1)+1)  ) / 
      >                             ppiclf_n_bins(i)
+!         WRITE(*,*) "infinite loop", i, ppiclf_bins_dx(i),
+!     >    ppiclf_d2chk(1)
             enddo
          endif
          total_bin = total_bin*ppiclf_n_bins(i)
