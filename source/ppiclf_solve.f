@@ -2053,9 +2053,11 @@ c----------------------------------------------------------------------
         end do
 
         do ip=1,ppiclf_npart
-           do ie=1,ppiclf_neltb
+           !do ie=1,ppiclf_neltb
   
-             if (ie .ne. ppiclf_iprop(2,ip)+1) cycle
+             !if (ie .ne. ppiclf_iprop(2,ip)+1) cycle
+             ie = ppiclf_iprop(2, ip) + 1
+             if ((ie .lt. 1) .or. (ie .gt. ppiclf_neltb)) cycle
 
              ! Sam - general hexahedron volume calculation
              if (if3d) then
@@ -2157,8 +2159,8 @@ c----------------------------------------------------------------------
            enddo
            enddo
            enddo
-        enddo
-      endif
+        !enddo ! ppiclf_neltb
+      endif ! ppiclf_npart
 
       ! now send xm1b to the processors in nek that hold xm1
 
