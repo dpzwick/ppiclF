@@ -1148,9 +1148,10 @@ c----------------------------------------------------------------------
       iout = .false.
       if (istage .eq. nstage) iout = .true.
 
-!Zero out for first stage
       ! evaluate ydot
       call ppiclf_solve_SetYdot
+
+      !Zero out for first stage
       if (istage .eq. 1) then
         ndum = PPICLF_NPART*PPICLF_LRS
         do i=1,ndum
@@ -1165,14 +1166,13 @@ c----------------------------------------------------------------------
       !   Center for Modeling of Turbulence and Transition.
       !   Research Briefs, 1991.
 
-
-      ! rk3 integrate CHECK SIGNS
       ndum = PPICLF_NPART*PPICLF_LRS
       do i=1,ndum
          ppiclf_y(i,1) =  -ppiclf_rk3coef(1,istage)*ppiclf_y1   (i)
      >                   + ppiclf_rk3coef(2,istage)*ppiclf_y    (i,1)
      >                   + ppiclf_rk3coef(3,istage)*ppiclf_ydot (i,1)
       enddo
+
 !Store Current stage RHS for next stage's use
         do i=1,ndum
          ppiclf_y1(i) = ppiclf_ydot(i,1)
@@ -1877,8 +1877,8 @@ c----------------------------------------------------------------------
       rdum = 0.0d0
       if (ppiclf_lfiltgauss) then
          rsig    = ppiclf_filter/(2.0d0*sqrt(2.0d0*log(2.0d0)))
-         multfci = 1.0d0/(sqrt(2.0d0*pi)**2 * rsig**2) 
-         if (if3d) multfci = multfci**(1.5d0)
+         multfci = 1.0d0/(sqrt(2.0d0*pi)**2 * rsig**2) ! in 2D
+         if (if3d) multfci = multfci**(1.5d0) ! in 3D
          rdum   = 1.0d0/(-2.0d0*rsig**2)
       endif
 
@@ -1993,7 +1993,7 @@ c----------------------------------------------------------------------
   
               if (rdist2 .gt. d2chk2_sq) cycle
   
-              rexp = 1.0d0
+              rexp = 1.0d0  ! for box filter
               if (ppiclf_lfiltgauss)
      >           rexp = exp(rdist2*rproj(1,ip))
   
